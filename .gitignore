@@ -1,0 +1,32 @@
+# environmental
+compile_commands.json
+extension_api.json
+.sconsign.dblite
+*.os
+.DS_Store
+.nobackup*
+demo/bin/libhexmap*
+
+*.import
+
+
+.cache/
+
+# Godot 4+ specific ignores
+.godot/
+
+# Godot-specific ignores
+.import/
+export.cfg
+export_presets.cfg
+
+# Imported translations (automatically generated from CSV files)
+*.translation
+
+# for projects that use SCons for building: http://http://www.scons.org/
+.sconsign.dblite
+
+# When configure fails, SCons outputs these
+config.log
+.sconf_temp
+
