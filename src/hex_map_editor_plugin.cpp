@@ -30,6 +30,7 @@
 
 #include "hex_map_editor_plugin.h"
 
+#include <cstdint>
 #include <godot_cpp/classes/base_material3d.hpp>
 #include <godot_cpp/classes/box_mesh.hpp>
 #include <godot_cpp/classes/camera3d.hpp>
@@ -56,6 +57,7 @@
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
 #include <godot_cpp/variant/packed_vector3_array.hpp>
+#include <godot_cpp/variant/utility_functions.hpp>
 
 // TTR not defined for gdext
 #define TTR(s) s
@@ -445,16 +447,16 @@ bool HexMapEditorPlugin::do_input_action(Camera3D *p_camera, const Point2 &p_poi
 	// 	return false;
 	// }
 
-	if (selected_palette < 0 && input_action != INPUT_PICK && input_action != INPUT_SELECT && input_action != INPUT_PASTE) {
-		return false;
-	}
+	// if (selected_palette < 0 && input_action != INPUT_PICK && input_action != INPUT_SELECT && input_action != INPUT_PASTE) {
+	// 	return false;
+	// }
 	if (mesh_library.is_null()) {
 		return false;
 	}
-	if (input_action != INPUT_PICK && input_action != INPUT_SELECT && input_action != INPUT_PASTE /* && !mesh_library->has_item(selected_palette) */) {
-		// XXX test painting with invalid item number
-		return false;
-	}
+	// if (input_action != INPUT_PICK && input_action != INPUT_SELECT && input_action != INPUT_PASTE /* && !mesh_library->has_item(selected_palette) */) {
+	// 	// XXX test painting with invalid item number
+	// 	return false;
+	// }
 
 	Camera3D *camera = p_camera;
 	Vector3 from = camera->project_ray_origin(p_point);
@@ -468,6 +470,7 @@ bool HexMapEditorPlugin::do_input_action(Camera3D *p_camera, const Point2 &p_poi
 	if (!edit_plane.intersects_segment(from, from + normal * settings_pick_distance->get_value(), &edit_plane_point)) {
 		return false;
 	}
+	UtilityFunctions::print("intersect " + edit_plane_point);
 
 	// Make sure the intersection is inside the frustum planes, to avoid
 	// Painting on invisible regions.
@@ -707,7 +710,8 @@ void HexMapEditorPlugin::_make_visible(bool p_visible) {
 		set_process(false);
 	}
 }
-EditorPlugin::AfterGUIInput HexMapEditorPlugin::forward_spatial_input_event(Camera3D *p_camera, const Ref<InputEvent> &p_event) {
+
+int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera, const Ref<InputEvent> &p_event) {
 	if (!node) {
 		return EditorPlugin::AFTER_GUI_INPUT_PASS;
 	}
@@ -1046,11 +1050,7 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 
 	// XXX works when no connect() calls made in constructor; waiting on 4.3
 	// which will have https://github.com/godotengine/godot-cpp/pull/1446
-	HexMap *map = Object::cast_to<HexMap>(p_object);
-	ERR_FAIL_COND(map == nullptr);
-
 	node = Object::cast_to<HexMap>(p_object);
-	ERR_FAIL_COND(!node);
 
 	input_action = INPUT_NONE;
 	selection.active = false;
@@ -1543,7 +1543,8 @@ void HexMapEditorPlugin::_notification(int p_what) {
 				Ref<InputEventMouseButton> release;
 				release.instantiate();
 				release->set_button_index(MouseButton::MOUSE_BUTTON_LEFT);
-				forward_spatial_input_event(nullptr, release);
+				// XXX this feels like a bad hack
+				_forward_3d_gui_input(nullptr, release);
 			}
 		} break;
 	}

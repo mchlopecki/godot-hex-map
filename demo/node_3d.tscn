@@ -1,5 +1,10 @@
-[gd_scene format=3 uid="uid://bt0soj2wvavie"]
+[gd_scene load_steps=2 format=3 uid="uid://bt0soj2wvavie"]
+
+[sub_resource type="MeshLibrary" id="MeshLibrary_amnye"]
 
 [node name="Node3D" type="Node3D"]
 
 [node name="HexMap" type="HexMap" parent="."]
+mesh_library = SubResource("MeshLibrary_amnye")
+cell_shape = 1
+cell_size = Vector3(1, 1, 1)

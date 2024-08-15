@@ -33,6 +33,8 @@
 #include "hex_map.h"
 
 #include <godot_cpp/classes/box_container.hpp>
+#include <godot_cpp/classes/camera3d.hpp>
+#include <godot_cpp/classes/input_event.hpp>
 #include <godot_cpp/classes/confirmation_dialog.hpp>
 #include <godot_cpp/classes/editor_plugin.hpp>
 #include <godot_cpp/classes/h_box_container.hpp>
@@ -49,6 +51,72 @@
 #include <godot_cpp/classes/v_box_container.hpp>
 
 using namespace godot;
+
+// Figure out how to add EditorSetting for HexMapEditorPlugin
+// Break out MeshLibraryPicker (VBox)
+// Break out ContextMenu (HBox); signals back for control
+//
+// Signals or function calls to EditorPlugins?
+//
+// XXX BUG while shift-click dragging, if you drag outside of the pane, will
+// translate the node we're editing.
+
+// EditorPlugin
+//	- has get_editor_interface()
+//	- needs EditorInterface for shortcuts & settings
+//	- handle viewpane input
+//		- mouse movement move cursor
+//		- clicks place tiles, do selection
+//	- 3d view output
+//		- draw grid
+//		- draw cursor
+//
+//
+// MeshLibraryPicker (VBox)
+//	- Needs Ref<Theme> to get icons
+//	- Hbox
+//		- LineEdit (filter)
+//		- Button (thumbnail)
+//		- Button (list)
+//  - HSlider (thumbnail size)
+//	- ItemList (mesh library palette)
+//
+// ContextMenu
+//	- to get settings/shortcuts need EditorSettings || ProjectSettings
+//	- Floor/Layer
+//	- Axis setting
+//		- maintain per-axis floor here; just signal plane_changed(axis, floor)
+//	- Tile/Selection rotation; cursor_changed(orientation?)
+//	- Deselect; "select_none"
+//	- Fill Selection; "selection_fill"
+//	- Copy Selection; "selection_copy"
+//	- Cut Selection;  "selection_cut"
+//	- enable/disable selection-based menu options
+//
+// Signals
+//  - HexMap
+//		- cell_size_changed -> redraw grids, cursor
+//		- cell_shape_changed -> redraw grids, cursor
+//		- mesh_library_changed -> update palette
+//		- map_changed(pos. old, new)
+//  - MeshLibrary changed -> update palette
+//	- MeshLibraryPicker
+//		- Search Box
+//			- text_changed -> filter ItemList
+//			- gui_input -> up/down/page_up/page_down redirect to ItemList for
+//			  selection
+//		- Thumbnail Button "pressed" -> set ItemList display mode
+//		- List Button "pressed" -> set ItemList display mode
+//		- Size Slider "value_changed" -> set ItemList icon size
+//		- ItemList "gui_input" -> ctrl + mouse wheel size adjustments
+//		- item_selected(index) -> set cursor model
+//	- ContextMenu
+//		- Floor
+//			- value_changed -> to EditorPlugin
+//			- mouse_exited -> release floor edit focus
+//		- Options Dropdown Menu
+//			- id_pressed -> process, then issue "changed"
+//		- changed(axis, floor)
 
 class HexMapEditorPlugin : public EditorPlugin {
 	GDCLASS(HexMapEditorPlugin, EditorPlugin);
@@ -244,8 +312,7 @@ public:
 	virtual void _make_visible(bool visible) override;
 	virtual bool _handles(Object *object) const override;
 	virtual void _edit(Object *p_object) override;
-
-	EditorPlugin::AfterGUIInput forward_spatial_input_event(Camera3D *p_camera, const Ref<InputEvent> &p_event);
+	virtual int32_t _forward_3d_gui_input(Camera3D *viewport_camera, const Ref<InputEvent> &event) override;
 
 	HexMapEditorPlugin();
 	~HexMapEditorPlugin();

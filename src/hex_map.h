@@ -248,7 +248,7 @@ protected:
 
 	void _notification(int p_what);
 	void _update_visibility();
-	static void _bind_methods() {};
+	static void _bind_methods();
 
 public:
 	enum { INVALID_CELL_ITEM = -1 };

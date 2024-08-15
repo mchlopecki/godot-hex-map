@@ -1,0 +1,55 @@
+[gd_scene load_steps=13 format=3 uid="uid://che38xcyuyi8u"]
+
+[ext_resource type="PackedScene" uid="uid://dxfx2ibi6akeu" path="res://addons/kaykit_medieval_hexagon_pack/Assets/gltf/tiles/coast/hex_coast_A.gltf" id="1_xevjp"]
+[ext_resource type="PackedScene" uid="uid://ce6b8frxho5qo" path="res://addons/kaykit_medieval_hexagon_pack/Assets/gltf/tiles/coast/hex_coast_B.gltf" id="2_f5bhx"]
+[ext_resource type="PackedScene" uid="uid://n5j56vboq2ff" path="res://addons/kaykit_medieval_hexagon_pack/Assets/gltf/tiles/coast/hex_coast_C.gltf" id="3_lnh0e"]
+[ext_resource type="PackedScene" uid="uid://d1y1tqfuag101" path="res://addons/kaykit_medieval_hexagon_pack/Assets/gltf/tiles/coast/hex_coast_D.gltf" id="4_3rv5r"]
+[ext_resource type="PackedScene" uid="uid://vx77dipnb1yn" path="res://addons/kaykit_medieval_hexagon_pack/Assets/gltf/tiles/coast/hex_coast_E.gltf" id="5_r6xim"]
+[ext_resource type="PackedScene" uid="uid://b8boleeajmeye" path="res://addons/kaykit_medieval_hexagon_pack/Assets/gltf/tiles/base/hex_water.gltf" id="6_fj361"]
+[ext_resource type="PackedScene" uid="uid://cxpmln17fhbib" path="res://addons/kaykit_medieval_hexagon_pack/Assets/gltf/tiles/base/hex_grass.gltf" id="7_18gij"]
+[ext_resource type="PackedScene" uid="uid://bi0nf6khtwg7b" path="res://addons/kaykit_medieval_hexagon_pack/Assets/gltf/tiles/coast/waterless/hex_coast_A_waterless.gltf" id="8_ysgfg"]
+[ext_resource type="PackedScene" uid="uid://blgsuw1s0jimd" path="res://addons/kaykit_medieval_hexagon_pack/Assets/gltf/tiles/coast/waterless/hex_coast_B_waterless.gltf" id="9_8ojkh"]
+[ext_resource type="PackedScene" uid="uid://co3esy3hd4dam" path="res://addons/kaykit_medieval_hexagon_pack/Assets/gltf/tiles/coast/waterless/hex_coast_C_waterless.gltf" id="10_4k223"]
+[ext_resource type="PackedScene" uid="uid://bfyvf1n38uobu" path="res://addons/kaykit_medieval_hexagon_pack/Assets/gltf/tiles/coast/waterless/hex_coast_D_waterless.gltf" id="11_80ix4"]
+[ext_resource type="PackedScene" uid="uid://lx8uuiitmghk" path="res://addons/kaykit_medieval_hexagon_pack/Assets/gltf/tiles/coast/waterless/hex_coast_E_waterless.gltf" id="12_2hl28"]
+
+[node name="Tileset" type="Node3D"]
+
+[node name="hex_coast_A2" parent="." instance=ExtResource("1_xevjp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="hex_coast_B2" parent="." instance=ExtResource("2_f5bhx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="hex_coast_C2" parent="." instance=ExtResource("3_lnh0e")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="hex_coast_D2" parent="." instance=ExtResource("4_3rv5r")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="hex_coast_E2" parent="." instance=ExtResource("5_r6xim")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="hex_water2" parent="." instance=ExtResource("6_fj361")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="hex_grass2" parent="." instance=ExtResource("7_18gij")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="hex_water3" parent="." instance=ExtResource("6_fj361")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="hex_coast_A_waterless2" parent="." instance=ExtResource("8_ysgfg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="hex_coast_B_waterless2" parent="." instance=ExtResource("9_8ojkh")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="hex_coast_C_waterless2" parent="." instance=ExtResource("10_4k223")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="hex_coast_D_waterless2" parent="." instance=ExtResource("11_80ix4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="hex_coast_E_waterless2" parent="." instance=ExtResource("12_2hl28")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)

@@ -1365,6 +1365,10 @@ void HexMap::_octant_clean_up(const OctantKey &p_key) {
 
 void HexMap::_notification(int p_what) {
 	switch (p_what) {
+		case NOTIFICATION_POSTINITIALIZE:
+			// XXX workaround for connect during initialize
+			break;
+
 		case NOTIFICATION_ENTER_WORLD: {
 			last_transform = get_global_transform();
 
@@ -1512,7 +1516,6 @@ void HexMap::_update_octants_callback() {
 	awaiting_update = false;
 }
 
-#if 0
 void HexMap::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_collision_layer", "layer"),
 			&HexMap::set_collision_layer);
@@ -1683,7 +1686,6 @@ void HexMap::_bind_methods() {
 					PROPERTY_HINT_ENUM, "Square,Hexagon")));
 	ADD_SIGNAL(MethodInfo("changed"));
 }
-#endif
 
 void HexMap::set_cell_scale(float p_scale) {
 	cell_scale = p_scale;
