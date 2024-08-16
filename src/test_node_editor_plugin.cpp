@@ -1,4 +1,5 @@
 #include "test_node_editor_plugin.h"
+#include "godot_cpp/classes/cylinder_mesh.hpp"
 #include "godot_cpp/classes/global_constants.hpp"
 #include "godot_cpp/classes/input_event_key.hpp"
 #include "godot_cpp/classes/object.hpp"

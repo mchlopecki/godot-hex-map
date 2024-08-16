@@ -1371,9 +1371,10 @@ void HexMapEditorPlugin::_build_selection_meshes() {
 
 	switch (node->get_cell_shape()) {
 		case HexMap::CELL_SHAPE_SQUARE: {
-			BoxMesh m = BoxMesh();
-			m.set_size(Vector3(1, 1, 1));
-			mesh_array.append_array(m._create_mesh_array());
+			// Workaround for https://github.com/godotengine/godot-cpp/pull/1446
+			Ref<BoxMesh> m;
+			m->set_size(Vector3(1, 1, 1));
+			mesh_array.append_array(m->_create_mesh_array());
 
 			// XXX had to create instance first -__-
 			//
@@ -1407,13 +1408,14 @@ void HexMapEditorPlugin::_build_selection_meshes() {
 			break;
 		}
 		case HexMap::CELL_SHAPE_HEXAGON: {
-			CylinderMesh m = CylinderMesh();
-			m.set_top_radius(1.0);
-			m.set_bottom_radius(1.0);
-			m.set_height(1.0);
-			m.set_rings(1);
-			m.set_radial_segments(6);
-			mesh_array.append_array(m._create_mesh_array());
+			Ref<CylinderMesh> m;
+			m.instantiate();
+			m->set_top_radius(1.0);
+			m->set_bottom_radius(1.0);
+			m->set_height(1.0);
+			m->set_rings(1);
+			m->set_radial_segments(6);
+			mesh_array.append_array(m->_create_mesh_array());
 
 			// XXX not exposed; construct by hand
 			//
