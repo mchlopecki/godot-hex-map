@@ -34,8 +34,9 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
-#include "hex_map.h"
-#include "hex_map_editor_plugin.h"
+#include "hex_map/editor/hex_map_editor_plugin.h"
+#include "hex_map/hex_map.h"
+#include "test_node.h"
 #include "test_node_editor_plugin.h"
 
 using namespace godot;
@@ -47,8 +48,10 @@ void initialize_hexmap_module(ModuleInitializationLevel p_level) {
 	}
 
 	if (p_level == godot::MODULE_INITIALIZATION_LEVEL_EDITOR) {
+		ClassDB::register_internal_class<MeshLibraryPalette>();
 		ClassDB::register_internal_class<HexMapEditorPlugin>();
 		EditorPlugins::add_by_type<HexMapEditorPlugin>();
+
 		ClassDB::register_internal_class<TestNodeEditorPlugin>();
 		EditorPlugins::add_by_type<TestNodeEditorPlugin>();
 	}

@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "hex_map_editor_plugin.h"
+#include "godot_cpp/variant/callable_method_pointer.hpp"
 
 #include <cstdint>
 #include <godot_cpp/classes/base_material3d.hpp>
@@ -470,7 +471,6 @@ bool HexMapEditorPlugin::do_input_action(Camera3D *p_camera, const Point2 &p_poi
 	if (!edit_plane.intersects_segment(from, from + normal * settings_pick_distance->get_value(), &edit_plane_point)) {
 		return false;
 	}
-	UtilityFunctions::print("intersect " + edit_plane_point);
 
 	// Make sure the intersection is inside the frustum planes, to avoid
 	// Painting on invisible regions.
@@ -506,24 +506,13 @@ bool HexMapEditorPlugin::do_input_action(Camera3D *p_camera, const Point2 &p_poi
 
 		return true;
 	} else if (input_action == INPUT_PICK) {
+		// XXX allow picking from tiles on map,
 		int item = node->get_cell_item(pointer_cell);
 		if (item >= 0) {
+			// XXX should send a signal back when called; so we probably don't
+			// need to set it ourselves here.
+			palette->set_mesh(item);
 			selected_palette = item;
-
-			// Clear the filter if picked an item that's filtered out.
-			bool found = false;
-			for (int i = 0; i < mesh_library_palette->get_item_count(); i++) {
-				if (item == (int)mesh_library_palette->get_item_metadata(i)) {
-					found = true;
-					break;
-				}
-			}
-			if (!found) {
-				search_box->clear();
-			}
-
-			// This will select `selected_palette` in the ItemList when possible.
-			update_palette();
 
 			_update_cursor_instance();
 		}
@@ -701,12 +690,12 @@ bool HexMapEditorPlugin::_handles(Object *p_object) const {
 
 void HexMapEditorPlugin::_make_visible(bool p_visible) {
 	if (p_visible) {
-		// vbox self->show();
 		spatial_editor_hb->show();
+		palette->show();
 		set_process(true);
 	} else {
 		spatial_editor_hb->hide();
-		// vbox hide();
+		palette->hide();
 		set_process(false);
 	}
 }
@@ -838,9 +827,10 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera, const Ref<
 					_set_selection(false);
 					return EditorPlugin::AFTER_GUI_INPUT_STOP;
 				} else {
+					palette->clear_selection();
+					// XXX maybe signal will handle the set on our side
+					// XXX feel like escape
 					selected_palette = -1;
-					mesh_library_palette->deselect_all();
-					update_palette();
 					_update_cursor_instance();
 					return EditorPlugin::AFTER_GUI_INPUT_STOP;
 				}
@@ -888,150 +878,24 @@ struct _CGMEItemSort {
 	_FORCE_INLINE_ bool operator<(const _CGMEItemSort &r_it) const { return name < r_it.name; }
 };
 
-void HexMapEditorPlugin::_set_display_mode(int p_mode) {
-	if (display_mode == p_mode) {
-		return;
-	}
-
-	if (p_mode == DISPLAY_LIST) {
-		mode_list->set_pressed(true);
-		mode_thumbnail->set_pressed(false);
-	} else if (p_mode == DISPLAY_THUMBNAIL) {
-		mode_list->set_pressed(false);
-		mode_thumbnail->set_pressed(true);
-	}
-
-	display_mode = p_mode;
-
-	update_palette();
-}
-
-void HexMapEditorPlugin::_text_changed(const String &p_text) {
-	update_palette();
-}
-
-void HexMapEditorPlugin::_sbox_input(const Ref<InputEvent> &p_ie) {
-	const Ref<InputEventKey> k = p_ie;
-
-	if (k.is_valid() && (k->get_keycode() == Key::KEY_UP || k->get_keycode() == Key::KEY_DOWN || k->get_keycode() == Key::KEY_PAGEUP || k->get_keycode() == Key::KEY_PAGEDOWN)) {
-		// Forward the key input to the ItemList so it can be scrolled
-		mesh_library_palette->_gui_input(k);
-		search_box->accept_event();
-	}
-}
-
-void HexMapEditorPlugin::_mesh_library_palette_input(const Ref<InputEvent> &p_ie) {
-	const Ref<InputEventMouseButton> mb = p_ie;
-
-	// Zoom in/out using Ctrl + mouse wheel
-	if (mb.is_valid() && mb->is_pressed() && mb->is_command_or_control_pressed()) {
-		if (mb->is_pressed() && mb->get_button_index() == MouseButton::MOUSE_BUTTON_WHEEL_UP) {
-			size_slider->set_value(size_slider->get_value() + 0.2);
-		}
-
-		if (mb->is_pressed() && mb->get_button_index() == MouseButton::MOUSE_BUTTON_WHEEL_DOWN) {
-			size_slider->set_value(size_slider->get_value() - 0.2);
-		}
-	}
-}
-
-void HexMapEditorPlugin::_icon_size_changed(float p_value) {
-	mesh_library_palette->set_icon_scale(p_value);
-	update_palette();
-}
-
-void HexMapEditorPlugin::update_palette() {
-	// XXX no editor settings; no edscale
-	// float min_size = EDITOR_GET("editors/grid_map/preview_size");
-	// min_size *= EDSCALE;
-	float min_size = 128;
-
-	mesh_library_palette->clear();
-	if (display_mode == DISPLAY_THUMBNAIL) {
-		mesh_library_palette->set_max_columns(0);
-		mesh_library_palette->set_icon_mode(ItemList::ICON_MODE_TOP);
-		mesh_library_palette->set_fixed_column_width(min_size * MAX(size_slider->get_value(), 1.5));
-	} else if (display_mode == DISPLAY_LIST) {
-		mesh_library_palette->set_max_columns(1);
-		mesh_library_palette->set_icon_mode(ItemList::ICON_MODE_LEFT);
-		mesh_library_palette->set_fixed_column_width(0);
-	}
-
-	mesh_library_palette->set_fixed_icon_size(Size2(min_size, min_size));
-	mesh_library_palette->set_max_text_lines(2);
-
-	if (mesh_library.is_null()) {
-		search_box->set_text("");
-		search_box->set_editable(false);
-		info_message->show();
-		return;
-	}
-
-	search_box->set_editable(true);
-	info_message->hide();
-
-	PackedInt32Array ids = mesh_library->get_item_list();
-
-	List<_CGMEItemSort> il;
-	for (int i = 0; i < ids.size(); i++) {
-		_CGMEItemSort is;
-		is.id = ids[i];
-		is.name = mesh_library->get_item_name(ids[i]);
-		il.push_back(is);
-	}
-	il.sort();
-
-	String filter = search_box->get_text().strip_edges();
-
-	int item = 0;
-
-	for (_CGMEItemSort &E : il) {
-		int id = E.id;
-		String name = mesh_library->get_item_name(id);
-		Ref<Texture2D> preview = mesh_library->get_item_preview(id);
-
-		if (name.is_empty()) {
-			name = "#" + itos(id);
-		}
-
-		if (!filter.is_empty() && !filter.is_subsequence_ofn(name)) {
-			continue;
-		}
-
-		mesh_library_palette->add_item("");
-		if (!preview.is_null()) {
-			mesh_library_palette->set_item_icon(item, preview);
-			mesh_library_palette->set_item_tooltip(item, name);
-		}
-		mesh_library_palette->set_item_text(item, name);
-		mesh_library_palette->set_item_metadata(item, id);
-
-		if (selected_palette == id) {
-			mesh_library_palette->select(item);
-		}
-
-		item++;
-	}
-}
-
 void HexMapEditorPlugin::_update_mesh_library() {
 	ERR_FAIL_NULL(node);
 
 	Ref<MeshLibrary> new_mesh_library = node->get_mesh_library();
-	if (new_mesh_library != mesh_library) {
-		if (mesh_library.is_valid()) {
-			mesh_library->disconnect("changed", callable_mp(this, &HexMapEditorPlugin::update_palette));
-		}
-		mesh_library = new_mesh_library;
-	} else {
+	if (new_mesh_library == mesh_library) {
 		return;
 	}
 
 	if (mesh_library.is_valid()) {
-		mesh_library->connect("changed", callable_mp(this, &HexMapEditorPlugin::update_palette));
+		mesh_library->disconnect("changed", callable_mp(palette, &MeshLibraryPalette::set_mesh_library));
+	}
+	mesh_library = new_mesh_library;
+	palette->set_mesh_library(mesh_library);
+
+	if (mesh_library.is_valid()) {
+		mesh_library->connect("changed", callable_mp(palette, &MeshLibraryPalette::set_mesh_library));
 	}
 
-	update_palette();
 	// Update the cursor and grid in case the library is changed or removed.
 	_update_cursor_instance();
 	update_grid();
@@ -1043,7 +907,6 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 		node->disconnect(SNAME("cell_shape_changed"), callable_mp(this, &HexMapEditorPlugin::_update_cell_shape));
 		node->disconnect("changed", callable_mp(this, &HexMapEditorPlugin::_update_mesh_library));
 		if (mesh_library.is_valid()) {
-			mesh_library->disconnect("changed", callable_mp(this, &HexMapEditorPlugin::update_palette));
 			mesh_library = Ref<MeshLibrary>();
 		}
 	}
@@ -1074,7 +937,6 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 		return;
 	}
 
-	update_palette();
 	_update_cursor_instance();
 
 	set_process(true);
@@ -1484,15 +1346,12 @@ void HexMapEditorPlugin::_build_selection_meshes() {
 void HexMapEditorPlugin::_update_theme() {
 	auto theme = get_editor_interface()->get_editor_theme();
 	options->set_button_icon(theme->get_icon(SNAME("GridMap"), EditorStringName(EditorIcons)));
-	search_box->set_right_icon(theme->get_icon(SNAME("Search"), EditorStringName(EditorIcons)));
-	mode_thumbnail->set_button_icon(theme->get_icon(SNAME("FileThumbnail"), EditorStringName(EditorIcons)));
-	mode_list->set_button_icon(theme->get_icon(SNAME("FileList"), EditorStringName(EditorIcons)));
 }
 
 void HexMapEditorPlugin::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE: {
-			mesh_library_palette->connect("item_selected", callable_mp(this, &HexMapEditorPlugin::_item_selected_cbk));
+			// mesh_library_palette->connect("item_selected", callable_mp(this, &HexMapEditorPlugin::_item_selected_cbk));
 			for (int i = 0; i < 3; i++) {
 				grid_mesh[i] = RS::get_singleton()->mesh_create();
 				grid_instance[i] = RS::get_singleton()->instance_create2(grid_mesh[i], get_tree()->get_root()->get_world_3d()->get_scenario());
@@ -1573,9 +1432,8 @@ void HexMapEditorPlugin::_update_cursor_instance() {
 	}
 }
 
-void HexMapEditorPlugin::_item_selected_cbk(int p_idx) {
-	selected_palette = mesh_library_palette->get_item_metadata(p_idx);
-
+void HexMapEditorPlugin::mesh_changed(int p_mesh_id) {
+	selected_palette = p_mesh_id;
 	_update_cursor_instance();
 }
 
@@ -1747,58 +1605,9 @@ HexMapEditorPlugin::HexMapEditorPlugin() {
 
 	// options->get_popup()->connect("id_pressed", callable_mp(this, &HexMapEditorPlugin::_menu_option));
 	//
-	HBoxContainer *hb = memnew(HBoxContainer);
-	add_child(hb);
-	hb->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-
-	search_box = memnew(LineEdit);
-	search_box->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	search_box->set_placeholder(TTR("Filter Meshes"));
-	search_box->set_clear_button_enabled(true);
-	hb->add_child(search_box);
-	// search_box->connect("text_changed", callable_mp(this, &HexMapEditorPlugin::_text_changed));
-	// search_box->connect(SceneStringName(gui_input), callable_mp(this, &HexMapEditorPlugin::_sbox_input));
-
-	mode_thumbnail = memnew(Button);
-	mode_thumbnail->set_theme_type_variation("FlatButton");
-	mode_thumbnail->set_toggle_mode(true);
-	mode_thumbnail->set_pressed(true);
-	hb->add_child(mode_thumbnail);
-	// mode_thumbnail->connect(SceneStringName(pressed), callable_mp(this, &HexMapEditorPlugin::_set_display_mode).bind(DISPLAY_THUMBNAIL));
-
-	mode_list = memnew(Button);
-	mode_list->set_theme_type_variation("FlatButton");
-	mode_list->set_toggle_mode(true);
-	mode_list->set_pressed(false);
-	hb->add_child(mode_list);
-	// mode_list->connect(SceneStringName(pressed), callable_mp(this, &HexMapEditorPlugin::_set_display_mode).bind(DISPLAY_LIST));
-
-	size_slider = memnew(HSlider);
-	size_slider->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	size_slider->set_min(0.2f);
-	size_slider->set_max(4.0f);
-	size_slider->set_step(0.1f);
-	size_slider->set_value(1.0f);
-	// size_slider->connect("value_changed", callable_mp(this, &HexMapEditorPlugin::_icon_size_changed));
-	add_child(size_slider);
 
 	// XXX set editor setting default
 	// EDITOR_DEF("editors/grid_map/preview_size", 64);
-
-	mesh_library_palette = memnew(ItemList);
-	mesh_library_palette->set_auto_translate(false);
-	add_child(mesh_library_palette);
-	mesh_library_palette->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	// mesh_library_palette->connect(SceneStringName(gui_input), callable_mp(this, &HexMapEditorPlugin::_mesh_library_palette_input));
-
-	info_message = memnew(Label);
-	info_message->set_text(TTR("Give a MeshLibrary resource to this GridMap to use its meshes."));
-	info_message->set_vertical_alignment(VERTICAL_ALIGNMENT_CENTER);
-	info_message->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_CENTER);
-	info_message->set_autowrap_mode(TextServer::AUTOWRAP_WORD_SMART);
-	info_message->set_custom_minimum_size(Size2(100 * EDSCALE, 0));
-	info_message->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT, Control::PRESET_MODE_KEEP_SIZE, 8 * EDSCALE);
-	mesh_library_palette->add_child(info_message);
 
 	edit_floor[0] = -1;
 	edit_floor[1] = -1;
@@ -1806,6 +1615,14 @@ HexMapEditorPlugin::HexMapEditorPlugin() {
 
 	edit_axis = AXIS_Y;
 	edit_plane = Plane();
+
+	palette = memnew(MeshLibraryPalette);
+	palette->set_theme(get_editor_interface()->get_editor_theme());
+
+	palette->hide();
+	int rc = palette->connect("mesh_changed",
+			callable_mp(this, &HexMapEditorPlugin::mesh_changed));
+	UtilityFunctions::print("connect mesh_changed returned " + itos(rc));
 
 	inner_mat.instantiate();
 	inner_mat->set_albedo(Color(0.7, 0.7, 1.0, 0.2));
@@ -1837,6 +1654,7 @@ HexMapEditorPlugin::HexMapEditorPlugin() {
 	// XXX Not available
 	// Node3DEditor::get_singleton()->add_control_to_menu_panel(spatial_editor_hb);
 	add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, spatial_editor_hb);
+	add_control_to_container(CONTAINER_SPATIAL_EDITOR_SIDE_RIGHT, palette);
 	ERR_PRINT_ED("added control to container");
 }
 

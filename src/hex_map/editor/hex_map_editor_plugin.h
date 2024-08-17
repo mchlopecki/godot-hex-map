@@ -30,15 +30,13 @@
 
 #pragma once
 
-#include "hex_map.h"
-
 #include <godot_cpp/classes/box_container.hpp>
 #include <godot_cpp/classes/camera3d.hpp>
-#include <godot_cpp/classes/input_event.hpp>
 #include <godot_cpp/classes/confirmation_dialog.hpp>
 #include <godot_cpp/classes/editor_plugin.hpp>
 #include <godot_cpp/classes/h_box_container.hpp>
 #include <godot_cpp/classes/h_slider.hpp>
+#include <godot_cpp/classes/input_event.hpp>
 #include <godot_cpp/classes/item_list.hpp>
 #include <godot_cpp/classes/label.hpp>
 #include <godot_cpp/classes/menu_button.hpp>
@@ -49,6 +47,9 @@
 #include <godot_cpp/classes/spin_box.hpp>
 #include <godot_cpp/classes/standard_material3d.hpp>
 #include <godot_cpp/classes/v_box_container.hpp>
+
+#include "../hex_map.h"
+#include "mesh_library_palette.h"
 
 using namespace godot;
 
@@ -139,15 +140,12 @@ class HexMapEditorPlugin : public EditorPlugin {
 		DISPLAY_LIST
 	};
 
+	MeshLibraryPalette *palette = nullptr;
 	InputAction input_action = INPUT_NONE;
 	Panel *panel = nullptr;
 	MenuButton *options = nullptr;
 	SpinBox *floor = nullptr;
 	double accumulated_floor_delta = 0.0;
-	Button *mode_thumbnail = nullptr;
-	Button *mode_list = nullptr;
-	LineEdit *search_box = nullptr;
-	HSlider *size_slider = nullptr;
 	HBoxContainer *spatial_editor_hb = nullptr;
 	ConfirmationDialog *settings_dialog = nullptr;
 	VBoxContainer *settings_vbc = nullptr;
@@ -260,9 +258,6 @@ class HexMapEditorPlugin : public EditorPlugin {
 		RID instance;
 	};
 
-	ItemList *mesh_library_palette = nullptr;
-	Label *info_message = nullptr;
-
 	void update_grid(); // Change which and where the grid is displayed
 	void _draw_hex_grid(RID p_grid, const Vector3 &p_cell_size);
 	void _draw_hex_r_axis_grid(RID p_grid, const Vector3 &p_cell_size);
@@ -273,17 +268,13 @@ class HexMapEditorPlugin : public EditorPlugin {
 	void _build_selection_meshes();
 	void _configure();
 	void _menu_option(int);
-	void update_palette();
 	void _update_mesh_library();
-	void _set_display_mode(int p_mode);
 	void _item_selected_cbk(int idx);
 	void _update_cursor_transform();
 	void _update_cursor_instance();
 	void _update_theme();
 
-	void _text_changed(const String &p_text);
-	void _sbox_input(const Ref<InputEvent> &p_ie);
-	void _mesh_library_palette_input(const Ref<InputEvent> &p_ie);
+	void mesh_changed(int p_mesh_id);
 
 	void _icon_size_changed(float p_value);
 
