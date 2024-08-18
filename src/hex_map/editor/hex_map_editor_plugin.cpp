@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "hex_map_editor_plugin.h"
+#include "godot_cpp/core/math.hpp"
 #include "godot_cpp/variant/callable_method_pointer.hpp"
 
 #include <cstdint>
@@ -107,70 +108,38 @@ void HexMapEditorPlugin::_configure() {
 
 void HexMapEditorPlugin::_menu_option(int p_option) {
 	switch (p_option) {
-		case MENU_OPTION_PREV_LEVEL: {
-			floor->set_value(floor->get_value() - 1);
-		} break;
-
-		case MENU_OPTION_NEXT_LEVEL: {
-			floor->set_value(floor->get_value() + 1);
-		} break;
-
-		case MENU_OPTION_X_AXIS:
-			edit_axis = AXIS_X;
-			update_grid();
-			break;
-		case MENU_OPTION_Y_AXIS:
-			edit_axis = AXIS_Y;
-			update_grid();
-			break;
-		case MENU_OPTION_Z_AXIS:
-			edit_axis = AXIS_Z;
-			update_grid();
-			break;
-		case MENU_OPTION_Q_AXIS: // hex cell axis, running northwest-southeast
-			edit_axis = AXIS_Q;
-			update_grid();
-			break;
-		case MENU_OPTION_R_AXIS: // hex cell axis, running east-west
-			edit_axis = AXIS_R;
-			update_grid();
-			break;
-		case MENU_OPTION_S_AXIS: // hex cell axis, running southwest-northeast
-			edit_axis = AXIS_S;
-			update_grid();
-			break;
 		// as there are more axis to edit on when working with hex cells, offer
 		// an option to rotate through the non-y axis.
 		case MENU_OPTION_ROTATE_AXIS_CW:
 			switch (edit_axis) {
-				case AXIS_R:
-					edit_axis = AXIS_Q;
+				case EditorControl::AXIS_R:
+					edit_axis = EditorControl::AXIS_Q;
 					break;
-				case AXIS_Q:
-					edit_axis = AXIS_X;
+				case EditorControl::AXIS_Q:
+					edit_axis = EditorControl::AXIS_X;
 					break;
-				case AXIS_X:
-					edit_axis = AXIS_S;
+				case EditorControl::AXIS_X:
+					edit_axis = EditorControl::AXIS_S;
 					break;
 				default:
-					edit_axis = AXIS_R;
+					edit_axis = EditorControl::AXIS_R;
 					break;
 			}
 			update_grid();
 			break;
 		case MENU_OPTION_ROTATE_AXIS_CCW:
 			switch (edit_axis) {
-				case AXIS_X:
-					edit_axis = AXIS_Q;
+				case EditorControl::AXIS_X:
+					edit_axis = EditorControl::AXIS_Q;
 					break;
-				case AXIS_Q:
-					edit_axis = AXIS_R;
+				case EditorControl::AXIS_Q:
+					edit_axis = EditorControl::AXIS_R;
 					break;
-				case AXIS_R:
-					edit_axis = AXIS_S;
+				case EditorControl::AXIS_R:
+					edit_axis = EditorControl::AXIS_S;
 					break;
 				default:
-					edit_axis = AXIS_X;
+					edit_axis = EditorControl::AXIS_X;
 					break;
 			}
 			update_grid();
@@ -388,7 +357,7 @@ void HexMapEditorPlugin::_update_selection() {
 	for (int i = 0; i < cells.size(); i++) {
 		Vector3i cell = cells[i];
 		switch (edit_axis) {
-			case AXIS_Q:
+			case EditorControl::AXIS_Q:
 				// We're using knowledge of the internal coordinate system of
 				// hex cells in the GridMap here, which makes this brittle to
 				// change,  The axial Q axis value is stored in the X field.
@@ -397,7 +366,7 @@ void HexMapEditorPlugin::_update_selection() {
 					continue;
 				}
 				break;
-			case AXIS_S:
+			case EditorControl::AXIS_S:
 				// The S axis value can be calculated from the Q/R values stored
 				// in X & Z.  If the S value of the cell doesn't match that of
 				// the beginning cell, the cell doesn't fall on the same S-axis
@@ -418,7 +387,7 @@ void HexMapEditorPlugin::_update_selection() {
 	// create an instance of the multimesh with the transform of our node
 	selection_multimesh_instance = rs->instance_create2(selection_multimesh, get_tree()->get_root()->get_world_3d()->get_scenario());
 	rs->instance_set_transform(selection_multimesh_instance, node->get_global_transform());
-	rs->instance_set_layer_mask(selection_multimesh_instance, /* Node3DEditorViewport::MISC_TOOL_LAYER */ 1 << 24);
+	rs->instance_set_layer_mask(selection_multimesh_instance, /* Node3DEditorViewport::MISC_TOOL_LAYER */ 24);
 }
 
 void HexMapEditorPlugin::_set_selection(bool p_active, const Vector3 &p_begin, const Vector3 &p_end) {
@@ -839,8 +808,10 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera, const Ref<
 		// XXX consider also blocking other keys here to prevent changing to
 		// scale mode, or transform
 		if (!k->is_echo() && editor_control->handle_keypress(k)) {
+			editor_control->accept_event();
 			return EditorPlugin::AFTER_GUI_INPUT_STOP;
 		}
+		return EditorPlugin::AFTER_GUI_INPUT_STOP;
 	}
 
 	Ref<InputEventPanGesture> pan_gesture = p_event;
@@ -933,11 +904,13 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 
 	set_process(true);
 
+	// XXX Save the editor floor state
+	//
 	// load any previous floor values
-	TypedArray<int> floors = node->get_meta("_editor_floor_", TypedArray<int>());
-	for (int i = 0; i < MIN(floors.size(), AXIS_MAX); i++) {
-		edit_floor[i] = floors[i];
-	}
+	// TypedArray<int> floors = node->get_meta("_editor_floor_", TypedArray<int>());
+	// for (int i = 0; i < MIN(floors.size(), AXIS_MAX); i++) {
+	// 	edit_floor[i] = floors[i];
+	// }
 	_draw_grids(node->get_cell_size());
 	update_grid();
 
@@ -956,7 +929,7 @@ void HexMapEditorPlugin::update_grid() {
 	// Hex planes Q, R, and S need to offset the grid by half a cell on even
 	// numbered floors.  We calculate this value here to simplify the code
 	// later.
-	int is_even_floor = (edit_floor[edit_axis] & 1) == 0;
+	int is_even_floor = (edit_depth & 1) == 0;
 
 	// hide the active grid
 	if (active_grid_instance.is_valid()) {
@@ -970,7 +943,7 @@ void HexMapEditorPlugin::update_grid() {
 
 	// switch the edit plane and pick the new active grid and rotate if necessary
 	switch (edit_axis) {
-		case AXIS_X:
+		case EditorControl::AXIS_X:
 			// set which grid to display
 			active_grid_instance = grid_instance[0];
 			// set the edit plane normal, and cell depth (used by the plane)
@@ -983,19 +956,19 @@ void HexMapEditorPlugin::update_grid() {
 			// update the menu
 			menu_axis = MENU_OPTION_X_AXIS;
 			break;
-		case AXIS_Y:
+		case EditorControl::AXIS_Y:
 			active_grid_instance = grid_instance[1];
 			edit_plane.normal = Vector3(0, 1, 0);
 			cell_depth = cell_size.y;
 			menu_axis = MENU_OPTION_Y_AXIS;
 			break;
-		case AXIS_Z:
-			active_grid_instance = grid_instance[2];
-			edit_plane.normal = Vector3(0, 0, 1);
-			cell_depth = cell_size.z;
-			menu_axis = MENU_OPTION_Z_AXIS;
-			break;
-		case AXIS_Q: // hex plane, northwest to southeast
+		// case AXIS_Z:
+		// 	active_grid_instance = grid_instance[2];
+		// 	edit_plane.normal = Vector3(0, 0, 1);
+		// 	cell_depth = cell_size.z;
+		// 	menu_axis = MENU_OPTION_Z_AXIS;
+		// 	break;
+		case EditorControl::AXIS_Q: // hex plane, northwest to southeast
 			active_grid_instance = grid_instance[2];
 			edit_plane.normal = Vector3(SQRT3_2, 0, -0.5).normalized();
 			cell_depth = 1.5 * cell_size.x;
@@ -1004,14 +977,14 @@ void HexMapEditorPlugin::update_grid() {
 			grid_transform.translate_local(Vector3(is_even_floor * SQRT3_2 * cell_size.x, 0, 0));
 			menu_axis = MENU_OPTION_Q_AXIS;
 			break;
-		case AXIS_R: // hex plane, east to west; same as AXIS_Z, but for hex
+		case EditorControl::AXIS_R: // hex plane, east to west; same as AXIS_Z, but for hex
 			active_grid_instance = grid_instance[2];
 			edit_plane.normal = Vector3(0, 0, 1);
 			cell_depth = 1.5 * cell_size.x;
 			grid_transform.translate_local(Vector3(is_even_floor * SQRT3_2 * cell_size.x, 0, 0));
 			menu_axis = MENU_OPTION_R_AXIS;
 			break;
-		case AXIS_S: // hex plane, southwest to northeast
+		case EditorControl::AXIS_S: // hex plane, southwest to northeast
 			active_grid_instance = grid_instance[2];
 			edit_plane.normal = Vector3(SQRT3_2, 0, 0.5).normalized();
 			cell_depth = 1.5 * cell_size.x;
@@ -1027,7 +1000,7 @@ void HexMapEditorPlugin::update_grid() {
 
 	// update the depth of the edit plane so it matches the floor, and update
 	// the grid transform for the depth.
-	edit_plane.d = edit_floor[edit_axis] * cell_depth;
+	edit_plane.d = edit_depth * cell_depth;
 	grid_transform.origin += edit_plane.normal * edit_plane.d;
 
 	// shift the edit plane a little into the cell to prevent floating point
@@ -1035,7 +1008,7 @@ void HexMapEditorPlugin::update_grid() {
 	// only need to do this when the grid is drawn along the edge of a cell,
 	// so the Y & X axis, or any square shape cell.  Hex cells draw the grid
 	// through the middle of the cells for Q/R/S.
-	if (edit_axis == AXIS_Y || edit_axis == AXIS_X || !is_hex) {
+	if (edit_axis == EditorControl::AXIS_Y || edit_axis == EditorControl::AXIS_X || !is_hex) {
 		edit_plane.d += cell_depth * 0.1;
 	}
 
@@ -1045,17 +1018,19 @@ void HexMapEditorPlugin::update_grid() {
 	RenderingServer::get_singleton()->instance_set_transform(active_grid_instance,
 			node->get_global_transform() * grid_transform);
 
-	// update the UI floor indicator
-	floor->set_value(edit_floor[edit_axis]);
+	// XXX data flow in the wrong direction
+	// // update the UI floor indicator
+	// floor->set_value(edit_floor[edit_axis]);
 
-	// update the option menu to show the correct axis is selected
-	PopupMenu *popup = options->get_popup();
-	for (int i = MENU_OPTION_X_AXIS; i <= MENU_OPTION_S_AXIS; i++) {
-		int index = popup->get_item_index(i);
-		if (index != -1) {
-			popup->set_item_checked(index, menu_axis == i);
-		}
-	}
+	// XXX should be handled in EditorControl
+	// // update the option menu to show the correct axis is selected
+	// PopupMenu *popup = options->get_popup();
+	// for (int i = MENU_OPTION_X_AXIS; i <= MENU_OPTION_S_AXIS; i++) {
+	// 	int index = popup->get_item_index(i);
+	// 	if (index != -1) {
+	// 		popup->set_item_checked(index, menu_axis == i);
+	// 	}
+	// }
 }
 
 // create a mesh and draw a grid of hexagonal cells on it
@@ -1197,7 +1172,7 @@ void HexMapEditorPlugin::_draw_grids(const Vector3 &p_cell_size) {
 void HexMapEditorPlugin::_update_cell_shape(const HexMap::CellShape cell_shape) {
 	_draw_grids(node->get_cell_size());
 	_build_selection_meshes();
-	edit_axis = AXIS_Y;
+	edit_axis = EditorControl::AXIS_Y;
 	_update_options_menu();
 	selection.active = false;
 	_update_selection();
@@ -1214,7 +1189,7 @@ void HexMapEditorPlugin::_build_selection_meshes() {
 	}
 
 	// we can get called when node is null
-	if (node == NULL) {
+	if (node == nullptr) {
 		return;
 	}
 
@@ -1347,7 +1322,7 @@ void HexMapEditorPlugin::_notification(int p_what) {
 			for (int i = 0; i < 3; i++) {
 				grid_mesh[i] = RS::get_singleton()->mesh_create();
 				grid_instance[i] = RS::get_singleton()->instance_create2(grid_mesh[i], get_tree()->get_root()->get_world_3d()->get_scenario());
-				RenderingServer::get_singleton()->instance_set_layer_mask(grid_instance[i], 1 << 24 /* XXX Node3DEditorViewport::MISC_TOOL_LAYER */);
+				RenderingServer::get_singleton()->instance_set_layer_mask(grid_instance[i], 24 /* XXX Node3DEditorViewport::MISC_TOOL_LAYER */);
 				RenderingServer::get_singleton()->instance_set_visible(grid_instance[i], false);
 			}
 			_update_selection();
@@ -1429,20 +1404,28 @@ void HexMapEditorPlugin::mesh_changed(int p_mesh_id) {
 	_update_cursor_instance();
 }
 
-void HexMapEditorPlugin::_floor_changed(float p_value) {
-	// update the floor number for the current plane we're editing
-	edit_floor[edit_axis] = p_value;
-
-	// save off editor floor numbers so the user can jump in and out of the
-	// gridmap editor without losing their place.
-	TypedArray<int> floors;
-	for (int i = 0; i < AXIS_MAX; i++) {
-		floors.push_back(edit_floor[i]);
-	}
-	node->set_meta("_editor_floor_", floors);
-
+void HexMapEditorPlugin::plane_changed(int p_plane) {
+	edit_depth = p_plane;
 	update_grid();
 	_update_selection();
+}
+
+void HexMapEditorPlugin::axis_changed(int p_axis) {
+	edit_axis = (EditorControl::EditAxis)p_axis;
+	UtilityFunctions::print("axis changed " + itos(edit_axis));
+	update_grid();
+	_update_selection();
+}
+
+void HexMapEditorPlugin::cursor_changed(int p_rotation, bool p_flip) {
+	UtilityFunctions::print("cursor changed: rotation " + itos(p_rotation) + ", flip " + itos(p_flip));
+	Basis rotation;
+	rotation.rotate(Vector3(0, 1, 0), p_rotation * Math_PI / 3.0);
+	if (p_flip) {
+		rotation.rotate(Vector3(1, 0, 0), Math_PI);
+	}
+	cursor_rot = node->get_orthogonal_index_from_basis(rotation);
+	_update_cursor_transform();
 }
 
 void HexMapEditorPlugin::_floor_mouse_exited() {
@@ -1601,13 +1584,15 @@ HexMapEditorPlugin::HexMapEditorPlugin() {
 	// XXX set editor setting default
 	// EDITOR_DEF("editors/grid_map/preview_size", 64);
 
-	edit_floor[0] = -1;
-	edit_floor[1] = -1;
-	edit_floor[2] = -1;
+	// edit_floor[0] = -1;
+	// edit_floor[1] = -1;
+	// edit_floor[2] = -1;
 
-	edit_axis = AXIS_Y;
+	edit_axis = EditorControl::AXIS_Y;
 	edit_plane = Plane();
+	edit_depth = 0;
 
+	// XXX For some reason this material is not being drawn during selection
 	inner_mat.instantiate();
 	inner_mat->set_albedo(Color(0.7, 0.7, 1.0, 0.2));
 	inner_mat->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
@@ -1646,6 +1631,12 @@ HexMapEditorPlugin::HexMapEditorPlugin() {
 
 	editor_control = memnew(EditorControl);
 	editor_control->hide();
+	editor_control->connect("plane_changed",
+			callable_mp(this, &HexMapEditorPlugin::plane_changed));
+	editor_control->connect("axis_changed",
+			callable_mp(this, &HexMapEditorPlugin::axis_changed));
+	editor_control->connect("cursor_changed",
+			callable_mp(this, &HexMapEditorPlugin::cursor_changed));
 	add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, editor_control);
 
 	ERR_PRINT_ED("added control to container");

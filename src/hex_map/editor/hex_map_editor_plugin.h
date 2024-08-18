@@ -49,8 +49,8 @@
 #include <godot_cpp/classes/v_box_container.hpp>
 
 #include "../hex_map.h"
-#include "mesh_library_palette.h"
 #include "editor_control.h"
+#include "mesh_library_palette.h"
 
 using namespace godot;
 
@@ -173,17 +173,17 @@ class HexMapEditorPlugin : public EditorPlugin {
 	// plane we're editing cells on; depth comes from edit_floor
 	Plane edit_plane;
 
-	enum EditAxis {
-		AXIS_X = 0,
-		AXIS_Y,
-		AXIS_Z,
-		AXIS_Q, // axial hex coordinates northwest/southeast
-		AXIS_R, // axial hex coordinates east/west
-		AXIS_S, // axial hex coordinates northeast/southwest
-		AXIS_MAX,
-	};
-	EditAxis edit_axis;
-	int edit_floor[AXIS_MAX];
+	// enum EditAxis {
+	// 	AXIS_X = 0,
+	// 	AXIS_Y,
+	// 	AXIS_Z,
+	// 	AXIS_Q, // axial hex coordinates northwest/southeast
+	// 	AXIS_R, // axial hex coordinates east/west
+	// 	AXIS_S, // axial hex coordinates northeast/southwest
+	// 	AXIS_MAX,
+	// };
+	EditorControl::EditAxis edit_axis;
+	int edit_depth;
 
 	RID active_grid_instance;
 	RID grid_mesh[3];
@@ -277,6 +277,9 @@ class HexMapEditorPlugin : public EditorPlugin {
 	void _update_theme();
 
 	void mesh_changed(int p_mesh_id);
+	void plane_changed(int p_axis);
+	void axis_changed(int p_axis);
+	void cursor_changed(int p_rotation, bool p_flip);
 
 	void _icon_size_changed(float p_value);
 
@@ -287,7 +290,6 @@ class HexMapEditorPlugin : public EditorPlugin {
 	void _update_selection();
 	void _set_selection(bool p_active, const Vector3 &p_begin = Vector3(), const Vector3 &p_end = Vector3());
 
-	void _floor_changed(float p_value);
 	void _floor_mouse_exited();
 
 	void _delete_selection();

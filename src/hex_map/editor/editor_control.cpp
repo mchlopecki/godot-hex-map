@@ -64,24 +64,132 @@ void EditorControl::handle_action(int p_action) {
 	UtilityFunctions::print("handle_action() " + itos(p_action));
 
 	switch ((Action)p_action) {
-		case PLANE_DOWN:
+		case ACTION_PLANE_DOWN:
 			plane_spin_box->set_value(plane_spin_box->get_value() - 1);
 			break;
-		case PLANE_UP:
+		case ACTION_PLANE_UP:
 			plane_spin_box->set_value(plane_spin_box->get_value() + 1);
 			break;
+		case ACTION_AXIS_X:
+			active_axis = AXIS_X;
+			emit_signal("axis_changed", active_axis);
+			plane_spin_box->set_value(plane[active_axis]);
+			break;
+		case ACTION_AXIS_Y:
+			active_axis = AXIS_Y;
+			emit_signal("axis_changed", active_axis);
+			plane_spin_box->set_value(plane[active_axis]);
+			break;
+		case ACTION_AXIS_Q:
+			active_axis = AXIS_Q;
+			emit_signal("axis_changed", active_axis);
+			plane_spin_box->set_value(plane[active_axis]);
+			break;
+		case ACTION_AXIS_R:
+			active_axis = AXIS_R;
+			emit_signal("axis_changed", active_axis);
+			plane_spin_box->set_value(plane[active_axis]);
+			break;
+		case ACTION_AXIS_S:
+			active_axis = AXIS_S;
+			emit_signal("axis_changed", active_axis);
+			plane_spin_box->set_value(plane[active_axis]);
+			break;
+		case ACTION_AXIS_ROTATE_CW:
+			switch (active_axis) {
+				case AXIS_X:
+					active_axis = AXIS_S;
+					break;
+				case AXIS_Y:
+					active_axis = AXIS_R;
+					break;
+				case AXIS_Q:
+					active_axis = AXIS_X;
+					break;
+				case AXIS_R:
+					active_axis = AXIS_Q;
+					break;
+				case AXIS_S:
+					active_axis = AXIS_R;
+					break;
+			}
+			emit_signal("axis_changed", active_axis);
+			plane_spin_box->set_value(plane[active_axis]);
+			break;
+		case ACTION_AXIS_ROTATE_CCW:
+			switch (active_axis) {
+				case AXIS_X:
+					active_axis = AXIS_Q;
+					break;
+				case AXIS_Y:
+					active_axis = AXIS_S;
+					break;
+				case AXIS_Q:
+					active_axis = AXIS_R;
+					break;
+				case AXIS_R:
+					active_axis = AXIS_S;
+					break;
+				case AXIS_S:
+					active_axis = AXIS_X;
+					break;
+			}
+			emit_signal("axis_changed", active_axis);
+			plane_spin_box->set_value(plane[active_axis]);
+			break;
+		case ACTION_TILE_RESET:
+			cursor_rotation = 0;
+			cursor_flipped = false;
+			emit_signal("cursor_changed", cursor_rotation, cursor_flipped);
+			break;
+		case ACTION_TILE_FLIP:
+			cursor_flipped = !cursor_flipped;
+			emit_signal("cursor_changed", cursor_rotation, cursor_flipped);
+			break;
+		case ACTION_TILE_ROTATE_CW:
+			cursor_rotation += cursor_flipped ? 1 : -1;
+			if (cursor_rotation > 5) {
+				cursor_rotation = 0;
+			} else if (cursor_rotation < 0) {
+				cursor_rotation = 5;
+			}
+			emit_signal("cursor_changed", cursor_rotation, cursor_flipped);
+			break;
+		case ACTION_TILE_ROTATE_CCW:
+			cursor_rotation += cursor_flipped ? -1 : 1;
+			if (cursor_rotation > 5) {
+				cursor_rotation = 0;
+			} else if (cursor_rotation < 0) {
+				cursor_rotation = 5;
+			}
+			emit_signal("cursor_changed", cursor_rotation, cursor_flipped);
+			break;
+	}
+
+	// ensure the axis selection ratio buttons are marked correctly
+	PopupMenu *popup = menu_button->get_popup();
+	Action selected_axis = (Action)(active_axis + ACTION_AXIS_X);
+	for (int i = ACTION_AXIS_X; i <= ACTION_AXIS_S; i++) {
+		int index = popup->get_item_index(i);
+		if (index != 1) {
+			popup->set_item_checked(index, i == selected_axis);
+		}
 	}
 }
 
 void EditorControl::set_plane(int p_plane) {
 	plane[active_axis] = p_plane;
-	emit_signal("plane_changed", active_axis, p_plane);
+	emit_signal("plane_changed", p_plane);
 }
 
 void EditorControl::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("plane_changed",
-			PropertyInfo(Variant::INT, "axis"),
 			PropertyInfo(Variant::INT, "plane")));
+	ADD_SIGNAL(MethodInfo("axis_changed",
+			PropertyInfo(Variant::INT, "axis")));
+	ADD_SIGNAL(MethodInfo("cursor_changed",
+			PropertyInfo(Variant::INT, "rotation"), // steps 0..5, ccw
+			PropertyInfo(Variant::BOOL, "flipped"))); // y-up = 0, y-down = 1
 }
 
 bool EditorControl::handle_keypress(Ref<InputEventKey> p_event) {
@@ -93,6 +201,8 @@ bool EditorControl::handle_keypress(Ref<InputEventKey> p_event) {
 	for (int i = 0; i < count; i++) {
 		const Ref<Shortcut> shortcut = popup->get_item_shortcut(i);
 		if (shortcut.is_valid() && shortcut->matches_event(p_event)) {
+			UtilityFunctions::print("editor_control handling action");
+			accept_event();
 			handle_action(popup->get_item_id(i));
 			return true;
 		}
@@ -134,15 +244,49 @@ EditorControl::EditorControl() {
 	popup->add_shortcut(editor_shortcut("hex_map/previous_floor",
 								"Previous Floor",
 								Key::KEY_Q, true),
-			Action::PLANE_DOWN);
+			Action::ACTION_PLANE_DOWN);
 	popup->add_shortcut(editor_shortcut("hex_map/next_floor",
 								"Next Floor",
 								Key::KEY_E, true),
-			Action::PLANE_UP);
+			Action::ACTION_PLANE_UP);
+
+	popup->add_separator();
+	popup->add_radio_check_item("Edit X Axis", ACTION_AXIS_X);
+	popup->add_radio_check_shortcut(
+			editor_shortcut("hex_map/edit_y_axis",
+					"Edit Y Axis",
+					Key::KEY_X, true),
+			Action::ACTION_AXIS_Y);
+	popup->add_radio_check_item("Edit Q Axis", ACTION_AXIS_Q);
+	popup->add_radio_check_item("Edit R Axis", ACTION_AXIS_R);
+	popup->add_radio_check_item("Edit S Axis", ACTION_AXIS_S);
+	popup->add_shortcut(editor_shortcut("hex_map/edit_plane_rotate_cw",
+								"Rotate Edit Plane Clockwise",
+								Key::KEY_C, true),
+			Action::ACTION_AXIS_ROTATE_CW);
+	popup->add_shortcut(editor_shortcut("hex_map/edit_plane_rotate_ccw",
+								"Rotate Edit Plane Counter-Clockwise",
+								Key::KEY_Z, true),
+			Action::ACTION_AXIS_ROTATE_CCW);
+
+	popup->add_separator();
+	popup->add_shortcut(editor_shortcut("hex_map/tile_flip",
+								"Flip Tile",
+								Key::KEY_W, true),
+			Action::ACTION_TILE_FLIP);
+	popup->add_shortcut(editor_shortcut("hex_map/tile_rotate_cw",
+								"Rotate Tile Clockwise",
+								Key::KEY_D, true),
+			Action::ACTION_TILE_ROTATE_CW);
+	popup->add_shortcut(editor_shortcut("hex_map/tile_rotate_ccw",
+								"Rotate Tile Counter-Clockwise",
+								Key::KEY_A, true),
+			Action::ACTION_TILE_ROTATE_CCW);
+	popup->add_shortcut(editor_shortcut("hex_map/tile_clear_rotation",
+								"Clear Tile Rotation",
+								Key::KEY_S, true),
+			Action::ACTION_TILE_RESET);
 }
 
 EditorControl::~EditorControl() {
-	memfree(menu_button);
-	memfree(plane_spin_box);
-	memfree(plane_label);
 }

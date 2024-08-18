@@ -10,16 +10,30 @@ using namespace godot;
 class EditorControl : public godot::HBoxContainer {
 	GDCLASS(EditorControl, godot::HBoxContainer);
 
-	enum Action {
-		PLANE_DOWN,
-		PLANE_UP,
-	};
-
+public:
 	enum EditAxis {
+		AXIS_X,
 		AXIS_Y,
 		AXIS_Q, // northwest/southeast
 		AXIS_R, // east/west
 		AXIS_S, // northeast/southeast
+	};
+
+private:
+	enum Action {
+		ACTION_PLANE_DOWN,
+		ACTION_PLANE_UP,
+		ACTION_AXIS_X,
+		ACTION_AXIS_Y,
+		ACTION_AXIS_Q,
+		ACTION_AXIS_R,
+		ACTION_AXIS_S,
+		ACTION_AXIS_ROTATE_CW,
+		ACTION_AXIS_ROTATE_CCW,
+		ACTION_TILE_ROTATE_CW,
+		ACTION_TILE_ROTATE_CCW,
+		ACTION_TILE_FLIP,
+		ACTION_TILE_RESET,
 	};
 
 private:
@@ -30,6 +44,8 @@ private:
 	// plane value for each axis
 	int active_axis = AXIS_Y;
 	int plane[AXIS_S + 1] = { 0 };
+	int cursor_rotation = 0; // rotation about Y-axis in 60 degree steps
+	bool cursor_flipped = false;
 
 	Ref<Shortcut> editor_shortcut(const String &p_path, const String &p_name,
 			Key p_keycode, bool p_physical);
