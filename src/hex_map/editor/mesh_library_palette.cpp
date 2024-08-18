@@ -1,6 +1,8 @@
 #include "mesh_library_palette.h"
 #include "godot_cpp/classes/button.hpp"
 #include "godot_cpp/classes/control.hpp"
+#include "godot_cpp/classes/editor_interface.hpp"
+#include "godot_cpp/classes/editor_plugin.hpp"
 #include "godot_cpp/classes/h_box_container.hpp"
 #include "godot_cpp/classes/item_list.hpp"
 #include "godot_cpp/classes/line_edit.hpp"
@@ -14,6 +16,8 @@
 #include "godot_cpp/variant/vector2i.hpp"
 
 MeshLibraryPalette::MeshLibraryPalette() {
+	Ref<Theme> theme = EditorInterface::get_singleton()->get_editor_theme();
+
 	HBoxContainer *hbox = memnew(HBoxContainer);
 	hbox->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	hbox->set_custom_minimum_size(Vector2(230, 0));
@@ -23,6 +27,8 @@ MeshLibraryPalette::MeshLibraryPalette() {
 	filter_line_edit->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	filter_line_edit->set_placeholder("Filter Meshes");
 	filter_line_edit->set_clear_button_enabled(true);
+	filter_line_edit->set_right_icon(
+			theme->get_icon("Search", "EditorIcons"));
 	filter_line_edit->connect(
 			"text_changed",
 			callable_mp(this, &MeshLibraryPalette::set_filter));
@@ -33,6 +39,8 @@ MeshLibraryPalette::MeshLibraryPalette() {
 	mode_list_button->set_theme_type_variation("FlatButton");
 	mode_list_button->set_toggle_mode(true);
 	mode_list_button->set_pressed(false);
+	mode_list_button->set_button_icon(
+			theme->get_icon("FileList", "EditorIcons"));
 	mode_list_button->connect("pressed",
 			callable_mp(this, &MeshLibraryPalette::set_display_mode)
 					.bind(DisplayMode::LIST));
@@ -42,6 +50,8 @@ MeshLibraryPalette::MeshLibraryPalette() {
 	mode_thumbnail_button->set_theme_type_variation("FlatButton");
 	mode_thumbnail_button->set_toggle_mode(true);
 	mode_thumbnail_button->set_pressed(true);
+	mode_thumbnail_button->set_button_icon(
+			theme->get_icon("FileThumbnail", "EditorIcons"));
 	mode_thumbnail_button->connect("pressed",
 			callable_mp(this, &MeshLibraryPalette::set_display_mode)
 					.bind(DisplayMode::THUMBNAIL));
@@ -148,15 +158,6 @@ void MeshLibraryPalette::set_mesh(int p_mesh_id, bool update) {
 void MeshLibraryPalette::set_mesh_library(Ref<MeshLibrary> p_mesh_library) {
 	mesh_library = p_mesh_library;
 	update_item_list();
-}
-
-void MeshLibraryPalette::set_theme(Ref<Theme> theme) {
-	filter_line_edit->set_right_icon(
-			theme->get_icon("Search", "EditorIcons"));
-	mode_list_button->set_button_icon(
-			theme->get_icon("FileList", "EditorIcons"));
-	mode_thumbnail_button->set_button_icon(
-			theme->get_icon("FileThumbnail", "EditorIcons"));
 }
 
 void MeshLibraryPalette::update_item_list() {

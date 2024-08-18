@@ -38,7 +38,6 @@ public:
 	static void _bind_methods();
 
 	void clear_selection();
-	void set_theme(Ref<Theme> p_theme);
 	void set_display_mode(int p_mode);
 	void set_filter(String p_text);
 	void set_icon_scale(float p_scale);

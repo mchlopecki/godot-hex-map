@@ -690,11 +690,11 @@ bool HexMapEditorPlugin::_handles(Object *p_object) const {
 
 void HexMapEditorPlugin::_make_visible(bool p_visible) {
 	if (p_visible) {
-		spatial_editor_hb->show();
+		editor_control->show();
 		palette->show();
 		set_process(true);
 	} else {
-		spatial_editor_hb->hide();
+		editor_control->hide();
 		palette->hide();
 		set_process(false);
 	}
@@ -816,38 +816,30 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera, const Ref<
 
 	Ref<InputEventKey> k = p_event;
 
-	if (k.is_valid()) {
-		if (k->is_pressed()) {
-			if (k->get_keycode() == Key::KEY_ESCAPE) {
-				if (input_action == INPUT_PASTE) {
-					input_action = INPUT_NONE;
-					_clear_clipboard_data();
-					return EditorPlugin::AFTER_GUI_INPUT_STOP;
-				} else if (selection.active) {
-					_set_selection(false);
-					return EditorPlugin::AFTER_GUI_INPUT_STOP;
-				} else {
-					palette->clear_selection();
-					// XXX maybe signal will handle the set on our side
-					// XXX feel like escape
-					selected_palette = -1;
-					_update_cursor_instance();
-					return EditorPlugin::AFTER_GUI_INPUT_STOP;
-				}
+	if (k.is_valid() && k->is_pressed()) {
+		if (k->get_keycode() == Key::KEY_ESCAPE) {
+			if (input_action == INPUT_PASTE) {
+				input_action = INPUT_NONE;
+				_clear_clipboard_data();
+				return EditorPlugin::AFTER_GUI_INPUT_STOP;
+			} else if (selection.active) {
+				_set_selection(false);
+				return EditorPlugin::AFTER_GUI_INPUT_STOP;
+			} else {
+				palette->clear_selection();
+				// XXX maybe signal will handle the set on our side
+				// XXX feel like escape
+				selected_palette = -1;
+				_update_cursor_instance();
+				return EditorPlugin::AFTER_GUI_INPUT_STOP;
 			}
+		}
 
-			// Consume input to avoid conflicts with other plugins.
-			if (k.is_valid() && k->is_pressed() && !k->is_echo()) {
-				for (int i = 0; i < options->get_popup()->get_item_count(); ++i) {
-					const Ref<Shortcut> &shortcut = options->get_popup()->get_item_shortcut(i);
-					if (shortcut.is_valid() && shortcut->matches_event(p_event)) {
-						// XXX not sure if this is needed
-						// accept_event();
-						_menu_option(options->get_popup()->get_item_id(i));
-						return EditorPlugin::AFTER_GUI_INPUT_STOP;
-					}
-				}
-			}
+		// pass other non-repeat keypresses to EditorControl to match shortcuts
+		// XXX consider also blocking other keys here to prevent changing to
+		// scale mode, or transform
+		if (!k->is_echo() && editor_control->handle_keypress(k)) {
+			return EditorPlugin::AFTER_GUI_INPUT_STOP;
 		}
 	}
 
@@ -1616,14 +1608,6 @@ HexMapEditorPlugin::HexMapEditorPlugin() {
 	edit_axis = AXIS_Y;
 	edit_plane = Plane();
 
-	palette = memnew(MeshLibraryPalette);
-	palette->set_theme(get_editor_interface()->get_editor_theme());
-
-	palette->hide();
-	int rc = palette->connect("mesh_changed",
-			callable_mp(this, &HexMapEditorPlugin::mesh_changed));
-	UtilityFunctions::print("connect mesh_changed returned " + itos(rc));
-
 	inner_mat.instantiate();
 	inner_mat->set_albedo(Color(0.7, 0.7, 1.0, 0.2));
 	inner_mat->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
@@ -1653,8 +1637,17 @@ HexMapEditorPlugin::HexMapEditorPlugin() {
 
 	// XXX Not available
 	// Node3DEditor::get_singleton()->add_control_to_menu_panel(spatial_editor_hb);
-	add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, spatial_editor_hb);
+
+	palette = memnew(MeshLibraryPalette);
+	palette->hide();
+	palette->connect("mesh_changed",
+			callable_mp(this, &HexMapEditorPlugin::mesh_changed));
 	add_control_to_container(CONTAINER_SPATIAL_EDITOR_SIDE_RIGHT, palette);
+
+	editor_control = memnew(EditorControl);
+	editor_control->hide();
+	add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, editor_control);
+
 	ERR_PRINT_ED("added control to container");
 }
 

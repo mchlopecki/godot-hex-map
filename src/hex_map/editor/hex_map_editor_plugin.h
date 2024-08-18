@@ -50,6 +50,7 @@
 
 #include "../hex_map.h"
 #include "mesh_library_palette.h"
+#include "editor_control.h"
 
 using namespace godot;
 
@@ -141,6 +142,7 @@ class HexMapEditorPlugin : public EditorPlugin {
 	};
 
 	MeshLibraryPalette *palette = nullptr;
+	EditorControl *editor_control = nullptr;
 	InputAction input_action = INPUT_NONE;
 	Panel *panel = nullptr;
 	MenuButton *options = nullptr;
