@@ -1875,16 +1875,16 @@ RID HexMap::get_bake_mesh_instance(int p_idx) {
 HexMap::HexMap() {
 	set_notify_transform(true);
 	set_cell_shape(CELL_SHAPE_SQUARE);
-	// binding issue https://github.com/godotengine/godot-cpp/pull/1446
-	//
-	// fixed in godot-cpp 4.3
-	// #ifdef DEBUG_ENABLED
-	// 	NavigationServer3D::get_singleton()->connect(
-	// 			"map_changed", callable_mp(this, &HexMap::_navigation_map_changed));
-	// 	NavigationServer3D::get_singleton()->connect(
-	// 			"navigation_debug_changed",
-	// 			callable_mp(this, &HexMap::_update_navigation_debug_edge_connections));
-	// #endif // DEBUG_ENABLED
+// binding issue https://github.com/godotengine/godot-cpp/pull/1446
+//
+// fixed in godot-cpp 4.3
+#ifdef DEBUG_ENABLED
+	NavigationServer3D::get_singleton()->connect(
+			"map_changed", callable_mp(this, &HexMap::_navigation_map_changed));
+	NavigationServer3D::get_singleton()->connect(
+			"navigation_debug_changed",
+			callable_mp(this, &HexMap::_update_navigation_debug_edge_connections));
+#endif // DEBUG_ENABLED
 }
 
 #ifdef DEBUG_ENABLED

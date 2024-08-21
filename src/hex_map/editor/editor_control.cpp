@@ -3,6 +3,7 @@
 #include "godot_cpp/classes/box_container.hpp"
 #include "godot_cpp/classes/editor_interface.hpp"
 #include "godot_cpp/classes/editor_settings.hpp"
+#include "godot_cpp/classes/global_constants.hpp"
 #include "godot_cpp/classes/input_event_key.hpp"
 #include "godot_cpp/classes/label.hpp"
 #include "godot_cpp/classes/line_edit.hpp"
@@ -12,6 +13,7 @@
 #include "godot_cpp/classes/v_separator.hpp"
 #include "godot_cpp/core/error_macros.hpp"
 #include "godot_cpp/core/memory.hpp"
+#include "godot_cpp/core/object.hpp"
 #include "godot_cpp/variant/callable_method_pointer.hpp"
 #include "godot_cpp/variant/utility_functions.hpp"
 
@@ -164,6 +166,21 @@ void EditorControl::handle_action(int p_action) {
 			}
 			emit_signal("cursor_changed", cursor_rotation, cursor_flipped);
 			break;
+		case ACTION_SELECTION_CLEAR:
+			emit_signal("selection_clear");
+			break;
+		case ACTION_SELECTION_FILL:
+			emit_signal("selection_fill");
+			break;
+		case ACTION_SELECTION_MOVE:
+			emit_signal("selection_move");
+			break;
+		case ACTION_SELECTION_CLONE:
+			emit_signal("selection_clone");
+			break;
+		case ACTION_DESELECT:
+			emit_signal("deselect");
+			break;
 	}
 
 	// ensure the axis selection ratio buttons are marked correctly
@@ -190,6 +207,11 @@ void EditorControl::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("cursor_changed",
 			PropertyInfo(Variant::INT, "rotation"), // steps 0..5, ccw
 			PropertyInfo(Variant::BOOL, "flipped"))); // y-up = 0, y-down = 1
+	ADD_SIGNAL(MethodInfo("selection_clear"));
+	ADD_SIGNAL(MethodInfo("selection_fill"));
+	ADD_SIGNAL(MethodInfo("selection_move"));
+	ADD_SIGNAL(MethodInfo("selection_clone"));
+	ADD_SIGNAL(MethodInfo("deselect"));
 }
 
 bool EditorControl::handle_keypress(Ref<InputEventKey> p_event) {
@@ -199,6 +221,10 @@ bool EditorControl::handle_keypress(Ref<InputEventKey> p_event) {
 	int count = popup->get_item_count();
 
 	for (int i = 0; i < count; i++) {
+		// skip disabled items
+		if (popup->is_item_disabled(i)) {
+			continue;
+		}
 		const Ref<Shortcut> shortcut = popup->get_item_shortcut(i);
 		if (shortcut.is_valid() && shortcut->matches_event(p_event)) {
 			UtilityFunctions::print("editor_control handling action");
@@ -208,6 +234,17 @@ bool EditorControl::handle_keypress(Ref<InputEventKey> p_event) {
 		}
 	}
 	return false;
+}
+
+void EditorControl::set_selection_active(bool p_value) {
+	PopupMenu *popup = menu_button->get_popup();
+
+	for (int i = ACTION_SELECTION_FILL; i <= ACTION_DESELECT; i++) {
+		int index = popup->get_item_index(i);
+		if (index != -1) {
+			popup->set_item_disabled(index, !p_value);
+		}
+	}
 }
 
 EditorControl::EditorControl() {
@@ -286,6 +323,29 @@ EditorControl::EditorControl() {
 								"Clear Tile Rotation",
 								Key::KEY_S, true),
 			Action::ACTION_TILE_RESET);
+
+	popup->add_separator();
+	popup->add_shortcut(editor_shortcut("hex_map/selection_fill",
+								"Fill Selected Region",
+								Key::KEY_F, true),
+			Action::ACTION_SELECTION_FILL);
+	popup->add_shortcut(editor_shortcut("hex_map/selection_clear",
+								"Clear Selected Tiles",
+								Key::KEY_BACKSPACE, true),
+			Action::ACTION_SELECTION_CLEAR);
+	popup->add_shortcut(editor_shortcut("hex_map/selection_clone",
+								"Clone Selected Tiles",
+								Key(KEY_MASK_SHIFT + KEY_D),
+								true),
+			Action::ACTION_SELECTION_CLONE);
+	popup->add_shortcut(editor_shortcut("hex_map/selection_move",
+								"Move Selected Tiles",
+								Key::KEY_G, true),
+			Action::ACTION_SELECTION_MOVE);
+	popup->add_shortcut(editor_shortcut("hex_map/deselect",
+								"Deselect Tiles",
+								Key::KEY_ESCAPE, true),
+			Action::ACTION_DESELECT);
 }
 
 EditorControl::~EditorControl() {

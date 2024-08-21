@@ -34,6 +34,11 @@ private:
 		ACTION_TILE_ROTATE_CCW,
 		ACTION_TILE_FLIP,
 		ACTION_TILE_RESET,
+		ACTION_SELECTION_FILL,
+		ACTION_SELECTION_CLEAR,
+		ACTION_SELECTION_CLONE,
+		ACTION_SELECTION_MOVE,
+		ACTION_DESELECT,
 	};
 
 private:
@@ -58,6 +63,9 @@ public:
 
 	// handle a keypress event if it matches a shortcut in the menu
 	bool handle_keypress(Ref<InputEventKey> p_event);
+
+	// used to update the dropdown menu when there is an active selection
+	void set_selection_active(bool p_value);
 
 	EditorControl();
 	~EditorControl();

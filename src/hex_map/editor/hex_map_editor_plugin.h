@@ -144,15 +144,7 @@ class HexMapEditorPlugin : public EditorPlugin {
 	MeshLibraryPalette *palette = nullptr;
 	EditorControl *editor_control = nullptr;
 	InputAction input_action = INPUT_NONE;
-	Panel *panel = nullptr;
-	MenuButton *options = nullptr;
-	SpinBox *floor = nullptr;
 	double accumulated_floor_delta = 0.0;
-	HBoxContainer *spatial_editor_hb = nullptr;
-	ConfirmationDialog *settings_dialog = nullptr;
-	VBoxContainer *settings_vbc = nullptr;
-	SpinBox *settings_pick_distance = nullptr;
-	Label *spin_box_label = nullptr;
 
 	struct SetItem {
 		Vector3i position;
@@ -276,10 +268,16 @@ class HexMapEditorPlugin : public EditorPlugin {
 	void _update_cursor_instance();
 	void _update_theme();
 
+	// callbacks used by signals from EditorControl
 	void mesh_changed(int p_mesh_id);
 	void plane_changed(int p_axis);
 	void axis_changed(int p_axis);
 	void cursor_changed(int p_rotation, bool p_flip);
+	void deselect_tiles();
+	void selection_fill();
+	void selection_clear();
+	void selection_move();
+	void selection_clone();
 
 	void _icon_size_changed(float p_value);
 
@@ -293,7 +291,6 @@ class HexMapEditorPlugin : public EditorPlugin {
 	void _floor_mouse_exited();
 
 	void _delete_selection();
-	void _fill_selection();
 
 	bool do_input_action(Camera3D *p_camera, const Point2 &p_point, bool p_click);
 
