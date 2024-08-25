@@ -32,6 +32,7 @@
 #define GRID_MAP_H
 
 #include "godot_cpp/classes/physics_material.hpp"
+#include <cstdint>
 #include <godot_cpp/classes/array_mesh.hpp>
 #include <godot_cpp/classes/mesh_library.hpp>
 #include <godot_cpp/classes/node3d.hpp>

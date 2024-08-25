@@ -1,3 +1,4 @@
+#include "../tile_orientation.h"
 #include "godot_cpp/classes/h_box_container.hpp"
 #include "godot_cpp/classes/input_event_key.hpp"
 #include "godot_cpp/classes/label.hpp"
@@ -49,8 +50,7 @@ private:
 	// plane value for each axis
 	int active_axis = AXIS_Y;
 	int plane[AXIS_S + 1] = { 0 };
-	int cursor_rotation = 0; // rotation about Y-axis in 60 degree steps
-	bool cursor_flipped = false;
+	TileOrientation cursor_orientation;
 
 	Ref<Shortcut> editor_shortcut(const String &p_path, const String &p_name,
 			Key p_keycode, bool p_physical);
@@ -65,7 +65,7 @@ public:
 	bool handle_keypress(Ref<InputEventKey> p_event);
 
 	// used to update the dropdown menu when there is an active selection
-	void set_selection_active(bool p_value);
+	void update_selection_menu(bool p_active, bool p_duplicate = false);
 
 	EditorControl();
 	~EditorControl();

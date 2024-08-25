@@ -140,31 +140,20 @@ void EditorControl::handle_action(int p_action) {
 			plane_spin_box->set_value(plane[active_axis]);
 			break;
 		case ACTION_TILE_RESET:
-			cursor_rotation = 0;
-			cursor_flipped = false;
-			emit_signal("cursor_changed", cursor_rotation, cursor_flipped);
+			cursor_orientation = TileOrientation::Upright0;
+			emit_signal("cursor_orientation_changed", cursor_orientation);
 			break;
 		case ACTION_TILE_FLIP:
-			cursor_flipped = !cursor_flipped;
-			emit_signal("cursor_changed", cursor_rotation, cursor_flipped);
+			cursor_orientation.flip();
+			emit_signal("cursor_orientation_changed", cursor_orientation);
 			break;
 		case ACTION_TILE_ROTATE_CW:
-			cursor_rotation += cursor_flipped ? 1 : -1;
-			if (cursor_rotation > 5) {
-				cursor_rotation = 0;
-			} else if (cursor_rotation < 0) {
-				cursor_rotation = 5;
-			}
-			emit_signal("cursor_changed", cursor_rotation, cursor_flipped);
+			cursor_orientation.rotate(-1);
+			emit_signal("cursor_orientation_changed", cursor_orientation);
 			break;
 		case ACTION_TILE_ROTATE_CCW:
-			cursor_rotation += cursor_flipped ? -1 : 1;
-			if (cursor_rotation > 5) {
-				cursor_rotation = 0;
-			} else if (cursor_rotation < 0) {
-				cursor_rotation = 5;
-			}
-			emit_signal("cursor_changed", cursor_rotation, cursor_flipped);
+			cursor_orientation.rotate(1);
+			emit_signal("cursor_orientation_changed", cursor_orientation);
 			break;
 		case ACTION_SELECTION_CLEAR:
 			emit_signal("selection_clear");
@@ -204,9 +193,8 @@ void EditorControl::_bind_methods() {
 			PropertyInfo(Variant::INT, "plane")));
 	ADD_SIGNAL(MethodInfo("axis_changed",
 			PropertyInfo(Variant::INT, "axis")));
-	ADD_SIGNAL(MethodInfo("cursor_changed",
-			PropertyInfo(Variant::INT, "rotation"), // steps 0..5, ccw
-			PropertyInfo(Variant::BOOL, "flipped"))); // y-up = 0, y-down = 1
+	ADD_SIGNAL(MethodInfo("cursor_orientation_changed",
+			PropertyInfo(Variant::INT, "orientation")));
 	ADD_SIGNAL(MethodInfo("selection_clear"));
 	ADD_SIGNAL(MethodInfo("selection_fill"));
 	ADD_SIGNAL(MethodInfo("selection_move"));
@@ -236,13 +224,13 @@ bool EditorControl::handle_keypress(Ref<InputEventKey> p_event) {
 	return false;
 }
 
-void EditorControl::set_selection_active(bool p_value) {
+void EditorControl::update_selection_menu(bool p_active, bool p_duplicate) {
 	PopupMenu *popup = menu_button->get_popup();
 
 	for (int i = ACTION_SELECTION_FILL; i <= ACTION_DESELECT; i++) {
 		int index = popup->get_item_index(i);
 		if (index != -1) {
-			popup->set_item_disabled(index, !p_value);
+			popup->set_item_disabled(index, !p_active);
 		}
 	}
 }

@@ -108,23 +108,6 @@ void HexMapEditorPlugin::_configure() {
 
 void HexMapEditorPlugin::_menu_option(int p_option) {
 	switch (p_option) {
-		case MENU_OPTION_PASTE_SELECTS: {
-			// int idx = options->get_popup()->get_item_index(MENU_OPTION_PASTE_SELECTS);
-			// options->get_popup()->set_item_checked(idx, !options->get_popup()->is_item_checked(idx));
-		} break;
-
-		case MENU_OPTION_SELECTION_DUPLICATE:
-		case MENU_OPTION_SELECTION_CUT: {
-			if (!(selection.active && input_action == INPUT_NONE)) {
-				break;
-			}
-
-			_set_clipboard_data();
-
-			input_action = INPUT_PASTE;
-			paste_orientation = 0;
-			_update_paste_indicator();
-		} break;
 		case MENU_OPTION_GRIDMAP_SETTINGS: {
 			// XXX need EditorScale::get_scale()
 			// settings_dialog->popup_centered(settings_vbc->get_combined_minimum_size() + Size2(50, 50) /* * EditorScale::get_scale() */);
@@ -223,18 +206,12 @@ void HexMapEditorPlugin::_set_selection(bool p_active, const Vector3 &p_begin, c
 		_update_selection();
 	}
 	// XXX split _set_selection out into set & clear selection
-	editor_control->set_selection_active(true);
+	editor_control->update_selection_menu(true);
 
 	// XXX missing visibility check
 	// if (is_visible_in_tree()) {
 	// 	_update_selection();
 	// }
-
-	// XXX update editor_control menu options when selection is present
-	// options->get_popup()->set_item_disabled(options->get_popup()->get_item_index(MENU_OPTION_SELECTION_CLEAR), !selection.active);
-	// options->get_popup()->set_item_disabled(options->get_popup()->get_item_index(MENU_OPTION_SELECTION_CUT), !selection.active);
-	// options->get_popup()->set_item_disabled(options->get_popup()->get_item_index(MENU_OPTION_SELECTION_DUPLICATE), !selection.active);
-	// options->get_popup()->set_item_disabled(options->get_popup()->get_item_index(MENU_OPTION_SELECTION_FILL), !selection.active);
 }
 
 void HexMapEditorPlugin::deselect_tiles() {
@@ -244,7 +221,7 @@ void HexMapEditorPlugin::deselect_tiles() {
 	}
 	selection.cells.clear();
 	selection.active = false;
-	editor_control->set_selection_active(false);
+	editor_control->update_selection_menu(false);
 }
 
 bool HexMapEditorPlugin::do_input_action(Camera3D *p_camera, const Point2 &p_point, bool p_click) {
@@ -310,7 +287,7 @@ bool HexMapEditorPlugin::do_input_action(Camera3D *p_camera, const Point2 &p_poi
 		selection.end = edit_plane_point;
 		selection.active = true;
 		_update_selection();
-		editor_control->set_selection_active(true);
+		editor_control->update_selection_menu(true);
 
 		return true;
 	} else if (input_action == INPUT_PICK) {
@@ -328,6 +305,7 @@ bool HexMapEditorPlugin::do_input_action(Camera3D *p_camera, const Point2 &p_poi
 	}
 
 	if (input_action == INPUT_PAINT) {
+		// XXX disallow painting outside of selection box if selected
 		SetItem si;
 		si.position = pointer_cell;
 		si.new_value = selected_palette;
@@ -396,11 +374,13 @@ void HexMapEditorPlugin::_clear_clipboard_data() {
 	clipboard_items.clear();
 }
 
-void HexMapEditorPlugin::_set_clipboard_data() {
+void HexMapEditorPlugin::selection_begin_move() {
 	_clear_clipboard_data();
 
 	Ref<MeshLibrary> meshLibrary = node->get_mesh_library();
 	RID root = get_tree()->get_root()->get_world_3d()->get_scenario();
+	RID other = node->get_window()->get_world_3d()->get_scenario();
+	UtilityFunctions::print("root", root, "other", other);
 
 	// We're going to duplicate the meshes for the selected region as a chunk
 	// that is centered on the mouse cursor.  To do this, we need to calculate
@@ -431,12 +411,35 @@ void HexMapEditorPlugin::_set_clipboard_data() {
 		item.instance = mesh_instance;
 		clipboard_items.push_back(item);
 	}
+
+	if (selection.cells.size() > 0) {
+		input_action = INPUT_PASTE;
+		_update_paste_indicator();
+	}
+}
+
+void HexMapEditorPlugin::selection_clone() {
+	// XXX need to distinguish clone from move
+	// when move completes, save the clipboard to allow quick duplicate
+	selection_begin_move();
+	deselect_tiles();
+}
+
+void HexMapEditorPlugin::selection_move() {
+	// XXX need to distinguish move from clone
+	// when escape is pressed, need to undo clear selection/ret clipboard
+	// contents.
+	selection_begin_move();
+	// XXX need to be able to undo this
+	selection_clear();
+	deselect_tiles();
 }
 
 void HexMapEditorPlugin::_update_paste_indicator() {
 	ERR_FAIL_COND_MSG(input_action != INPUT_PASTE, "updating paste while not pasting");
 
 	Vector3 cursor = node->map_to_local(pointer_cell);
+	// XXX need to update cursor_changed() callback to support rotating all
 	Basis paste_rotation = node->get_basis_with_orthogonal_index(paste_orientation);
 
 	for (const ClipboardItem &item : clipboard_items) {
@@ -634,9 +637,6 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera, const Ref<
 				return EditorPlugin::AFTER_GUI_INPUT_STOP;
 			} else {
 				palette->clear_selection();
-				// XXX maybe signal will handle the set on our side
-				// XXX feel like escape
-				selected_palette = -1;
 				_update_cursor_instance();
 				return EditorPlugin::AFTER_GUI_INPUT_STOP;
 			}
@@ -857,20 +857,6 @@ void HexMapEditorPlugin::update_grid() {
 			->instance_set_visible(active_grid_instance, true);
 	RenderingServer::get_singleton()->instance_set_transform(active_grid_instance,
 			node->get_global_transform() * grid_transform);
-
-	// XXX data flow in the wrong direction
-	// // update the UI floor indicator
-	// floor->set_value(edit_floor[edit_axis]);
-
-	// XXX should be handled in EditorControl
-	// // update the option menu to show the correct axis is selected
-	// PopupMenu *popup = options->get_popup();
-	// for (int i = MENU_OPTION_X_AXIS; i <= MENU_OPTION_S_AXIS; i++) {
-	// 	int index = popup->get_item_index(i);
-	// 	if (index != -1) {
-	// 		popup->set_item_checked(index, menu_axis == i);
-	// 	}
-	// }
 }
 
 // create a mesh and draw a grid of hexagonal cells on it
@@ -1274,28 +1260,17 @@ void HexMapEditorPlugin::mesh_changed(int p_mesh_id) {
 void HexMapEditorPlugin::plane_changed(int p_plane) {
 	edit_depth = p_plane;
 	update_grid();
-	if (selection.active) {
-		_update_selection();
-	}
 }
 
 void HexMapEditorPlugin::axis_changed(int p_axis) {
 	edit_axis = (EditorControl::EditAxis)p_axis;
 	UtilityFunctions::print("axis changed " + itos(edit_axis));
 	update_grid();
-	if (selection.active) {
-		_update_selection();
-	}
 }
 
-void HexMapEditorPlugin::cursor_changed(int p_rotation, bool p_flip) {
-	UtilityFunctions::print("cursor changed: rotation " + itos(p_rotation) + ", flip " + itos(p_flip));
-	Basis rotation;
-	rotation.rotate(Vector3(0, 1, 0), p_rotation * Math_PI / 3.0);
-	if (p_flip) {
-		rotation.rotate(Vector3(1, 0, 0), Math_PI);
-	}
-	cursor_rot = node->get_orthogonal_index_from_basis(rotation);
+void HexMapEditorPlugin::cursor_changed(Variant p_orientation) {
+	TileOrientation orientation(p_orientation);
+	cursor_rot = node->get_orthogonal_index_from_basis(orientation);
 	_update_cursor_transform();
 }
 
@@ -1472,7 +1447,7 @@ HexMapEditorPlugin::HexMapEditorPlugin() {
 			callable_mp(this, &HexMapEditorPlugin::plane_changed));
 	editor_control->connect("axis_changed",
 			callable_mp(this, &HexMapEditorPlugin::axis_changed));
-	editor_control->connect("cursor_changed",
+	editor_control->connect("cursor_orientation_changed",
 			callable_mp(this, &HexMapEditorPlugin::cursor_changed));
 	editor_control->connect("deselect",
 			callable_mp(this, &HexMapEditorPlugin::deselect_tiles));
@@ -1480,6 +1455,10 @@ HexMapEditorPlugin::HexMapEditorPlugin() {
 			callable_mp(this, &HexMapEditorPlugin::selection_fill));
 	editor_control->connect("selection_clear",
 			callable_mp(this, &HexMapEditorPlugin::selection_clear));
+	editor_control->connect("selection_move",
+			callable_mp(this, &HexMapEditorPlugin::selection_move));
+	editor_control->connect("selection_clone",
+			callable_mp(this, &HexMapEditorPlugin::selection_clone));
 	add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, editor_control);
 
 	// XXX why is this necessary?

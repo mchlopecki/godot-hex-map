@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "hex_map.h"
+#include "godot_cpp/variant/basis.hpp"
 
 #include <godot_cpp/classes/array_mesh.hpp>
 #include <godot_cpp/classes/main_loop.hpp>

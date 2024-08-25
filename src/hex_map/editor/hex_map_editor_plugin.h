@@ -72,7 +72,56 @@ using namespace godot;
 //	- 3d view output
 //		- draw grid
 //		- draw cursor
+//	- input handling
+//		- input modes
+//			- paint
+//				- only when tile selected
+//			- clear
+//				- right-click if in paint mode
+//			- selecting
+//			- move
+//				- update cursor for selection
+//				- clear selected tiles
+//				- clear selection
+//				- cancel restores cleared tiles, and selection
+//			- duplicate
+//				- with selection
+//					- save duplicate last source
+//					- cancel restores selection; clears last source
+//				- without selection & without last source
+//					- disabled
+//				- without selection & with last source
+//					- cancel just resets the cursor state
 //
+// TileCursor
+//	- hide/show
+//	- clear tiles
+//		- clear()
+//	- draw single tile
+//		- set_tile(pos, index, rotation)
+//	- draw multiple tiles
+//		- set_tile(pos, index, rotation)
+//	- rotate/flip cursor
+//	- move cursor
+//		- set_pointer_cell()
+//		- update hex coord for cursor
+//		- translate cursor tile instances
+//	- get cursor location relative list of cells
+//		- List<CellId, index, rotation> get_tiles()
+//		- cursor.tiles.each { |tile| grid_map.set(tile) }
+//	- internals
+//		- need MeshLibrary and HexMap for positioning
+//			- can do all with just HexMap
+//		- multimesh may be overkill here
+//		- set mesh layer higher than hexgrid layer
+//		- dynamically calculate center during `set_tile()`?
+//	- XXX need to figure out cursor positioning vs pointer
+//		- center entire cursor on pointer cell
+//			- can look like some cells deleted when move selected
+//			- could be fixed with a highlight box around cursor tiles?
+//		- position relative to pointer cell
+//			- move selected leaves cells where they are; may appear to not be
+//			  working, except for the cleared selection
 //
 // MeshLibraryPicker (VBox)
 //	- Needs Ref<Theme> to get icons
@@ -119,7 +168,7 @@ using namespace godot;
 //		- Options Dropdown Menu
 //			- id_pressed -> process, then issue "changed"
 //		- changed(axis, floor)
-
+//
 class HexMapEditorPlugin : public EditorPlugin {
 	GDCLASS(HexMapEditorPlugin, EditorPlugin);
 
@@ -134,11 +183,6 @@ class HexMapEditorPlugin : public EditorPlugin {
 		INPUT_PICK,
 		INPUT_SELECT,
 		INPUT_PASTE,
-	};
-
-	enum DisplayMode {
-		DISPLAY_THUMBNAIL,
-		DISPLAY_LIST
 	};
 
 	MeshLibraryPalette *palette = nullptr;
@@ -164,16 +208,6 @@ class HexMapEditorPlugin : public EditorPlugin {
 
 	// plane we're editing cells on; depth comes from edit_floor
 	Plane edit_plane;
-
-	// enum EditAxis {
-	// 	AXIS_X = 0,
-	// 	AXIS_Y,
-	// 	AXIS_Z,
-	// 	AXIS_Q, // axial hex coordinates northwest/southeast
-	// 	AXIS_R, // axial hex coordinates east/west
-	// 	AXIS_S, // axial hex coordinates northeast/southwest
-	// 	AXIS_MAX,
-	// };
 	EditorControl::EditAxis edit_axis;
 	int edit_depth;
 
@@ -189,7 +223,7 @@ class HexMapEditorPlugin : public EditorPlugin {
 		RID instance;
 	};
 
-	List<ClipboardItem> clipboard_items;
+	List<ClipboardItem> clipboard_items, last_clipboard;
 
 	Ref<StandardMaterial3D> indicator_mat;
 	Ref<StandardMaterial3D> inner_mat;
@@ -215,7 +249,6 @@ class HexMapEditorPlugin : public EditorPlugin {
 	// cell index for the pointer
 	Vector3i pointer_cell;
 
-	int display_mode = DISPLAY_THUMBNAIL;
 	int selected_palette = -1;
 	int cursor_rot = 0;
 
@@ -272,17 +305,17 @@ class HexMapEditorPlugin : public EditorPlugin {
 	void mesh_changed(int p_mesh_id);
 	void plane_changed(int p_axis);
 	void axis_changed(int p_axis);
-	void cursor_changed(int p_rotation, bool p_flip);
+	void cursor_changed(Variant p_orientation);
 	void deselect_tiles();
 	void selection_fill();
 	void selection_clear();
+	void selection_begin_move();
 	void selection_move();
 	void selection_clone();
 
 	void _icon_size_changed(float p_value);
 
 	void _clear_clipboard_data();
-	void _set_clipboard_data();
 	void _update_paste_indicator();
 	void _do_paste();
 	void _update_selection();
