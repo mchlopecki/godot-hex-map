@@ -1,4 +1,5 @@
 #include "tile_orientation.h"
+#include "godot_cpp/variant/string.hpp"
 
 #define Math_PI_3 (Math_PI / 3.0)
 
@@ -48,6 +49,16 @@ TileOrientation::operator Basis() const {
 			break;
 	}
 	return basis;
+}
+
+TileOrientation TileOrientation::operator+(const TileOrientation &other) const {
+	TileOrientation out(value);
+	// if we're flipped, flip, and then rotate however manu steps
+	if (other >= TileOrientation::Flipped0) {
+		out.flip();
+	}
+	out.rotate(other.value % 6);
+	return out;
 }
 
 void TileOrientation::rotate(int steps) {

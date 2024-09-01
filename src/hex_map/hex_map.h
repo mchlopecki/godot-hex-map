@@ -32,6 +32,7 @@
 #define GRID_MAP_H
 
 #include "godot_cpp/classes/physics_material.hpp"
+#include "tile_orientation.h"
 #include <cstdint>
 #include <godot_cpp/classes/array_mesh.hpp>
 #include <godot_cpp/classes/mesh_library.hpp>
@@ -62,6 +63,7 @@ public:
 		CELL_SHAPE_HEXAGON,
 		CELL_SHAPE_MAX,
 	};
+	using CellId = Vector3i;
 
 private:
 	enum {
@@ -307,7 +309,7 @@ public:
 	int get_orthogonal_index_from_basis(const Basis &p_basis) const;
 	TypedArray<Vector3i> get_cell_neighbors(const Vector3i p_cell) const;
 
-	Vector3i local_to_map(const Vector3 &p_local_position) const;
+	CellId local_to_map(const Vector3 &p_local_position) const;
 	Vector3 map_to_local(const Vector3i &p_map_position) const;
 
 	TypedArray<Vector3i> local_region_to_map(Vector3 p_local_point_a,

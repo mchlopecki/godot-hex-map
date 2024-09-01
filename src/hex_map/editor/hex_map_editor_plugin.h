@@ -50,6 +50,7 @@
 
 #include "../hex_map.h"
 #include "editor_control.h"
+#include "editor_cursor.h"
 #include "mesh_library_palette.h"
 
 using namespace godot;
@@ -187,6 +188,8 @@ class HexMapEditorPlugin : public EditorPlugin {
 
 	MeshLibraryPalette *palette = nullptr;
 	EditorControl *editor_control = nullptr;
+	EditorCursor *editor_cursor = nullptr;
+
 	InputAction input_action = INPUT_NONE;
 	double accumulated_floor_delta = 0.0;
 
@@ -214,7 +217,6 @@ class HexMapEditorPlugin : public EditorPlugin {
 	RID active_grid_instance;
 	RID grid_mesh[3];
 	RID grid_instance[3];
-	RID cursor_instance;
 
 	struct ClipboardItem {
 		int cell_item = 0;
@@ -247,10 +249,7 @@ class HexMapEditorPlugin : public EditorPlugin {
 	Transform3D cursor_transform;
 
 	// cell index for the pointer
-	Vector3i pointer_cell;
-
-	int selected_palette = -1;
-	int cursor_rot = 0;
+	HexMap::CellId pointer_cell;
 
 	enum Menu {
 		MENU_OPTION_NEXT_LEVEL,
@@ -302,7 +301,7 @@ class HexMapEditorPlugin : public EditorPlugin {
 	void _update_theme();
 
 	// callbacks used by signals from EditorControl
-	void mesh_changed(int p_mesh_id);
+	void tile_changed(int p_mesh_id);
 	void plane_changed(int p_axis);
 	void axis_changed(int p_axis);
 	void cursor_changed(Variant p_orientation);

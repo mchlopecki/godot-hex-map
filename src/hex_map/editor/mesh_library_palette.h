@@ -43,5 +43,6 @@ public:
 	void set_icon_scale(float p_scale);
 	void selection_changed(int p_index);
 	void set_mesh(int p_mesh_id, bool update = true);
+	int get_mesh();
 	void set_mesh_library(Ref<MeshLibrary> p_mesh_library);
 };

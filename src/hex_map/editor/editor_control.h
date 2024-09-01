@@ -67,6 +67,9 @@ public:
 	// used to update the dropdown menu when there is an active selection
 	void update_selection_menu(bool p_active, bool p_duplicate = false);
 
+	// reset cursor orientation
+	void reset_orientation() { cursor_orientation = TileOrientation::Upright0; }
+
 	EditorControl();
 	~EditorControl();
 };

@@ -109,6 +109,13 @@ void MeshLibraryPalette::clear_selection() {
 	set_mesh(-1, false);
 }
 
+int MeshLibraryPalette::get_mesh() {
+	if (!mesh_item_list->is_anything_selected()) {
+		return -1;
+	}
+	return mesh_item_list->get_selected_items()[0];
+}
+
 void MeshLibraryPalette::set_filter(String filter) {
 	static String last_value = "";
 	if (last_value != filter) {

@@ -30,6 +30,7 @@
 
 #include "hex_map.h"
 #include "godot_cpp/variant/basis.hpp"
+#include "tile_orientation.h"
 
 #include <godot_cpp/classes/array_mesh.hpp>
 #include <godot_cpp/classes/main_loop.hpp>
@@ -583,18 +584,11 @@ int HexMap::get_cell_item_orientation(const Vector3i &p_position) const {
 }
 
 Basis HexMap::get_cell_item_basis(const Vector3i &p_position) const {
-	int orientation = get_cell_item_orientation(p_position);
-
-	if (orientation == -1) {
-		return Basis();
-	}
-
-	return get_basis_with_orthogonal_index(orientation);
+	return TileOrientation(get_cell_item_orientation(p_position));
 }
 
 Basis HexMap::get_basis_with_orthogonal_index(int p_index) const {
-	ERR_FAIL_INDEX_V(p_index, cell_orientations.size(), Basis());
-	return cell_orientations[p_index];
+	return TileOrientation(p_index);
 }
 
 // for hex cells, round a value within a Basis to -sqrt(3)/2, 0.0, sqrt(3)/2
@@ -724,7 +718,7 @@ static inline Vector3i oddr_to_axial(Vector3i oddr) {
 	return Vector3i(q, oddr.y, oddr.z);
 }
 
-Vector3i HexMap::local_to_map(const Vector3 &p_local_position) const {
+HexMap::CellId HexMap::local_to_map(const Vector3 &p_local_position) const {
 	if (cell_shape != CELL_SHAPE_HEXAGON) {
 		Vector3 map_position = (p_local_position / cell_size).floor();
 		return Vector3i(map_position);
@@ -972,7 +966,7 @@ bool HexMap::_octant_update(const OctantKey &p_key) {
 		Vector3 map_pos = Vector3(E.x, E.y, E.z);
 		Transform3D cell_transform;
 
-		cell_transform.basis = cell_orientations[c.rot];
+		cell_transform.basis = TileOrientation(c.rot);
 		cell_transform.set_origin(map_to_local(map_pos));
 		cell_transform.basis.scale(Vector3(cell_scale, cell_scale, cell_scale));
 		if (baked_meshes.size() == 0) {
@@ -1739,7 +1733,7 @@ Array HexMap::get_meshes() const {
 
 		Transform3D xform;
 
-		xform.basis = cell_orientations[E.value.rot];
+		xform.basis = TileOrientation(E.value.rot);
 
 		xform.set_origin(cellpos);
 		xform.basis.scale(Vector3(cell_scale, cell_scale, cell_scale));
@@ -1791,7 +1785,7 @@ void HexMap::make_baked_meshes(bool p_gen_lightmap_uv,
 
 		Transform3D xform;
 
-		xform.basis = cell_orientations[E.value.rot];
+		xform.basis = TileOrientation(E.value.rot);
 		xform.set_origin(cellpos * cell_size + ofs);
 		xform.basis.scale(Vector3(cell_scale, cell_scale, cell_scale));
 

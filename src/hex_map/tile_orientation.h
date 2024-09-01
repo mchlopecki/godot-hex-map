@@ -6,6 +6,9 @@
 
 using namespace godot;
 
+// XXX converting this into a godot object so we can expose it to GDScript
+// XXX cannot convert to a godot object because we cannot bind a function in
+// HexMap that returns an GDExtension class.
 class TileOrientation {
 public:
 	enum Value : uint8_t {
@@ -27,8 +30,10 @@ public:
 	TileOrientation() = default;
 	constexpr TileOrientation(Value v) :
 			value(v) {}
+	constexpr TileOrientation(int v) :
+			value(static_cast<Value>(v)) {}
 	TileOrientation(Variant v) :
-			value((Value)(uint8_t)v) {}
+			value(static_cast<Value>((int)v)) {}
 	constexpr operator Value() const { return value; }
 	constexpr bool operator==(TileOrientation other) const {
 		return value == other.value;
@@ -36,6 +41,7 @@ public:
 	constexpr bool operator!=(TileOrientation other) const {
 		return value != other.value;
 	}
+	TileOrientation operator+(const TileOrientation &other) const;
 
 	operator Basis() const;
 	operator int() const { return value; }
@@ -46,5 +52,5 @@ public:
 	void flip();
 
 private:
-	Value value;
+	Value value = Upright0;
 };
