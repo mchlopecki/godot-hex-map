@@ -6,6 +6,8 @@
 #include "godot_cpp/classes/spin_box.hpp"
 #include <godot_cpp/classes/control.hpp>
 
+#pragma once
+
 using namespace godot;
 
 class EditorControl : public godot::HBoxContainer {
@@ -48,7 +50,7 @@ private:
 	MenuButton *menu_button = nullptr;
 
 	// plane value for each axis
-	int active_axis = AXIS_Y;
+	EditAxis active_axis = AXIS_Y;
 	int plane[AXIS_S + 1] = { 0 };
 	TileOrientation cursor_orientation;
 
@@ -61,6 +63,9 @@ protected:
 public:
 	static void _bind_methods();
 
+	EditAxis get_active_axis() { return active_axis; }
+	int get_plane() { return plane[active_axis]; }
+
 	// handle a keypress event if it matches a shortcut in the menu
 	bool handle_keypress(Ref<InputEventKey> p_event);
 
@@ -68,7 +73,9 @@ public:
 	void update_selection_menu(bool p_active, bool p_duplicate = false);
 
 	// reset cursor orientation
-	void reset_orientation() { cursor_orientation = TileOrientation::Upright0; }
+	void reset_orientation() {
+		cursor_orientation = TileOrientation::Upright0;
+	}
 
 	EditorControl();
 	~EditorControl();

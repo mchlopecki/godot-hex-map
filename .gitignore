@@ -3,6 +3,7 @@ compile_commands.json
 extension_api.json
 .sconsign.dblite
 *.os
+*.o
 .DS_Store
 .nobackup*
 demo/bin/libhexmap*

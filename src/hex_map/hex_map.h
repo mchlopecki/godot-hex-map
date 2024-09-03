@@ -31,7 +31,9 @@
 #ifndef GRID_MAP_H
 #define GRID_MAP_H
 
+#include "editor/editor_control.h"
 #include "godot_cpp/classes/physics_material.hpp"
+#include "hex_map_cell_id.h"
 #include "tile_orientation.h"
 #include <cstdint>
 #include <godot_cpp/classes/array_mesh.hpp>
@@ -58,11 +60,6 @@ class HexMap : public Node3D {
 	GDCLASS(HexMap, Node3D);
 
 public:
-	enum CellShape {
-		CELL_SHAPE_SQUARE,
-		CELL_SHAPE_HEXAGON,
-		CELL_SHAPE_MAX,
-	};
 	using CellId = Vector3i;
 
 private:
@@ -100,8 +97,8 @@ private:
 	};
 
 	/**
-	 * @brief A Cell is a single cell in the cube map space; it is defined by its
-	 * coordinates and the populating Item, identified by int id.
+	 * @brief A Cell is a single cell in the cube map space; it is defined by
+	 * its coordinates and the populating Item, identified by int id.
 	 */
 	union Cell {
 		struct {
@@ -113,8 +110,8 @@ private:
 	};
 
 	/**
-	 * @brief An Octant is a prism containing Cells, and possibly belonging to an
-	 * Area. A GridMap can have multiple Octants.
+	 * @brief An Octant is a prism containing Cells, and possibly belonging to
+	 * an Area. A GridMap can have multiple Octants.
 	 */
 	struct Octant {
 		struct NavigationCell {
@@ -182,7 +179,6 @@ private:
 	Transform3D last_transform;
 
 	bool _in_tree = false;
-	CellShape cell_shape = CELL_SHAPE_SQUARE;
 	TypedArray<Basis> cell_orientations;
 	Vector3 cell_size = Vector3(2, 2, 2);
 	int octant_size = 8;
@@ -219,8 +215,8 @@ private:
 	void _octant_clean_up(const OctantKey &p_key);
 	void _octant_transform(const OctantKey &p_key);
 #ifdef DEBUG_ENABLED
-	void
-	_update_octant_navigation_debug_edge_connections_mesh(const OctantKey &p_key);
+	void _update_octant_navigation_debug_edge_connections_mesh(
+			const OctantKey &p_key);
 	void _navigation_map_changed(RID p_map);
 	void _update_navigation_debug_edge_connections();
 #endif // DEBUG_ENABLED
@@ -285,9 +281,6 @@ public:
 	void set_mesh_library(const Ref<MeshLibrary> &p_mesh_library);
 	Ref<MeshLibrary> get_mesh_library() const;
 
-	void set_cell_shape(CellShape p_shape);
-	CellShape get_cell_shape() const;
-
 	void set_cell_size(const Vector3 &p_size);
 	Vector3 get_cell_size() const;
 
@@ -306,14 +299,14 @@ public:
 	int get_cell_item_orientation(const Vector3i &p_position) const;
 	Basis get_cell_item_basis(const Vector3i &p_position) const;
 	Basis get_basis_with_orthogonal_index(int p_index) const;
-	int get_orthogonal_index_from_basis(const Basis &p_basis) const;
 	TypedArray<Vector3i> get_cell_neighbors(const Vector3i p_cell) const;
 
 	CellId local_to_map(const Vector3 &p_local_position) const;
 	Vector3 map_to_local(const Vector3i &p_map_position) const;
+	// Vector3 map_to_local(const HexMapCellId &p_cell_id) const;
 
-	TypedArray<Vector3i> local_region_to_map(Vector3 p_local_point_a,
-			Vector3 p_local_point_b) const;
+	TypedArray<Vector3i> local_region_to_map(
+			Vector3 p_local_point_a, Vector3 p_local_point_b) const;
 
 	void set_cell_scale(float p_scale);
 	float get_cell_scale() const;
@@ -335,7 +328,5 @@ public:
 	HexMap();
 	~HexMap();
 };
-
-VARIANT_ENUM_CAST(HexMap::CellShape);
 
 #endif // GRID_MAP_H

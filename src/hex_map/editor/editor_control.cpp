@@ -17,8 +17,8 @@
 #include "godot_cpp/variant/callable_method_pointer.hpp"
 #include "godot_cpp/variant/utility_functions.hpp"
 
-Ref<Shortcut>
-EditorControl::editor_shortcut(const String &p_path, const String &p_name, Key p_keycode, bool p_physical) {
+Ref<Shortcut> EditorControl::editor_shortcut(const String &p_path,
+		const String &p_name, Key p_keycode, bool p_physical) {
 	Ref<EditorSettings> editor_settings =
 			EditorInterface::get_singleton()->get_editor_settings();
 
@@ -27,7 +27,8 @@ EditorControl::editor_shortcut(const String &p_path, const String &p_name, Key p
 	if (p_keycode != KEY_NONE) {
 		input_event_key.instantiate();
 		if (p_physical) {
-			input_event_key->set_physical_keycode((Key)(p_keycode & KEY_CODE_MASK));
+			input_event_key->set_physical_keycode(
+					(Key)(p_keycode & KEY_CODE_MASK));
 		} else {
 			input_event_key->set_keycode((Key)(p_keycode & KEY_CODE_MASK));
 		}
@@ -63,8 +64,6 @@ EditorControl::editor_shortcut(const String &p_path, const String &p_name, Key p
 }
 
 void EditorControl::handle_action(int p_action) {
-	UtilityFunctions::print("handle_action() " + itos(p_action));
-
 	switch ((Action)p_action) {
 		case ACTION_PLANE_DOWN:
 			plane_spin_box->set_value(plane_spin_box->get_value() - 1);
@@ -189,10 +188,9 @@ void EditorControl::set_plane(int p_plane) {
 }
 
 void EditorControl::_bind_methods() {
-	ADD_SIGNAL(MethodInfo("plane_changed",
-			PropertyInfo(Variant::INT, "plane")));
-	ADD_SIGNAL(MethodInfo("axis_changed",
-			PropertyInfo(Variant::INT, "axis")));
+	ADD_SIGNAL(
+			MethodInfo("plane_changed", PropertyInfo(Variant::INT, "plane")));
+	ADD_SIGNAL(MethodInfo("axis_changed", PropertyInfo(Variant::INT, "axis")));
 	ADD_SIGNAL(MethodInfo("cursor_orientation_changed",
 			PropertyInfo(Variant::INT, "orientation")));
 	ADD_SIGNAL(MethodInfo("selection_clear"));
@@ -215,7 +213,6 @@ bool EditorControl::handle_keypress(Ref<InputEventKey> p_event) {
 		}
 		const Ref<Shortcut> shortcut = popup->get_item_shortcut(i);
 		if (shortcut.is_valid() && shortcut->matches_event(p_event)) {
-			UtilityFunctions::print("editor_control handling action");
 			accept_event();
 			handle_action(popup->get_item_id(i));
 			return true;
@@ -252,7 +249,8 @@ EditorControl::EditorControl() {
 	plane_spin_box->set_step(1);
 	plane_spin_box->get_line_edit()->add_theme_constant_override(
 			"minimum_character_width", 8);
-	plane_spin_box->connect("value_changed", callable_mp(this, &EditorControl::set_plane));
+	plane_spin_box->connect(
+			"value_changed", callable_mp(this, &EditorControl::set_plane));
 	add_child(plane_spin_box);
 
 	add_child(memnew(VSeparator));
@@ -263,78 +261,68 @@ EditorControl::EditorControl() {
 	add_child(menu_button);
 
 	PopupMenu *popup = menu_button->get_popup();
-	popup->connect("id_pressed",
-			callable_mp(this, &EditorControl::handle_action));
+	popup->connect(
+			"id_pressed", callable_mp(this, &EditorControl::handle_action));
 
 	popup->add_shortcut(editor_shortcut("hex_map/previous_floor",
-								"Previous Floor",
-								Key::KEY_Q, true),
+								"Previous Floor", Key::KEY_Q, true),
 			Action::ACTION_PLANE_DOWN);
-	popup->add_shortcut(editor_shortcut("hex_map/next_floor",
-								"Next Floor",
+	popup->add_shortcut(editor_shortcut("hex_map/next_floor", "Next Floor",
 								Key::KEY_E, true),
 			Action::ACTION_PLANE_UP);
 
 	popup->add_separator();
 	popup->add_radio_check_item("Edit X Axis", ACTION_AXIS_X);
-	popup->add_radio_check_shortcut(
-			editor_shortcut("hex_map/edit_y_axis",
-					"Edit Y Axis",
-					Key::KEY_X, true),
+	popup->add_radio_check_shortcut(editor_shortcut("hex_map/edit_y_axis",
+											"Edit Y Axis", Key::KEY_X, true),
 			Action::ACTION_AXIS_Y);
 	popup->add_radio_check_item("Edit Q Axis", ACTION_AXIS_Q);
 	popup->add_radio_check_item("Edit R Axis", ACTION_AXIS_R);
 	popup->add_radio_check_item("Edit S Axis", ACTION_AXIS_S);
-	popup->add_shortcut(editor_shortcut("hex_map/edit_plane_rotate_cw",
-								"Rotate Edit Plane Clockwise",
-								Key::KEY_C, true),
+	popup->add_shortcut(
+			editor_shortcut("hex_map/edit_plane_rotate_cw",
+					"Rotate Edit Plane Clockwise", Key::KEY_C, true),
 			Action::ACTION_AXIS_ROTATE_CW);
-	popup->add_shortcut(editor_shortcut("hex_map/edit_plane_rotate_ccw",
-								"Rotate Edit Plane Counter-Clockwise",
-								Key::KEY_Z, true),
+	popup->add_shortcut(
+			editor_shortcut("hex_map/edit_plane_rotate_ccw",
+					"Rotate Edit Plane Counter-Clockwise", Key::KEY_Z, true),
 			Action::ACTION_AXIS_ROTATE_CCW);
 
 	popup->add_separator();
-	popup->add_shortcut(editor_shortcut("hex_map/tile_flip",
-								"Flip Tile",
+	popup->add_shortcut(editor_shortcut("hex_map/tile_flip", "Flip Tile",
 								Key::KEY_W, true),
 			Action::ACTION_TILE_FLIP);
 	popup->add_shortcut(editor_shortcut("hex_map/tile_rotate_cw",
-								"Rotate Tile Clockwise",
-								Key::KEY_D, true),
+								"Rotate Tile Clockwise", Key::KEY_D, true),
 			Action::ACTION_TILE_ROTATE_CW);
-	popup->add_shortcut(editor_shortcut("hex_map/tile_rotate_ccw",
-								"Rotate Tile Counter-Clockwise",
-								Key::KEY_A, true),
+	popup->add_shortcut(
+			editor_shortcut("hex_map/tile_rotate_ccw",
+					"Rotate Tile Counter-Clockwise", Key::KEY_A, true),
 			Action::ACTION_TILE_ROTATE_CCW);
 	popup->add_shortcut(editor_shortcut("hex_map/tile_clear_rotation",
-								"Clear Tile Rotation",
-								Key::KEY_S, true),
+								"Clear Tile Rotation", Key::KEY_S, true),
 			Action::ACTION_TILE_RESET);
 
 	popup->add_separator();
 	popup->add_shortcut(editor_shortcut("hex_map/selection_fill",
-								"Fill Selected Region",
-								Key::KEY_F, true),
+								"Fill Selected Region", Key::KEY_F, true),
 			Action::ACTION_SELECTION_FILL);
-	popup->add_shortcut(editor_shortcut("hex_map/selection_clear",
-								"Clear Selected Tiles",
-								Key::KEY_BACKSPACE, true),
+	popup->add_shortcut(
+			editor_shortcut("hex_map/selection_clear", "Clear Selected Tiles",
+					Key::KEY_BACKSPACE, true),
 			Action::ACTION_SELECTION_CLEAR);
-	popup->add_shortcut(editor_shortcut("hex_map/selection_clone",
-								"Clone Selected Tiles",
-								Key(KEY_MASK_SHIFT + KEY_D),
-								true),
+	popup->add_shortcut(
+			editor_shortcut("hex_map/selection_clone", "Clone Selected Tiles",
+					Key(KEY_MASK_SHIFT + KEY_D), true),
 			Action::ACTION_SELECTION_CLONE);
 	popup->add_shortcut(editor_shortcut("hex_map/selection_move",
-								"Move Selected Tiles",
-								Key::KEY_G, true),
+								"Move Selected Tiles", Key::KEY_G, true),
 			Action::ACTION_SELECTION_MOVE);
-	popup->add_shortcut(editor_shortcut("hex_map/deselect",
-								"Deselect Tiles",
+	popup->add_shortcut(editor_shortcut("hex_map/deselect", "Deselect Tiles",
 								Key::KEY_ESCAPE, true),
 			Action::ACTION_DESELECT);
+
+	// XXX add popup window for setting maximum pick distance
 }
 
-EditorControl::~EditorControl() {
-}
+EditorControl::~EditorControl() {}

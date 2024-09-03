@@ -51,6 +51,7 @@
 #include "../hex_map.h"
 #include "editor_control.h"
 #include "editor_cursor.h"
+#include "grid_manager.h"
 #include "mesh_library_palette.h"
 
 using namespace godot;
@@ -62,7 +63,7 @@ using namespace godot;
 // Signals or function calls to EditorPlugins?
 //
 // XXX BUG while shift-click dragging, if you drag outside of the pane, will
-// translate the node we're editing.
+// translate the node we're editing. -- fixed
 
 // EditorPlugin
 //	- has get_editor_interface()
@@ -93,6 +94,21 @@ using namespace godot;
 //					- disabled
 //				- without selection & with last source
 //					- cancel just resets the cursor state
+//
+// GridManager
+//	- resize(float radius, float height)
+//	- hide()/show()
+//	- set_axis()
+//	- set_depth()
+//	- bool get_ray_intersect(Vector3 from, Vector3 normal, Vector3 *point)
+//
+//	- allocate mesh
+//	- add points to the mesh based on cell size & axis
+//		- mesh_clear() first
+//	- allocate mesh instance
+//	- hide/show mesh instance
+//	- reposition the grid based on the pointer
+//	- set grid depth
 //
 // TileCursor
 //	- hide/show
@@ -173,9 +189,7 @@ using namespace godot;
 class HexMapEditorPlugin : public EditorPlugin {
 	GDCLASS(HexMapEditorPlugin, EditorPlugin);
 
-	enum {
-		GRID_CURSOR_SIZE = 50
-	};
+	enum { GRID_CURSOR_SIZE = 50 };
 
 	enum InputAction {
 		INPUT_NONE,
@@ -186,9 +200,10 @@ class HexMapEditorPlugin : public EditorPlugin {
 		INPUT_PASTE,
 	};
 
-	MeshLibraryPalette *palette = nullptr;
+	MeshLibraryPalette *mesh_palette = nullptr;
 	EditorControl *editor_control = nullptr;
 	EditorCursor *editor_cursor = nullptr;
+	GridManager *grid_manager = nullptr;
 
 	InputAction input_action = INPUT_NONE;
 	double accumulated_floor_delta = 0.0;
@@ -203,10 +218,10 @@ class HexMapEditorPlugin : public EditorPlugin {
 
 	List<SetItem> set_items;
 
-	HexMap *node = nullptr;
+	HexMap *hex_map = nullptr;
 	// caching the node global transform to detect when the node has been
 	// moved/scaled/rotated.
-	Transform3D node_global_transform;
+	Transform3D hex_map_global_transform;
 	Ref<MeshLibrary> mesh_library = nullptr;
 
 	// plane we're editing cells on; depth comes from edit_floor
@@ -218,18 +233,9 @@ class HexMapEditorPlugin : public EditorPlugin {
 	RID grid_mesh[3];
 	RID grid_instance[3];
 
-	struct ClipboardItem {
-		int cell_item = 0;
-		Vector3 position;
-		int orientation = 0;
-		RID instance;
-	};
-
-	List<ClipboardItem> clipboard_items, last_clipboard;
-
-	Ref<StandardMaterial3D> indicator_mat;
-	Ref<StandardMaterial3D> inner_mat;
-	Ref<StandardMaterial3D> outer_mat;
+	Ref<StandardMaterial3D> grid_mat;
+	Ref<StandardMaterial3D> selection_mesh_mat;
+	Ref<StandardMaterial3D> selection_line_mat;
 
 	struct Selection {
 		Vector3 begin;
@@ -287,13 +293,12 @@ class HexMapEditorPlugin : public EditorPlugin {
 	void update_grid(); // Change which and where the grid is displayed
 	void _draw_hex_grid(RID p_grid, const Vector3 &p_cell_size);
 	void _draw_hex_r_axis_grid(RID p_grid, const Vector3 &p_cell_size);
-	void _draw_plane_grid(RID p_grid, const Vector3 &p_axis_n1, const Vector3 &p_axis_n2, const Vector3 &p_cell_size);
+	void _draw_plane_grid(RID p_grid, const Vector3 &p_axis_n1,
+			const Vector3 &p_axis_n2, const Vector3 &p_cell_size);
 	void _draw_grids(const Vector3 &p_cell_size);
-	void _update_cell_shape(const HexMap::CellShape cell_shape);
-	void _update_options_menu();
+
 	void _build_selection_meshes();
 	void _configure();
-	void _menu_option(int);
 	void _update_mesh_library();
 	void _item_selected_cbk(int idx);
 	void _update_cursor_transform();
@@ -314,17 +319,16 @@ class HexMapEditorPlugin : public EditorPlugin {
 
 	void _icon_size_changed(float p_value);
 
-	void _clear_clipboard_data();
 	void _update_paste_indicator();
 	void _do_paste();
 	void _update_selection();
-	void _set_selection(bool p_active, const Vector3 &p_begin = Vector3(), const Vector3 &p_end = Vector3());
-
-	void _floor_mouse_exited();
+	void _set_selection(bool p_active, const Vector3 &p_begin = Vector3(),
+			const Vector3 &p_end = Vector3());
 
 	void _delete_selection();
 
-	bool do_input_action(Camera3D *p_camera, const Point2 &p_point, bool p_click);
+	bool do_input_action(
+			Camera3D *p_camera, const Point2 &p_point, bool p_click);
 
 	friend class GridMapEditorPlugin;
 
@@ -336,7 +340,8 @@ public:
 	virtual void _make_visible(bool visible) override;
 	virtual bool _handles(Object *object) const override;
 	virtual void _edit(Object *p_object) override;
-	virtual int32_t _forward_3d_gui_input(Camera3D *viewport_camera, const Ref<InputEvent> &event) override;
+	virtual int32_t _forward_3d_gui_input(
+			Camera3D *viewport_camera, const Ref<InputEvent> &event) override;
 
 	HexMapEditorPlugin();
 	~HexMapEditorPlugin();
@@ -352,7 +357,9 @@ public:
 //
 // public:
 // 	// XXX no such virtual function to override
-// 	// virtual EditorPlugin::AfterGUIInput forward_3d_gui_input(Camera3D *p_camera, const Ref<InputEvent> &p_event) override { return grid_map_editor->forward_spatial_input_event(p_camera, p_event); }
+// 	// virtual EditorPlugin::AfterGUIInput forward_3d_gui_input(Camera3D
+// *p_camera, const Ref<InputEvent> &p_event) override { return
+// grid_map_editor->forward_spatial_input_event(p_camera, p_event); }
 // 	// virtual String get_name() const override { return "GridMap"; }
 // 	// bool has_main_screen() const override { return false; }
 // 	// virtual void edit(Object *p_object) override;
