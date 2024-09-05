@@ -228,6 +228,7 @@ bool HexMapEditorPlugin::do_input_action(
 	pointer_cell = hex_map->local_to_map(edit_plane_point);
 	if (editor_cursor) {
 		editor_cursor->set_pointer(pointer_cell);
+		grid_manager->set_center(HexMapCellId(pointer_cell));
 	}
 
 	if (input_action == INPUT_PASTE) {

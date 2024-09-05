@@ -15,6 +15,7 @@ public:
 	int y;
 
 	HexMapCellId(int q = 0, int r = 0, int y = 0) : q(q), r(r), y(y){};
+	HexMapCellId(Vector3i v) : q(v.x), r(v.z), y(v.y){};
 	int s() const { return -q - r; }
 
 	// XXX remove this; temporary until we fully switch from Vector3i to

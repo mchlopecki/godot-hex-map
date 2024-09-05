@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../hex_map.h"
+#include "../hex_map_cell_id.h"
 #include "editor_control.h"
 #include "godot_cpp/classes/ref.hpp"
 #include "godot_cpp/classes/standard_material3d.hpp"
@@ -18,6 +19,8 @@ private:
 	EditorControl::EditAxis axis = EditorControl::EditAxis::AXIS_Y;
 	int depth = 0;
 
+	HexMapCellId center;
+
 	void build_grid();
 	void build_x_grid();
 	void build_y_grid();
@@ -32,4 +35,5 @@ public:
 
 	void set_axis(EditorControl::EditAxis);
 	void set_depth(int);
+	void set_center(const HexMapCellId);
 };

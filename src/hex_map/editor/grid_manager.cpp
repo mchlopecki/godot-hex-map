@@ -143,6 +143,15 @@ void GridManager::set_depth(int value) {
 	// update_grid()
 }
 
+void GridManager::set_center(const HexMapCellId center) {
+	this->center = center;
+	Vector3 point = hex_map->map_to_local(center);
+	Transform3D transform;
+	transform.set_origin(point);
+	RenderingServer::get_singleton()->instance_set_transform(
+			grid_mesh_instance, transform);
+}
+
 void GridManager::hide() {
 	RenderingServer::get_singleton()->instance_set_visible(
 			grid_mesh_instance, false);
