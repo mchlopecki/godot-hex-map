@@ -10,9 +10,10 @@
 #include "godot_cpp/classes/sub_viewport.hpp"
 #include "godot_cpp/classes/window.hpp"
 #include "godot_cpp/classes/world3d.hpp"
+#include "godot_cpp/variant/color.hpp"
 #include "godot_cpp/variant/utility_functions.hpp"
 
-#define GRID_RADIUS 5u
+#define GRID_RADIUS 50u
 
 // create a mesh and draw a grid of hexagonal cells on it
 void GridManager::build_y_grid() {
@@ -26,14 +27,24 @@ void GridManager::build_y_grid() {
 	shape_points.append(Vector3(0.0, 0, 1.0) * p_cell_size);
 	shape_points.append(Vector3(SQRT3_2, 0, 0.5) * p_cell_size);
 	shape_points.append(Vector3(SQRT3_2, 0, -0.5) * p_cell_size);
+	shape_points.append(Vector3(0.0, 0, -1.0) * p_cell_size);
 
+	float max = hex_map->map_to_local(HexMapCellId(GRID_RADIUS,
+											  -(int)GRID_RADIUS / 2, 0))
+						.length_squared();
 	PackedVector3Array grid_points;
-	for (const auto cell : HexMapCellId::Origin.get_neighbors(GRID_RADIUS)) {
+	PackedColorArray grid_colors;
+	for (const auto cell : HexMapCellId::Origin.get_neighbors(
+				 GRID_RADIUS, HexMap::Planes::QRS)) {
 		Vector3 center = hex_map->map_to_local(cell);
+		float transparency =
+				Math::pow(MAX(0, (max - center.length_squared()) / max), 2);
 
 		for (int j = 1; j < shape_points.size(); j++) {
 			grid_points.append(center + shape_points[j - 1]);
 			grid_points.append(center + shape_points[j]);
+			grid_colors.push_back(Color(1, 1, 1, transparency));
+			grid_colors.push_back(Color(1, 1, 1, transparency));
 		}
 	}
 
@@ -54,6 +65,7 @@ void GridManager::build_y_grid() {
 	Array d;
 	d.resize(RS::ARRAY_MAX);
 	d[RS::ARRAY_VERTEX] = grid_points;
+	d[RS::ARRAY_COLOR] = grid_colors;
 
 	RenderingServer *rs = RenderingServer::get_singleton();
 	rs->mesh_add_surface_from_arrays(

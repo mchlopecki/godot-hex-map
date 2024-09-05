@@ -58,6 +58,37 @@
 #include <godot_cpp/variant/variant.hpp>
 #include <godot_cpp/variant/vector3.hpp>
 
+const HexMap::Planes HexMap::Planes::All{
+	.y = true,
+	.q = true,
+	.r = true,
+	.s = true,
+};
+const HexMap::Planes HexMap::Planes::QRS{
+	.y = false,
+	.q = true,
+	.r = true,
+	.s = true,
+};
+const HexMap::Planes HexMap::Planes::YRS{
+	.y = true,
+	.q = false,
+	.r = true,
+	.s = true,
+};
+const HexMap::Planes HexMap::Planes::YQS{
+	.y = true,
+	.q = true,
+	.r = false,
+	.s = true,
+};
+const HexMap::Planes HexMap::Planes::YQR{
+	.y = true,
+	.q = true,
+	.r = true,
+	.s = false,
+};
+
 bool HexMap::_set(const StringName &p_name, const Variant &p_value) {
 	String name = p_name;
 

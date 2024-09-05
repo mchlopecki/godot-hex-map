@@ -1,6 +1,7 @@
 #pragma once
 
 #include "godot_cpp/variant/string.hpp"
+#include "hex_map.h"
 #include "hex_map_cell_id.h"
 
 // XXX need to make this iterable in gdscript
@@ -15,20 +16,8 @@
 
 struct HexMapCellIterator {
 public:
-	struct Planes {
-		bool y : 1;
-		bool q : 1;
-		bool r : 1;
-		bool s : 1;
-		static const Planes All;
-		static const Planes QRS;
-		static const Planes YQR;
-		static const Planes YRS;
-		static const Planes YQS;
-	};
-
 	HexMapCellIterator(const HexMapCellId center, unsigned int radius,
-			Planes planes = Planes::All);
+			const HexMap::Planes &planes = HexMap::Planes::All);
 
 	HexMapCellId operator*() const { return cell; }
 	const HexMapCellId &operator->() { return cell; }

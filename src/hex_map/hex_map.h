@@ -33,7 +33,6 @@
 
 #include "editor/editor_control.h"
 #include "godot_cpp/classes/physics_material.hpp"
-#include "hex_map_cell_id.h"
 #include "tile_orientation.h"
 #include <cstdint>
 #include <godot_cpp/classes/array_mesh.hpp>
@@ -251,6 +250,19 @@ protected:
 
 public:
 	enum { INVALID_CELL_ITEM = -1 };
+
+	struct Planes {
+		bool y : 1;
+		bool q : 1;
+		bool r : 1;
+		bool s : 1;
+
+		static const Planes All;
+		static const Planes QRS;
+		static const Planes YQR;
+		static const Planes YRS;
+		static const Planes YQS;
+	};
 
 	void set_collision_layer(uint32_t p_layer);
 	uint32_t get_collision_layer() const;

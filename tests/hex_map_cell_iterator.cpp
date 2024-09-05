@@ -1,9 +1,9 @@
 #include "../src/hex_map/hex_map_cell_iterator.h"
+#include "../src/hex_map/hex_map.h"
 #include "doctest.h"
 
 TEST_CASE("HexMapCellIterator::operator++(); prefix increment") {
-	HexMapCellIterator iter(
-			HexMapCellId(), 1, HexMapCellIterator::Planes::All);
+	HexMapCellIterator iter(HexMapCellId(), 1, HexMap::Planes::All);
 
 	// confirm first value
 	CHECK(*iter == HexMapCellId(0, 0, -1));
@@ -25,8 +25,7 @@ TEST_CASE("HexMapCellIterator::operator++(); prefix increment") {
 }
 
 TEST_CASE("HexMapCellIterator::operator++(); prefix increment (QRS)") {
-	HexMapCellIterator iter(
-			HexMapCellId(), 1, HexMapCellIterator::Planes::QRS);
+	HexMapCellIterator iter(HexMapCellId(), 1, HexMap::Planes::QRS);
 
 	// confirm first value
 	CHECK(*iter == HexMapCellId(-1, 0, 0));
@@ -43,8 +42,7 @@ TEST_CASE("HexMapCellIterator::operator++(); prefix increment (QRS)") {
 }
 
 TEST_CASE("HexMapCellIterator::operator++(); prefix increment (YRS)") {
-	HexMapCellIterator iter(
-			HexMapCellId(), 1, HexMapCellIterator::Planes::YRS);
+	HexMapCellIterator iter(HexMapCellId(), 1, HexMap::Planes::YRS);
 
 	// confirm first value
 	CHECK(*iter == HexMapCellId(0, 0, -1));
@@ -59,8 +57,7 @@ TEST_CASE("HexMapCellIterator::operator++(); prefix increment (YRS)") {
 }
 
 TEST_CASE("HexMapCellIterator::operator++(); prefix increment (YQS)") {
-	HexMapCellIterator iter(
-			HexMapCellId(), 1, HexMapCellIterator::Planes::YQS);
+	HexMapCellIterator iter(HexMapCellId(), 1, HexMap::Planes::YQS);
 
 	// confirm first value
 	CHECK(*iter == HexMapCellId(0, 0, -1));
@@ -75,8 +72,7 @@ TEST_CASE("HexMapCellIterator::operator++(); prefix increment (YQS)") {
 }
 
 TEST_CASE("HexMapCellIterator::operator++(); prefix increment (YQR)") {
-	HexMapCellIterator iter(
-			HexMapCellId(), 1, HexMapCellIterator::Planes::YQR);
+	HexMapCellIterator iter(HexMapCellId(), 1, HexMap::Planes::YQR);
 
 	// confirm first value
 	CHECK(*iter == HexMapCellId(0, 0, -1));

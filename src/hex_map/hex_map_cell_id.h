@@ -1,6 +1,6 @@
 #pragma once
 
-#include "editor/editor_control.h"
+#include "hex_map.h"
 
 using namespace godot;
 
@@ -38,8 +38,7 @@ public:
 
 	unsigned distance(const HexMapCellId &) const;
 	HexMapCellIterator get_neighbors(unsigned int radius = 1,
-			EditorControl::EditAxis axis =
-					EditorControl::EditAxis::AXIS_Y) const;
+			const HexMap::Planes &planes = HexMap::Planes::All) const;
 
 	static const HexMapCellId Origin;
 };

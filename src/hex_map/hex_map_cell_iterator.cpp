@@ -1,38 +1,7 @@
 #include "hex_map_cell_iterator.h"
 
-const HexMapCellIterator::Planes HexMapCellIterator::Planes::All{
-	.y = true,
-	.q = true,
-	.r = true,
-	.s = true,
-};
-const HexMapCellIterator::Planes HexMapCellIterator::Planes::QRS{
-	.y = false,
-	.q = true,
-	.r = true,
-	.s = true,
-};
-const HexMapCellIterator::Planes HexMapCellIterator::Planes::YRS{
-	.y = true,
-	.q = false,
-	.r = true,
-	.s = true,
-};
-const HexMapCellIterator::Planes HexMapCellIterator::Planes::YQS{
-	.y = true,
-	.q = true,
-	.r = false,
-	.s = true,
-};
-const HexMapCellIterator::Planes HexMapCellIterator::Planes::YQR{
-	.y = true,
-	.q = true,
-	.r = true,
-	.s = false,
-};
-
-HexMapCellIterator::HexMapCellIterator(
-		const HexMapCellId center, unsigned int radius, Planes planes) :
+HexMapCellIterator::HexMapCellIterator(const HexMapCellId center,
+		unsigned int radius, const HexMap::Planes &planes) :
 		center(center), radius(radius) {
 	if (planes.y) {
 		y_min = center.y - radius;

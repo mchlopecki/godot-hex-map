@@ -18,8 +18,8 @@ unsigned HexMapCellId::distance(const HexMapCellId &other) const {
 }
 
 HexMapCellIterator HexMapCellId::get_neighbors(
-		unsigned int radius, EditorControl::EditAxis axis) const {
-	return HexMapCellIterator(*this, radius);
+		unsigned int radius, const HexMap::Planes &planes) const {
+	return HexMapCellIterator(*this, radius, planes);
 }
 
 HexMapCellId::operator String() const {
