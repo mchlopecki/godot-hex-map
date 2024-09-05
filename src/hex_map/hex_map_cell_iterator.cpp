@@ -1,14 +1,64 @@
 #include "hex_map_cell_iterator.h"
 
+const HexMapCellIterator::Planes HexMapCellIterator::Planes::All{
+	.y = true,
+	.q = true,
+	.r = true,
+	.s = true,
+};
+const HexMapCellIterator::Planes HexMapCellIterator::Planes::QRS{
+	.y = false,
+	.q = true,
+	.r = true,
+	.s = true,
+};
+const HexMapCellIterator::Planes HexMapCellIterator::Planes::YRS{
+	.y = true,
+	.q = false,
+	.r = true,
+	.s = true,
+};
+const HexMapCellIterator::Planes HexMapCellIterator::Planes::YQS{
+	.y = true,
+	.q = true,
+	.r = false,
+	.s = true,
+};
+const HexMapCellIterator::Planes HexMapCellIterator::Planes::YQR{
+	.y = true,
+	.q = true,
+	.r = true,
+	.s = false,
+};
+
 HexMapCellIterator::HexMapCellIterator(
-		const HexMapCellId center, unsigned int radius) :
+		const HexMapCellId center, unsigned int radius, Planes planes) :
 		center(center), radius(radius) {
-	y_min = center.y - radius;
-	y_max = center.y + radius;
-	q_min = center.q - radius;
-	q_max = center.q + radius;
-	r_min = center.r - radius;
-	r_max = center.r + radius;
+	if (planes.y) {
+		y_min = center.y - radius;
+		y_max = center.y + radius;
+	} else {
+		y_min = y_max = center.y;
+	}
+	if (planes.q) {
+		q_min = center.q - radius;
+		q_max = center.q + radius;
+	} else {
+		q_min = q_max = center.q;
+	}
+	if (planes.r) {
+		r_min = center.r - radius;
+		r_max = center.r + radius;
+	} else {
+		r_min = r_max = center.r;
+	}
+	if (planes.s) {
+		s_min = center.s() - radius;
+		s_max = center.s() + radius;
+	} else {
+		s_min = s_max = center.s();
+	}
+
 	cell = HexMapCellId(q_min, r_min, y_min);
 	if (center.distance(cell) > radius) {
 		operator++();
@@ -28,13 +78,12 @@ HexMapCellIterator &HexMapCellIterator::operator++() {
 			cell.q = q_min;
 			cell.y++;
 		} else if (cell.y == y_max) {
-			cell.q = q_max + 1;
-			cell.r = r_max + 1;
-			cell.y = y_max + 1;
+			cell.q = cell.r = cell.y = (radius + 1);
 		} else {
 			break;
 		}
-	} while (center.distance(cell) > radius);
+	} while (cell.s() < s_min || cell.s() > s_max ||
+			center.distance(cell) > radius);
 	return *this;
 }
 
@@ -54,7 +103,7 @@ HexMapCellIterator HexMapCellIterator::begin() {
 
 HexMapCellIterator HexMapCellIterator::end() {
 	HexMapCellIterator iter = *this;
-	iter.cell = HexMapCellId(q_max + 1, r_max + 1, y_max + 1);
+	iter.cell = HexMapCellId(radius + 1, radius + 1, radius + 1);
 	return iter;
 }
 
@@ -66,6 +115,7 @@ HexMapCellIterator::operator String() const {
 		".cell = " + cell.operator String() + ", " +
 		".q = [" + itos(q_min) + ".." + itos(q_max) + "], " +
 		".r = [" + itos(r_min) + ".." + itos(r_max) + "], " +
+		".s = [" + itos(s_min) + ".." + itos(s_max) + "], " +
 		".y = [" + itos(y_min) + ".." + itos(y_max) + "], " +
 	"}";
 	// clang-format on
@@ -86,6 +136,10 @@ std::ostream &operator<<(std::ostream &os, const HexMapCellIterator &value) {
 	os << value.r_min;
 	os << ", ";
 	os << value.r_max;
+	os << "], .s = [";
+	os << value.s_min;
+	os << ", ";
+	os << value.s_max;
 	os << "], .y = [";
 	os << value.y_min;
 	os << ", ";

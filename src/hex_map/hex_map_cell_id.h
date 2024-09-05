@@ -15,6 +15,7 @@ public:
 	int y;
 
 	HexMapCellId(int q = 0, int r = 0, int y = 0) : q(q), r(r), y(y){};
+	int s() const { return -q - r; }
 
 	// XXX remove this; temporary until we fully switch from Vector3i to
 	// HexMapCellId
@@ -27,6 +28,7 @@ public:
 	HexMapCellId operator-(const HexMapCellId &other) const {
 		return HexMapCellId(q - other.q, r - other.r, y - other.y);
 	}
+
 	friend bool operator==(const HexMapCellId &a, const HexMapCellId &b) {
 		return a.q == b.q && a.r == b.r && a.y == b.y;
 	}

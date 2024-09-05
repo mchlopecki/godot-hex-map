@@ -15,7 +15,20 @@
 
 struct HexMapCellIterator {
 public:
-	HexMapCellIterator(const HexMapCellId center, unsigned int radius);
+	struct Planes {
+		bool y : 1;
+		bool q : 1;
+		bool r : 1;
+		bool s : 1;
+		static const Planes All;
+		static const Planes QRS;
+		static const Planes YQR;
+		static const Planes YRS;
+		static const Planes YQS;
+	};
+
+	HexMapCellIterator(const HexMapCellId center, unsigned int radius,
+			Planes planes = Planes::All);
 
 	HexMapCellId operator*() const { return cell; }
 	const HexMapCellId &operator->() { return cell; }
@@ -45,8 +58,9 @@ public:
 
 private:
 	unsigned int radius;
+	int y_min, y_max;
 	int q_min, q_max; // inclusive min/max
 	int r_min, r_max;
-	int y_min, y_max;
+	int s_min, s_max;
 	HexMapCellId center, cell;
 };
