@@ -29,22 +29,23 @@ TEST_CASE("HexMapCellId::distance(const HexMapCellId &other)") {
 	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(-10, 10, 0)) == 10);
 
 	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(1, 1, 0)) == 2);
-	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(1, 1, 1)) == 2);
-	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(1, 1, 2)) == 2);
+	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(1, 1, 1)) == 3);
+	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(1, 1, 2)) == 4);
 
 	// up/down neighbors off axis
-	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(1, 0, 1)) == 1);
-	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(0, 1, 1)) == 1);
-	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(1, 0, -1)) == 1);
+	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(1, 0, 1)) == 2);
+	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(0, 1, 1)) == 2);
+	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(1, 0, -1)) == 2);
 
 	// diagonal along the r axis
-	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(0, 2, 2)) == 2);
-	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(0, 3, 3)) == 3);
-	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(0, 4, 4)) == 4);
+	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(0, 2, 2)) == 4);
+	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(0, 3, 3)) == 6);
+	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(0, 4, 4)) == 8);
 
 	// diagonal not on any particular axis
-	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(2, -1, 5)) == 5);
-	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(4, -2, 2)) == 4);
-	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(4, -2, 2)) == 4);
-	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(123, -24, 21)) == 123);
+	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(2, -1, 5)) == 7);
+	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(4, -2, 2)) == 6);
+	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(4, -2, 2)) == 6);
+	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(123, -24, 21)) ==
+			123 + 21);
 }

@@ -14,7 +14,7 @@ unsigned HexMapCellId::distance(const HexMapCellId &other) const {
 
 	// movement laterally can combined with vertical movement, so which ever
 	// of the two distances is greater is the distance.
-	return MAX(hex_dist, y_dist);
+	return hex_dist + y_dist;
 }
 
 HexMapCellIterator HexMapCellId::get_neighbors(

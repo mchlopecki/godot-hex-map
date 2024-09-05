@@ -10,6 +10,9 @@ HexMapCellIterator::HexMapCellIterator(
 	r_min = center.r - radius;
 	r_max = center.r + radius;
 	cell = HexMapCellId(q_min, r_min, y_min);
+	if (center.distance(cell) > radius) {
+		operator++();
+	}
 }
 
 // prefix increment
@@ -45,6 +48,7 @@ HexMapCellIterator HexMapCellIterator::operator++(int) {
 HexMapCellIterator HexMapCellIterator::begin() {
 	HexMapCellIterator iter = *this;
 	iter.cell = HexMapCellId(q_min, r_min, y_min);
+	++iter;
 	return iter;
 }
 
