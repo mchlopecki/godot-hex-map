@@ -5,6 +5,12 @@
 
 const HexMapCellId HexMapCellId::Origin(0.0f, 0.0f, 0.0f);
 
+Vector3 HexMapCellId::unit_center() const {
+	// convert axial hex coordinates to a point
+	// https://www.redblobgames.com/grids/hexagons/#hex-to-pixel
+	return Vector3((Math_SQRT3 * q + SQRT3_2 * r), y, (3.0 / 2 * r));
+}
+
 unsigned HexMapCellId::distance(const HexMapCellId &other) const {
 	HexMapCellId delta = other - *this;
 

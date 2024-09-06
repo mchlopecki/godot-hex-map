@@ -1,5 +1,6 @@
 #pragma once
 
+#include "godot_cpp/variant/vector3.hpp"
 #include "hex_map.h"
 
 using namespace godot;
@@ -37,9 +38,17 @@ public:
 		return a.q != b.q || a.r != b.r || a.y != b.y;
 	}
 
+	// calculate the distance between two cells in cell units
 	unsigned distance(const HexMapCellId &) const;
+
+	// get all cells within radius of this cell, along the provided planes
 	HexMapCellIterator get_neighbors(unsigned int radius = 1,
 			const HexMap::Planes &planes = HexMap::Planes::All) const;
+
+	// get the pixel center of this cell assuming the cell is a unit cell with
+	// height = 1, radius = 1.  Use HexMap.map_to_local() for center scaled
+	// by cell size.
+	Vector3 unit_center() const;
 
 	static const HexMapCellId Origin;
 };

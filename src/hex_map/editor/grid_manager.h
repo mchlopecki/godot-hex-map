@@ -5,6 +5,7 @@
 #include "editor_control.h"
 #include "godot_cpp/classes/ref.hpp"
 #include "godot_cpp/classes/standard_material3d.hpp"
+#include "godot_cpp/variant/transform3d.hpp"
 
 using namespace godot;
 
@@ -15,6 +16,7 @@ private:
 	Ref<StandardMaterial3D> grid_mat;
 	RID grid_mesh;
 	RID grid_mesh_instance;
+	Transform3D grid_mesh_transform;
 
 	EditorControl::EditAxis axis = EditorControl::EditAxis::AXIS_Y;
 	int depth = 0;
@@ -24,7 +26,7 @@ private:
 	void build_grid();
 	void build_x_grid();
 	void build_y_grid();
-	void build_qrs_grid();
+	void build_r_grid();
 
 public:
 	GridManager(HexMap *hex_map);

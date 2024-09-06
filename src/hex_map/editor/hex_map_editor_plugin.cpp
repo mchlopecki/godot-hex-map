@@ -1166,6 +1166,7 @@ void HexMapEditorPlugin::plane_changed(int p_plane) {
 
 void HexMapEditorPlugin::axis_changed(int p_axis) {
 	edit_axis = (EditorControl::EditAxis)p_axis;
+	grid_manager->set_axis(edit_axis);
 	update_grid();
 }
 
