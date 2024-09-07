@@ -33,7 +33,6 @@
 #include "godot_cpp/core/error_macros.hpp"
 #include "godot_cpp/core/math.hpp"
 #include "godot_cpp/variant/callable_method_pointer.hpp"
-#include "grid_manager.h"
 
 #include <cassert>
 #include <cstdint>
@@ -95,8 +94,6 @@ void HexMapEditorPlugin::_configure() {
 	if (!hex_map) {
 		return;
 	}
-
-	update_grid();
 }
 
 void HexMapEditorPlugin::_update_selection() {
@@ -200,36 +197,14 @@ void HexMapEditorPlugin::deselect_tiles() {
 
 bool HexMapEditorPlugin::do_input_action(
 		Camera3D *p_camera, const Point2 &p_point, bool p_click) {
-	Camera3D *camera = p_camera;
-	Vector3 from = camera->project_ray_origin(p_point);
-	Vector3 normal = camera->project_ray_normal(p_point);
-	Transform3D local_xform = hex_map->get_global_transform().affine_inverse();
-	TypedArray<Plane> planes = camera->get_frustum();
-	from = local_xform.xform(from);
-	normal = local_xform.basis.xform(normal).normalized();
-
-	Vector3 edit_plane_point;
-
-	// XXX need pick distance in EditorControl
-	if (!edit_plane.intersects_segment(
-				from, from + normal * 5000, &edit_plane_point)) {
+	if (!editor_cursor) {
 		return false;
 	}
-
-	// Make sure the intersection is inside the frustum planes, to avoid
-	// Painting on invisible regions.
-	for (int i = 0; i < planes.size(); i++) {
-		Plane fp = local_xform.xform((Plane)planes[i]);
-		if (fp.is_point_over(edit_plane_point)) {
-			return false;
-		}
+	Vector3 edit_plane_point;
+	if (!editor_cursor->update(p_camera, p_point, &edit_plane_point)) {
+		return false;
 	}
-
-	pointer_cell = hex_map->local_to_map(edit_plane_point);
-	if (editor_cursor) {
-		editor_cursor->set_pointer(pointer_cell);
-		grid_manager->set_center(HexMapCellId(pointer_cell));
-	}
+	pointer_cell = editor_cursor->get_cell();
 
 	if (input_action == INPUT_PASTE) {
 		// _update_paste_indicator();
@@ -251,8 +226,6 @@ bool HexMapEditorPlugin::do_input_action(
 			// XXX should send a signal back when called; so we probably don't
 			// need to set it ourselves here.
 			mesh_palette->set_mesh(item);
-
-			// _update_cursor_instance();
 		}
 		return true;
 	}
@@ -265,7 +238,7 @@ bool HexMapEditorPlugin::do_input_action(
 		EditorCursor::CursorCell &tile = tiles[0];
 		// XXX disallow painting outside of selection box if selected
 		SetItem si;
-		si.position = pointer_cell;
+		si.position = tile.cell_id_live;
 		si.new_value = tile.tile;
 		si.new_orientation = tile.orientation;
 		si.old_value = hex_map->get_cell_item(pointer_cell);
@@ -361,7 +334,7 @@ void HexMapEditorPlugin::selection_begin_move() {
 		editor_cursor->set_tile(cell - pointer_cell, cell_item,
 				hex_map->get_cell_item_orientation(cell));
 	}
-	editor_cursor->redraw();
+	editor_cursor->update(true);
 
 	input_action = INPUT_PASTE;
 }
@@ -402,7 +375,7 @@ void HexMapEditorPlugin::_do_paste() {
 	editor_control->reset_orientation();
 	editor_cursor->clear_tiles();
 	editor_cursor->set_tile(Vector3(0, 0, 0), mesh_palette->get_mesh());
-	editor_cursor->redraw();
+	editor_cursor->update(true);
 }
 
 bool HexMapEditorPlugin::_handles(Object *p_object) const {
@@ -609,14 +582,6 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(
 	return EditorPlugin::AFTER_GUI_INPUT_PASS;
 }
 
-struct _CGMEItemSort {
-	String name;
-	int id = 0;
-	_FORCE_INLINE_ bool operator<(const _CGMEItemSort &r_it) const {
-		return name < r_it.name;
-	}
-};
-
 void HexMapEditorPlugin::_update_mesh_library() {
 	ERR_FAIL_NULL(hex_map);
 
@@ -643,16 +608,12 @@ void HexMapEditorPlugin::_update_mesh_library() {
 		editor_control->reset_orientation();
 		editor_cursor->clear_tiles();
 	}
-
-	// Update the cursor and grid in case the library is changed or removed.
-	// _update_cursor_instance();
-	update_grid();
 }
 
 void HexMapEditorPlugin::_edit(Object *p_object) {
 	if (hex_map) {
-		// hex_map->disconnect(SNAME("cell_size_changed"),
-		// 		callable_mp(this, &HexMapEditorPlugin::_draw_grids));
+		hex_map->disconnect(SNAME("cell_size_changed"),
+				callable_mp(this, &HexMapEditorPlugin::cell_size_changed));
 		hex_map->disconnect("changed",
 				callable_mp(this, &HexMapEditorPlugin::_update_mesh_library));
 		if (mesh_library.is_valid()) {
@@ -663,9 +624,6 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 		// subclass, so its destructor is not called with memfree().
 		delete editor_cursor;
 		editor_cursor = nullptr;
-
-		delete grid_manager;
-		grid_manager = nullptr;
 	}
 
 	// XXX works when no connect() calls made in constructor; waiting on 4.3
@@ -694,12 +652,6 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 	// not a godot Object subclass, so `new` instead of `memnew()`
 	editor_cursor = new EditorCursor(hex_map);
 
-	// create a new grid manager and update it for the current depth
-	grid_manager = new GridManager(hex_map);
-	grid_manager->set_axis(editor_control->get_active_axis());
-	grid_manager->set_depth(editor_control->get_plane());
-	grid_manager->show();
-
 	// _update_cursor_instance();
 
 	set_process(true);
@@ -712,246 +664,14 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 	// i++) { 	edit_floor[i] = floors[i];
 	// }
 	//
-	// _draw_grids(hex_map->get_cell_size());
-	// update_grid();
 
 	// hex_map->connect(SNAME("cell_size_changed"),
 	// 		callable_mp(this, &HexMapEditorPlugin::_draw_grids));
+	hex_map->connect(SNAME("cell_size_changed"),
+			callable_mp(this, &HexMapEditorPlugin::cell_size_changed));
 	hex_map->connect("changed",
 			callable_mp(this, &HexMapEditorPlugin::_update_mesh_library));
 	_update_mesh_library();
-}
-
-// update the grid mesh displayed in the editor
-void HexMapEditorPlugin::update_grid() {
-	RenderingServer *rs = RS::get_singleton();
-	Vector3 cell_size = hex_map->get_cell_size();
-
-	// Hex planes Q, R, and S need to offset the grid by half a cell on even
-	// numbered floors.  We calculate this value here to simplify the code
-	// later.
-	int is_even_floor = (edit_depth & 1) == 0;
-
-	// hide the active grid
-	if (active_grid_instance.is_valid()) {
-		rs->instance_set_visible(active_grid_instance, false);
-		active_grid_instance = RID();
-	}
-
-	real_t cell_depth;
-	Transform3D grid_transform;
-	Menu menu_axis;
-
-	// switch the edit plane and pick the new active grid and rotate if
-	// necessary
-	switch (edit_axis) {
-		case EditorControl::AXIS_X:
-			// set which grid to display
-			active_grid_instance = grid_instance[0];
-			// set the edit plane normal, and cell depth (used by the plane)
-			edit_plane.normal = Vector3(1, 0, 0);
-			cell_depth = SQRT3_2 * cell_size.x;
-			// shift the edit grid based on which floor we are on
-			if (!is_even_floor) {
-				grid_transform.translate_local(
-						Vector3(0, 0, 1.5 * cell_size.x));
-			}
-			// update the menu
-			menu_axis = MENU_OPTION_X_AXIS;
-			break;
-		case EditorControl::AXIS_Y:
-			active_grid_instance = grid_instance[1];
-			edit_plane.normal = Vector3(0, 1, 0);
-			cell_depth = cell_size.y;
-			menu_axis = MENU_OPTION_Y_AXIS;
-			break;
-		case EditorControl::AXIS_Q: // hex plane, northwest to southeast
-			active_grid_instance = grid_instance[2];
-			edit_plane.normal = Vector3(SQRT3_2, 0, -0.5).normalized();
-			cell_depth = 1.5 * cell_size.x;
-			grid_transform.rotate(Vector3(0, 1, 0), -Math_PI / 3.0);
-			// offset the edit grid on even numbered floors by half a cell
-			grid_transform.translate_local(
-					Vector3(is_even_floor * SQRT3_2 * cell_size.x, 0, 0));
-			menu_axis = MENU_OPTION_Q_AXIS;
-			break;
-		case EditorControl::AXIS_R:
-			active_grid_instance = grid_instance[2];
-			edit_plane.normal = Vector3(0, 0, 1);
-			cell_depth = 1.5 * cell_size.x;
-			grid_transform.translate_local(
-					Vector3(is_even_floor * SQRT3_2 * cell_size.x, 0, 0));
-			menu_axis = MENU_OPTION_R_AXIS;
-			break;
-		case EditorControl::AXIS_S: // hex plane, southwest to northeast
-			active_grid_instance = grid_instance[2];
-			edit_plane.normal = Vector3(SQRT3_2, 0, 0.5).normalized();
-			cell_depth = 1.5 * cell_size.x;
-			grid_transform.rotate(Vector3(0, 1, 0), Math_PI / 3.0);
-			grid_transform.translate_local(
-					Vector3(is_even_floor * SQRT3_2 * cell_size.x, 0, 0));
-			menu_axis = MENU_OPTION_S_AXIS;
-			break;
-		default:
-			ERR_PRINT_ED("unsupported edit plane axis");
-			return;
-	}
-	ERR_FAIL_COND_MSG(
-			!active_grid_instance.is_valid(), "no active grid mesh instance");
-
-	// update the depth of the edit plane so it matches the floor, and update
-	// the grid transform for the depth.
-	edit_plane.d = edit_depth * cell_depth;
-	grid_transform.origin += edit_plane.normal * edit_plane.d;
-
-	// shift the edit plane a little into the cell to prevent floating point
-	// errors from causing the raycast to fall into the lower cell.  Note we
-	// only need to do this when the grid is drawn along the edge of a cell,
-	// so the Y & X axis, or any square shape cell.  Hex cells draw the grid
-	// through the middle of the cells for Q/R/S.
-	if (edit_axis == EditorControl::AXIS_Y ||
-			edit_axis == EditorControl::AXIS_X) {
-		edit_plane.d += cell_depth * 0.1;
-	}
-
-	// make the editing grid visible
-	RenderingServer::get_singleton()->instance_set_visible(
-			active_grid_instance, true);
-	RenderingServer::get_singleton()->instance_set_transform(
-			active_grid_instance,
-			hex_map->get_global_transform() * grid_transform);
-}
-
-// create a mesh and draw a grid of hexagonal cells on it
-void HexMapEditorPlugin::_draw_hex_grid(
-		RID p_mesh_id, const Vector3 &p_cell_size) {
-	// create the points that make up the top of a hex cell
-	Vector<Vector3> shape_points;
-	shape_points.append(Vector3(0.0, 0, -1.0) * p_cell_size);
-	shape_points.append(Vector3(-SQRT3_2, 0, -0.5) * p_cell_size);
-	shape_points.append(Vector3(-SQRT3_2, 0, 0.5) * p_cell_size);
-	shape_points.append(Vector3(0.0, 0, 1.0) * p_cell_size);
-	shape_points.append(Vector3(SQRT3_2, 0, 0.5) * p_cell_size);
-	shape_points.append(Vector3(SQRT3_2, 0, -0.5) * p_cell_size);
-
-	PackedVector3Array grid_points;
-	TypedArray<Vector3i> cells = hex_map->local_region_to_map(
-			Vector3i(-GRID_CURSOR_SIZE * Math_SQRT3 * p_cell_size.x, 0,
-					-GRID_CURSOR_SIZE * 1.625 * p_cell_size.x),
-			Vector3i(GRID_CURSOR_SIZE * Math_SQRT3 * p_cell_size.x, 0,
-					GRID_CURSOR_SIZE * 1.625 * p_cell_size.x));
-	for (int i = 0; i < cells.size(); i++) {
-		Vector3 center = hex_map->map_to_local(cells[i]);
-
-		for (int j = 1; j < shape_points.size(); j++) {
-			grid_points.append(center + shape_points[j - 1]);
-			grid_points.append(center + shape_points[j]);
-		}
-	}
-
-	Array d;
-	d.resize(RS::ARRAY_MAX);
-	d[RS::ARRAY_VERTEX] = grid_points;
-	RenderingServer::get_singleton()->mesh_add_surface_from_arrays(
-			p_mesh_id, RenderingServer::PRIMITIVE_LINES, d);
-	RenderingServer::get_singleton()->mesh_surface_set_material(
-			p_mesh_id, 0, grid_mat->get_rid());
-}
-
-// create a mesh and draw a grid for R-Axis cells
-void HexMapEditorPlugin::_draw_hex_r_axis_grid(
-		RID p_mesh_id, const Vector3 &p_cell_size) {
-	PackedVector3Array grid_points;
-
-	// draw horizontal lines
-	for (int y_index = -GRID_CURSOR_SIZE; y_index <= GRID_CURSOR_SIZE;
-			y_index++) {
-		real_t y = y_index * p_cell_size.y;
-		grid_points.append(
-				Vector3(0, y, -GRID_CURSOR_SIZE * 1.625 * p_cell_size.x));
-		grid_points.append(
-				Vector3(0, y, GRID_CURSOR_SIZE * 1.625 * p_cell_size.x));
-	}
-
-	// for vertical lines, we'll need to know where the center of the cell is
-	// for a line along the Z axis.
-	TypedArray<Vector3i> cells = hex_map->local_region_to_map(
-			Vector3(0, 0.001, -GRID_CURSOR_SIZE * 1.625 * p_cell_size.x),
-			Vector3(0, 0.002, GRID_CURSOR_SIZE * 1.625 * p_cell_size.x));
-
-	// use the cell list to draw the vertical lines
-	for (int i = 0; i < cells.size(); i++) {
-		Vector3i cell = cells[i];
-
-		// grab the z coordinate for the center of the cell
-		real_t z = hex_map->map_to_local(cell).z;
-
-		// Adjust from the center of the cell to where the line should fall.
-		// We're drawing lines at 1 radius, then 2 radius apart, alternating.
-		if ((cell.z & 1) == 0) {
-			z += p_cell_size.x;
-		} else {
-			z += p_cell_size.x / 2;
-		}
-
-		grid_points.append(Vector3(0, -GRID_CURSOR_SIZE * p_cell_size.y, z));
-		grid_points.append(Vector3(0, GRID_CURSOR_SIZE * p_cell_size.y, z));
-	}
-
-	Array d;
-	d.resize(RS::ARRAY_MAX);
-	d[RS::ARRAY_VERTEX] = grid_points;
-	RenderingServer::get_singleton()->mesh_add_surface_from_arrays(
-			p_mesh_id, RenderingServer::PRIMITIVE_LINES, d);
-	RenderingServer::get_singleton()->mesh_surface_set_material(
-			p_mesh_id, 0, grid_mat->get_rid());
-}
-
-void HexMapEditorPlugin::_draw_plane_grid(RID p_mesh_id,
-		const Vector3 &p_axis_n1, const Vector3 &p_axis_n2,
-		const Vector3 &cell_size) {
-	PackedVector3Array grid_points;
-
-	Vector3 axis_n1 = p_axis_n1 * cell_size;
-	Vector3 axis_n2 = p_axis_n2 * cell_size;
-
-	for (int j = -GRID_CURSOR_SIZE; j <= GRID_CURSOR_SIZE; j++) {
-		for (int k = -GRID_CURSOR_SIZE; k <= GRID_CURSOR_SIZE; k++) {
-			Vector3 p = axis_n1 * j + axis_n2 * k;
-
-			Vector3 pj = axis_n1 * (j + 1) + axis_n2 * k;
-
-			Vector3 pk = axis_n1 * j + axis_n2 * (k + 1);
-
-			grid_points.push_back(p);
-			grid_points.push_back(pk);
-
-			grid_points.push_back(p);
-			grid_points.push_back(pj);
-		}
-	}
-
-	Array d;
-	d.resize(RS::ARRAY_MAX);
-	d[RS::ARRAY_VERTEX] = grid_points;
-	RenderingServer::get_singleton()->mesh_add_surface_from_arrays(
-			p_mesh_id, RenderingServer::PRIMITIVE_LINES, d);
-	RenderingServer::get_singleton()->mesh_surface_set_material(
-			p_mesh_id, 0, grid_mat->get_rid());
-}
-
-void HexMapEditorPlugin::_draw_grids(const Vector3 &p_cell_size) {
-	for (int i = 0; i < 3; i++) {
-		RS::get_singleton()->mesh_clear(grid_mesh[i]);
-	}
-
-	real_t radius = p_cell_size.x;
-	Vector3 cell_size =
-			Vector3(Math_SQRT3 * radius, p_cell_size.y, Math_SQRT3 * radius);
-	_draw_hex_r_axis_grid(grid_mesh[0], p_cell_size);
-	_draw_hex_grid(grid_mesh[1], p_cell_size);
-	_draw_plane_grid(
-			grid_mesh[2], Vector3(1, 0, 0), Vector3(0, 1, 0), cell_size);
 }
 
 void HexMapEditorPlugin::_build_selection_meshes() {
@@ -1113,10 +833,6 @@ void HexMapEditorPlugin::_notification(int p_what) {
 
 			deselect_tiles();
 
-			if (grid_manager != nullptr) {
-				delete grid_manager;
-				grid_manager = nullptr;
-			}
 		} break;
 
 		case NOTIFICATION_PROCESS: {
@@ -1128,8 +844,10 @@ void HexMapEditorPlugin::_notification(int p_what) {
 			Transform3D transform = hex_map->get_global_transform();
 			if (transform != hex_map_global_transform) {
 				hex_map_global_transform = transform;
-				update_grid();
-				_update_selection();
+				if (selection.active) {
+					_update_selection();
+				}
+				editor_cursor->update(true);
 			}
 		} break;
 
@@ -1150,24 +868,28 @@ void HexMapEditorPlugin::_notification(int p_what) {
 	}
 }
 
+void HexMapEditorPlugin::cell_size_changed(Vector3 cell_size) {
+	ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
+	editor_cursor->cell_size_changed();
+}
+
 void HexMapEditorPlugin::tile_changed(int p_mesh_id) {
 	ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
 	editor_cursor->clear_tiles();
 	if (p_mesh_id != -1) {
 		editor_cursor->set_tile(Vector3i(), p_mesh_id);
-		editor_cursor->redraw();
+		editor_cursor->update(true);
 	}
 }
 
 void HexMapEditorPlugin::plane_changed(int p_plane) {
 	edit_depth = p_plane;
-	update_grid();
+	editor_cursor->set_depth(p_plane);
 }
 
 void HexMapEditorPlugin::axis_changed(int p_axis) {
 	edit_axis = (EditorControl::EditAxis)p_axis;
-	grid_manager->set_axis(edit_axis);
-	update_grid();
+	editor_cursor->set_axis(edit_axis);
 }
 
 void HexMapEditorPlugin::cursor_changed(Variant p_orientation) {
@@ -1277,5 +999,4 @@ HexMapEditorPlugin::~HexMapEditorPlugin() {
 	if (editor_cursor != nullptr) {
 		delete editor_cursor;
 	}
-	assert(grid_manager == nullptr);
 }

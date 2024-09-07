@@ -51,7 +51,6 @@
 #include "../hex_map.h"
 #include "editor_control.h"
 #include "editor_cursor.h"
-#include "grid_manager.h"
 #include "mesh_library_palette.h"
 
 using namespace godot;
@@ -94,6 +93,27 @@ using namespace godot;
 //					- disabled
 //				- without selection & with last source
 //					- cancel just resets the cursor state
+//
+//
+// Merge GridManager & TileCursor?
+//	- move_raycast(from, direction)
+//		- calculate edit plane intercept and get cellid from hexmap
+//		- move cursor & grid based on pointer cell
+//	- set_axis(axis)
+//		- switch edit plane
+//	- set_depth(depth)
+//		- translate edit plane
+//	- redraw()
+//		- translate cursor meshes
+//		- called after setting tile meshes
+//	- set_tile(cell, tile, orientation)
+//		- set a tile in cursor
+//	- clear_tiles()
+//	- set_orientation(orientation)
+//		- rotate the cursor tiles as a group
+//	- get_tiles()
+//		- get all cursor cells with current cell id, tile, and orientation
+//
 //
 // GridManager
 //	- resize(float radius, float height)
@@ -203,7 +223,6 @@ class HexMapEditorPlugin : public EditorPlugin {
 	MeshLibraryPalette *mesh_palette = nullptr;
 	EditorControl *editor_control = nullptr;
 	EditorCursor *editor_cursor = nullptr;
-	GridManager *grid_manager = nullptr;
 
 	InputAction input_action = INPUT_NONE;
 	double accumulated_floor_delta = 0.0;
@@ -290,13 +309,6 @@ class HexMapEditorPlugin : public EditorPlugin {
 		RID instance;
 	};
 
-	void update_grid(); // Change which and where the grid is displayed
-	void _draw_hex_grid(RID p_grid, const Vector3 &p_cell_size);
-	void _draw_hex_r_axis_grid(RID p_grid, const Vector3 &p_cell_size);
-	void _draw_plane_grid(RID p_grid, const Vector3 &p_axis_n1,
-			const Vector3 &p_axis_n2, const Vector3 &p_cell_size);
-	void _draw_grids(const Vector3 &p_cell_size);
-
 	void _build_selection_meshes();
 	void _configure();
 	void _update_mesh_library();
@@ -305,6 +317,7 @@ class HexMapEditorPlugin : public EditorPlugin {
 	void _update_cursor_instance();
 	void _update_theme();
 
+	void cell_size_changed(Vector3 cell_size);
 	// callbacks used by signals from EditorControl
 	void tile_changed(int p_mesh_id);
 	void plane_changed(int p_axis);

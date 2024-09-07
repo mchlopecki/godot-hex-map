@@ -71,11 +71,6 @@ void EditorControl::handle_action(int p_action) {
 		case ACTION_PLANE_UP:
 			plane_spin_box->set_value(plane_spin_box->get_value() + 1);
 			break;
-		case ACTION_AXIS_X:
-			active_axis = AXIS_X;
-			emit_signal("axis_changed", active_axis);
-			plane_spin_box->set_value(plane[active_axis]);
-			break;
 		case ACTION_AXIS_Y:
 			active_axis = AXIS_Y;
 			emit_signal("axis_changed", active_axis);
@@ -98,14 +93,11 @@ void EditorControl::handle_action(int p_action) {
 			break;
 		case ACTION_AXIS_ROTATE_CW:
 			switch (active_axis) {
-				case AXIS_X:
-					active_axis = AXIS_S;
-					break;
 				case AXIS_Y:
 					active_axis = AXIS_R;
 					break;
 				case AXIS_Q:
-					active_axis = AXIS_X;
+					active_axis = AXIS_S;
 					break;
 				case AXIS_R:
 					active_axis = AXIS_Q;
@@ -119,9 +111,6 @@ void EditorControl::handle_action(int p_action) {
 			break;
 		case ACTION_AXIS_ROTATE_CCW:
 			switch (active_axis) {
-				case AXIS_X:
-					active_axis = AXIS_Q;
-					break;
 				case AXIS_Y:
 					active_axis = AXIS_S;
 					break;
@@ -132,7 +121,7 @@ void EditorControl::handle_action(int p_action) {
 					active_axis = AXIS_S;
 					break;
 				case AXIS_S:
-					active_axis = AXIS_X;
+					active_axis = AXIS_Q;
 					break;
 			}
 			emit_signal("axis_changed", active_axis);
@@ -173,8 +162,8 @@ void EditorControl::handle_action(int p_action) {
 
 	// ensure the axis selection ratio buttons are marked correctly
 	PopupMenu *popup = menu_button->get_popup();
-	Action selected_axis = (Action)(active_axis + ACTION_AXIS_X);
-	for (int i = ACTION_AXIS_X; i <= ACTION_AXIS_S; i++) {
+	Action selected_axis = (Action)(active_axis + ACTION_AXIS_Y);
+	for (int i = ACTION_AXIS_Y; i <= ACTION_AXIS_S; i++) {
 		int index = popup->get_item_index(i);
 		if (index != 1) {
 			popup->set_item_checked(index, i == selected_axis);
@@ -272,7 +261,6 @@ EditorControl::EditorControl() {
 			Action::ACTION_PLANE_UP);
 
 	popup->add_separator();
-	popup->add_radio_check_item("Edit X Axis", ACTION_AXIS_X);
 	popup->add_radio_check_shortcut(editor_shortcut("hex_map/edit_y_axis",
 											"Edit Y Axis", Key::KEY_X, true),
 			Action::ACTION_AXIS_Y);

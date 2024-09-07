@@ -15,7 +15,6 @@ class EditorControl : public godot::HBoxContainer {
 
 public:
 	enum EditAxis {
-		AXIS_X,
 		AXIS_Y,
 		AXIS_Q, // northwest/southeast
 		AXIS_R, // east/west
@@ -26,7 +25,6 @@ private:
 	enum Action {
 		ACTION_PLANE_DOWN,
 		ACTION_PLANE_UP,
-		ACTION_AXIS_X,
 		ACTION_AXIS_Y,
 		ACTION_AXIS_Q,
 		ACTION_AXIS_R,
