@@ -1,9 +1,9 @@
-#include "../src/hex_map/hex_map_cell_iterator.h"
+#include "../src/hex_map/hex_map_iter_axial.h"
 #include "../src/hex_map/hex_map.h"
 #include "doctest.h"
 
-TEST_CASE("HexMapCellIterator::operator++(); prefix increment") {
-	HexMapCellIterator iter(HexMapCellId(), 1, HexMap::Planes::All);
+TEST_CASE("HexMapIterAxial::operator++(); prefix increment") {
+	HexMapIterAxial iter(HexMapCellId(), 1, HexMap::Planes::All);
 
 	// confirm first value
 	CHECK(*iter == HexMapCellId(0, 0, -1));
@@ -24,8 +24,8 @@ TEST_CASE("HexMapCellIterator::operator++(); prefix increment") {
 	CHECK_MESSAGE(*iter == *iter.end(), "check the end");
 }
 
-TEST_CASE("HexMapCellIterator::operator++(); prefix increment (QRS)") {
-	HexMapCellIterator iter(HexMapCellId(), 1, HexMap::Planes::QRS);
+TEST_CASE("HexMapIterAxial::operator++(); prefix increment (QRS)") {
+	HexMapIterAxial iter(HexMapCellId(), 1, HexMap::Planes::QRS);
 
 	// confirm first value
 	CHECK(*iter == HexMapCellId(-1, 0, 0));
@@ -41,8 +41,8 @@ TEST_CASE("HexMapCellIterator::operator++(); prefix increment (QRS)") {
 	CHECK_MESSAGE(*++iter == *iter.end(), "does not increment past end");
 }
 
-TEST_CASE("HexMapCellIterator::operator++(); prefix increment (YRS)") {
-	HexMapCellIterator iter(HexMapCellId(), 1, HexMap::Planes::YRS);
+TEST_CASE("HexMapIterAxial::operator++(); prefix increment (YRS)") {
+	HexMapIterAxial iter(HexMapCellId(), 1, HexMap::Planes::YRS);
 
 	// confirm first value
 	CHECK(*iter == HexMapCellId(0, 0, -1));
@@ -56,8 +56,8 @@ TEST_CASE("HexMapCellIterator::operator++(); prefix increment (YRS)") {
 	CHECK_MESSAGE(*++iter == *iter.end(), "does not increment past end");
 }
 
-TEST_CASE("HexMapCellIterator::operator++(); prefix increment (YQS)") {
-	HexMapCellIterator iter(HexMapCellId(), 1, HexMap::Planes::YQS);
+TEST_CASE("HexMapIterAxial::operator++(); prefix increment (YQS)") {
+	HexMapIterAxial iter(HexMapCellId(), 1, HexMap::Planes::YQS);
 
 	// confirm first value
 	CHECK(*iter == HexMapCellId(0, 0, -1));
@@ -71,8 +71,8 @@ TEST_CASE("HexMapCellIterator::operator++(); prefix increment (YQS)") {
 	CHECK_MESSAGE(*++iter == *iter.end(), "does not increment past end");
 }
 
-TEST_CASE("HexMapCellIterator::operator++(); prefix increment (YQR)") {
-	HexMapCellIterator iter(HexMapCellId(), 1, HexMap::Planes::YQR);
+TEST_CASE("HexMapIterAxial::operator++(); prefix increment (YQR)") {
+	HexMapIterAxial iter(HexMapCellId(), 1, HexMap::Planes::YQR);
 
 	// confirm first value
 	CHECK(*iter == HexMapCellId(0, 0, -1));
@@ -86,8 +86,8 @@ TEST_CASE("HexMapCellIterator::operator++(); prefix increment (YQR)") {
 	CHECK_MESSAGE(*++iter == *iter.end(), "does not increment past end");
 }
 
-TEST_CASE("HexMapCellIterator::begin() is within radius") {
-	HexMapCellIterator iter(HexMapCellId(), 1);
+TEST_CASE("HexMapIterAxial::begin() is within radius") {
+	HexMapIterAxial iter(HexMapCellId(), 1);
 	CHECK_MESSAGE((*iter.begin()).distance(HexMapCellId()) <= 1,
 			"begin cell should be within the radius");
 }

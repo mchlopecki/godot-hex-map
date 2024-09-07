@@ -1,7 +1,7 @@
 #include "hex_map_cell_id.h"
 #include "godot_cpp/core/math.hpp"
 #include "godot_cpp/variant/string.hpp"
-#include "hex_map_cell_iterator.h"
+#include "hex_map_iter_axial.h"
 
 const HexMapCellId HexMapCellId::Origin(0.0f, 0.0f, 0.0f);
 
@@ -23,9 +23,9 @@ unsigned HexMapCellId::distance(const HexMapCellId &other) const {
 	return hex_dist + y_dist;
 }
 
-HexMapCellIterator HexMapCellId::get_neighbors(
+HexMapIterAxial HexMapCellId::get_neighbors(
 		unsigned int radius, const HexMap::Planes &planes) const {
-	return HexMapCellIterator(*this, radius, planes);
+	return HexMapIterAxial(*this, radius, planes);
 }
 
 HexMapCellId::operator String() const {

@@ -1,6 +1,6 @@
-#include "hex_map_cell_iterator.h"
+#include "hex_map_iter_axial.h"
 
-HexMapCellIterator::HexMapCellIterator(const HexMapCellId center,
+HexMapIterAxial::HexMapIterAxial(const HexMapCellId center,
 		unsigned int radius, const HexMap::Planes &planes) :
 		center(center), radius(radius) {
 	if (planes.y) {
@@ -35,7 +35,7 @@ HexMapCellIterator::HexMapCellIterator(const HexMapCellId center,
 }
 
 // prefix increment
-HexMapCellIterator &HexMapCellIterator::operator++() {
+HexMapIterAxial &HexMapIterAxial::operator++() {
 	do {
 		if (cell.r < r_max) {
 			cell.r++;
@@ -57,26 +57,26 @@ HexMapCellIterator &HexMapCellIterator::operator++() {
 }
 
 // postfix increment
-HexMapCellIterator HexMapCellIterator::operator++(int) {
+HexMapIterAxial HexMapIterAxial::operator++(int) {
 	auto tmp = *this;
 	++(*this);
 	return tmp;
 }
 
-HexMapCellIterator HexMapCellIterator::begin() {
-	HexMapCellIterator iter = *this;
+HexMapIterAxial HexMapIterAxial::begin() {
+	HexMapIterAxial iter = *this;
 	iter.cell = HexMapCellId(q_min, r_min, y_min);
 	++iter;
 	return iter;
 }
 
-HexMapCellIterator HexMapCellIterator::end() {
-	HexMapCellIterator iter = *this;
+HexMapIterAxial HexMapIterAxial::end() {
+	HexMapIterAxial iter = *this;
 	iter.cell = HexMapCellId(radius + 1, radius + 1, radius + 1);
 	return iter;
 }
 
-HexMapCellIterator::operator String() const {
+HexMapIterAxial::operator String() const {
 	// clang-format off
 	return (String)"{ " +
 		".center = " + center.operator String() + ", " +
@@ -90,7 +90,7 @@ HexMapCellIterator::operator String() const {
 	// clang-format on
 }
 
-std::ostream &operator<<(std::ostream &os, const HexMapCellIterator &value) {
+std::ostream &operator<<(std::ostream &os, const HexMapIterAxial &value) {
 	os << "{ .center = ";
 	os << value.center;
 	os << ", .radius = ";

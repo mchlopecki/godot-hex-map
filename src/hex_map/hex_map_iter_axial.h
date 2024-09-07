@@ -14,36 +14,36 @@
 //		- not really useful for anything but the grid generator
 //		- these cell coordinates are pretty easy to create, Q = N, R +/- 1
 
-struct HexMapCellIterator {
+struct HexMapIterAxial {
 public:
-	HexMapCellIterator(const HexMapCellId center, unsigned int radius,
+	HexMapIterAxial(const HexMapCellId center, unsigned int radius,
 			const HexMap::Planes &planes = HexMap::Planes::All);
 
 	HexMapCellId operator*() const { return cell; }
 	const HexMapCellId &operator->() { return cell; }
 
 	// Prefix increment
-	HexMapCellIterator &operator++();
+	HexMapIterAxial &operator++();
 
 	// Postfix increment
-	HexMapCellIterator operator++(int);
+	HexMapIterAxial operator++(int);
 
 	friend bool operator==(
-			const HexMapCellIterator &a, const HexMapCellIterator &b) {
+			const HexMapIterAxial &a, const HexMapIterAxial &b) {
 		return a.cell == b.cell;
 	};
 	friend bool operator!=(
-			const HexMapCellIterator &a, const HexMapCellIterator &b) {
+			const HexMapIterAxial &a, const HexMapIterAxial &b) {
 		return a.cell != b.cell;
 	};
 
-	HexMapCellIterator begin();
-	HexMapCellIterator end();
+	HexMapIterAxial begin();
+	HexMapIterAxial end();
 
 	operator String() const;
 	// added for testing
 	friend std::ostream &operator<<(
-			std::ostream &os, const HexMapCellIterator &value);
+			std::ostream &os, const HexMapIterAxial &value);
 
 private:
 	unsigned int radius;

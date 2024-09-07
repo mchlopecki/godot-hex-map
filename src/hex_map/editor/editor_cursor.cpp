@@ -1,6 +1,6 @@
 #include "editor_cursor.h"
 #include "../hex_map_cell_id.h"
-#include "../hex_map_cell_iterator.h"
+#include "../hex_map_iter_axial.h"
 #include "godot_cpp/classes/camera3d.hpp"
 #include "godot_cpp/classes/editor_interface.hpp"
 #include "godot_cpp/classes/editor_plugin.hpp"
@@ -13,7 +13,6 @@
 #include "godot_cpp/core/defs.hpp"
 #include "godot_cpp/variant/color.hpp"
 #include "godot_cpp/variant/transform3d.hpp"
-#include "godot_cpp/variant/utility_functions.hpp"
 #include "godot_cpp/variant/vector2.hpp"
 #include "godot_cpp/variant/vector3.hpp"
 #include <cassert>
