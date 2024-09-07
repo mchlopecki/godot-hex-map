@@ -66,6 +66,7 @@ public:
 	void clear_tiles();
 	void cell_size_changed();
 	void set_axis(EditorControl::EditAxis axis);
+	EditorControl::EditAxis get_axis() { return edit_axis; };
 	void set_depth(int);
 	void set_tile(CellId cell, int tile,
 			TileOrientation orientation = TileOrientation::Upright0);

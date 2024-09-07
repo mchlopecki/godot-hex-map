@@ -29,12 +29,13 @@
 /**************************************************************************/
 
 #include "hex_map_editor_plugin.h"
+#include "editor_control.h"
 #include "editor_cursor.h"
 #include "godot_cpp/core/error_macros.hpp"
 #include "godot_cpp/core/math.hpp"
 #include "godot_cpp/variant/callable_method_pointer.hpp"
+#include "godot_cpp/variant/transform3d.hpp"
 
-#include <cassert>
 #include <cstdint>
 #include <godot_cpp/classes/base_material3d.hpp>
 #include <godot_cpp/classes/box_mesh.hpp>
@@ -90,12 +91,6 @@
 		}                                                                     \
 	})
 
-void HexMapEditorPlugin::_configure() {
-	if (!hex_map) {
-		return;
-	}
-}
-
 void HexMapEditorPlugin::_update_selection() {
 	deselect_tiles();
 	selection.active = true;
@@ -130,7 +125,7 @@ void HexMapEditorPlugin::_update_selection() {
 			selection_multimesh, cells.size(), RS::MULTIMESH_TRANSFORM_3D);
 	for (int i = 0; i < cells.size(); i++) {
 		Vector3i cell = cells[i];
-		switch (edit_axis) {
+		switch (editor_cursor->get_axis()) {
 			case EditorControl::AXIS_Q:
 				// We're using knowledge of the internal coordinate system of
 				// hex cells in the GridMap here, which makes this brittle to
@@ -178,11 +173,6 @@ void HexMapEditorPlugin::_set_selection(
 	}
 	// XXX split _set_selection out into set & clear selection
 	editor_control->update_selection_menu(true);
-
-	// XXX missing visibility check
-	// if (is_visible_in_tree()) {
-	// 	_update_selection();
-	// }
 }
 
 void HexMapEditorPlugin::deselect_tiles() {
@@ -558,6 +548,7 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(
 		return EditorPlugin::AFTER_GUI_INPUT_STOP;
 	}
 
+	// XXX need to test this
 	Ref<InputEventPanGesture> pan_gesture = p_event;
 	if (pan_gesture.is_valid()) {
 		if (pan_gesture->is_alt_pressed() &&
@@ -641,11 +632,6 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 
 	if (!hex_map) {
 		set_process(false);
-		for (int i = 0; i < 3; i++) {
-			RenderingServer::get_singleton()->instance_set_visible(
-					grid_instance[i], false);
-		}
-
 		return;
 	}
 
@@ -801,49 +787,18 @@ void HexMapEditorPlugin::_build_selection_meshes() {
 
 void HexMapEditorPlugin::_notification(int p_what) {
 	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE: {
-			// fired when the plugin is loaded into the editor
-			//
-			// does not hot-reload
-			UtilityFunctions::print("enter tree");
-			for (int i = 0; i < 3; i++) {
-				grid_mesh[i] = RS::get_singleton()->mesh_create();
-				grid_instance[i] =
-						RS::get_singleton()->instance_create2(grid_mesh[i],
-								get_tree()
-										->get_root()
-										->get_world_3d()
-										->get_scenario());
-				RenderingServer::get_singleton()
-						->instance_set_layer_mask(grid_instance[i], 1 << 24 /* XXX Node3DEditorViewport::MISC_TOOL_LAYER */);
-				RenderingServer::get_singleton()->instance_set_visible(
-						grid_instance[i], false);
-			}
-		} break;
-
-		case NOTIFICATION_EXIT_TREE: {
-			// fired when exiting tree
-			UtilityFunctions::print("exit tree xxx");
-			for (int i = 0; i < 3; i++) {
-				RS::get_singleton()->free_rid(grid_instance[i]);
-				RS::get_singleton()->free_rid(grid_mesh[i]);
-				grid_instance[i] = RID();
-				grid_mesh[i] = RID();
-			}
-
-			deselect_tiles();
-
-		} break;
-
 		case NOTIFICATION_PROCESS: {
+			// we cache the global transform of the HexMap.  When the global
+			// transform changes, we'll update our visuals accordingly.
+			static Transform3D cached_transform;
 			ERR_FAIL_COND_MSG(hex_map == nullptr,
 					"HexMapEditorPlugin process without HexMap");
 
 			// if the transform of the HexMap node has been changed, update
 			// the grid.
 			Transform3D transform = hex_map->get_global_transform();
-			if (transform != hex_map_global_transform) {
-				hex_map_global_transform = transform;
+			if (transform != cached_transform) {
+				cached_transform = transform;
 				if (selection.active) {
 					_update_selection();
 				}
@@ -883,13 +838,13 @@ void HexMapEditorPlugin::tile_changed(int p_mesh_id) {
 }
 
 void HexMapEditorPlugin::plane_changed(int p_plane) {
-	edit_depth = p_plane;
+	ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
 	editor_cursor->set_depth(p_plane);
 }
 
 void HexMapEditorPlugin::axis_changed(int p_axis) {
-	edit_axis = (EditorControl::EditAxis)p_axis;
-	editor_cursor->set_axis(edit_axis);
+	ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
+	editor_cursor->set_axis((EditorControl::EditAxis)p_axis);
 }
 
 void HexMapEditorPlugin::cursor_changed(Variant p_orientation) {
@@ -898,8 +853,6 @@ void HexMapEditorPlugin::cursor_changed(Variant p_orientation) {
 }
 
 void HexMapEditorPlugin::_bind_methods() {
-	ClassDB::bind_method(
-			D_METHOD("_configure"), &HexMapEditorPlugin::_configure);
 	ClassDB::bind_method(D_METHOD("_set_selection", "active", "begin", "end"),
 			&HexMapEditorPlugin::_set_selection);
 }
@@ -910,10 +863,6 @@ HexMapEditorPlugin::HexMapEditorPlugin() {
 	Control *ec = memnew(Control);
 	ec->set_custom_minimum_size(Size2(mw, 0) * EDSCALE);
 	add_child(ec);
-
-	edit_axis = EditorControl::AXIS_Y;
-	edit_plane = Plane();
-	edit_depth = 0;
 
 	selection_mesh_mat.instantiate();
 	selection_mesh_mat->set_albedo(Color(0.7, 0.7, 1.0, 0.2));
@@ -938,15 +887,6 @@ HexMapEditorPlugin::HexMapEditorPlugin() {
 	selection_line_mat->set_transparency(
 			StandardMaterial3D::TRANSPARENCY_ALPHA);
 	selection_line_mat->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-
-	grid_mat.instantiate();
-	grid_mat->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-	grid_mat->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
-	grid_mat->set_flag(StandardMaterial3D::FLAG_SRGB_VERTEX_COLOR, true);
-	grid_mat->set_flag(
-			StandardMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
-	grid_mat->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-	grid_mat->set_albedo(Color(0.8, 0.5, 0.1));
 
 	// palette
 	mesh_palette = memnew(MeshLibraryPalette);
@@ -981,14 +921,6 @@ HexMapEditorPlugin::HexMapEditorPlugin() {
 HexMapEditorPlugin::~HexMapEditorPlugin() {
 	ERR_FAIL_NULL(RenderingServer::get_singleton());
 
-	for (int i = 0; i < 3; i++) {
-		if (grid_mesh[i].is_valid()) {
-			RenderingServer::get_singleton()->free_rid(grid_mesh[i]);
-		}
-		if (grid_instance[i].is_valid()) {
-			RenderingServer::get_singleton()->free_rid(grid_instance[i]);
-		}
-	}
 	if (selection_multimesh.is_valid()) {
 		RenderingServer::get_singleton()->free_rid(selection_multimesh);
 	}
