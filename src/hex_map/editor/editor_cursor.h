@@ -29,6 +29,7 @@ public:
 private:
 	HexMap *hex_map;
 
+	Vector3 pointer_pos;
 	CellId pointer_cell;
 	List<CursorCell> tiles;
 	TileOrientation orientation;
@@ -60,9 +61,11 @@ public:
 
 	bool update(const Camera3D *camera, const Point2 &pointer, Vector3 *point);
 	void update(bool force = false);
-	// XXX need to rebuild grids & transform cells when grid size changes
+
+	// XXX add support to hide tiles independently of grid
 	void show();
 	void hide();
+
 	void clear_tiles();
 	void cell_size_changed();
 	void set_axis(EditorControl::EditAxis axis);
@@ -70,8 +73,9 @@ public:
 	void set_depth(int);
 	void set_tile(CellId cell, int tile,
 			TileOrientation orientation = TileOrientation::Upright0);
-	void set_pointer(CellId cell);
 	void set_orientation(TileOrientation orientation);
 	List<CursorCell> get_tiles();
 	HexMapCellId get_cell() { return pointer_cell; };
+	Vector3 get_pos() { return pointer_pos; };
+	int get_tile_count() { return tiles.size(); };
 };

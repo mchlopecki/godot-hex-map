@@ -6,6 +6,8 @@
 
 // XXX need to make this iterable in gdscript
 // https://docs.godotengine.org/en/latest/tutorials/scripting/gdscript/gdscript_advanced.html#custom-iterators
+// XXX make a separate class `HexMapIterAxialRef` to be held inside a `Ref`
+// and returned to the client.
 
 // How do you want to iterate around cells?
 // - all cells on y plane around center
@@ -48,7 +50,7 @@ public:
 private:
 	unsigned int radius;
 	int y_min, y_max;
-	int q_min, q_max; // inclusive min/max
+	int q_min, q_max;
 	int r_min, r_max;
 	int s_min, s_max;
 	HexMapCellId center, cell;

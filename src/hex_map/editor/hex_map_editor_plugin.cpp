@@ -31,10 +31,14 @@
 #include "hex_map_editor_plugin.h"
 #include "editor_control.h"
 #include "editor_cursor.h"
+#include "godot_cpp/classes/global_constants.hpp"
+#include "godot_cpp/classes/input_event_mouse.hpp"
 #include "godot_cpp/core/error_macros.hpp"
 #include "godot_cpp/core/math.hpp"
 #include "godot_cpp/variant/callable_method_pointer.hpp"
 #include "godot_cpp/variant/transform3d.hpp"
+#include "godot_cpp/variant/vector3i.hpp"
+#include "selection_manager.h"
 
 #include <cstdint>
 #include <godot_cpp/classes/base_material3d.hpp>
@@ -91,176 +95,108 @@
 		}                                                                     \
 	})
 
-void HexMapEditorPlugin::_update_selection() {
-	deselect_tiles();
-	selection.active = true;
 
-	RenderingServer *rs = RS::get_singleton();
+void HexMapEditorPlugin::deselect_cells() {
+	EditorUndoRedoManager *undo_redo = get_undo_redo();
+	undo_redo->create_action("HexMap: deselect cells");
 
-	// Scaling and translation for the center of the cell mesh.
-	Vector3 cell_center = Vector3(
-			hex_map->get_center_x() ? 0 : hex_map->get_cell_size().x / 2.0,
-			hex_map->get_center_y() ? 0 : hex_map->get_cell_size().y / 2.0,
-			hex_map->get_center_z() ? 0 : hex_map->get_cell_size().z / 2.0);
-	Transform3D cell_transform =
-			Transform3D()
-					.scaled_local(hex_map->get_cell_size())
-					.translated(cell_center);
+	undo_redo->add_do_method(this, "deselect_cells");
 
-	// We're using `local_region_to_map()` to get a selection of cells, and
-	// that function returns cells within an axis-aligned bounding box.  The Q
-	// and S axis are not axis-aligned (they run diagonal along X/Z, so we'll
-	// need to filter the results from `local_region_map()` to make sure they
-	// all fall along a plane of the edit axis.  To do this, we'll need to use
-	// the cell index of the beginning point.
-	Vector3i begin = hex_map->local_to_map(selection.begin);
-
-	// Get the cells using our selection begin & end points to define an axis-
-	// aligned region of cells.
-	TypedArray<Vector3i> cells =
-			hex_map->local_region_to_map(selection.begin, selection.end);
-
-	// Add the cells to our selection multimesh
-	rs->multimesh_allocate_data(
-			selection_multimesh, cells.size(), RS::MULTIMESH_TRANSFORM_3D);
-	for (int i = 0; i < cells.size(); i++) {
-		Vector3i cell = cells[i];
-		switch (editor_cursor->get_axis()) {
-			case EditorControl::AXIS_Q:
-				// We're using knowledge of the internal coordinate system of
-				// hex cells in the GridMap here, which makes this brittle to
-				// change,  The axial Q axis value is stored in the X field.
-				// So exclude any cell that doesn't have the same X value
-				if (cell.x != begin.x) {
-					continue;
-				}
-				break;
-			case EditorControl::AXIS_S:
-				// The S axis value can be calculated from the Q/R values
-				// stored in X & Z.  If the S value of the cell doesn't match
-				// that of the beginning cell, the cell doesn't fall on the
-				// same S-axis plane, so we can exclude it from the selection.
-				if (-cell.x - cell.z != -begin.x - begin.z) {
-					continue;
-				}
-				break;
-
-			default:
-				break;
-		}
-		selection.cells.append(cell);
-		rs->multimesh_instance_set_transform(selection_multimesh, i,
-				cell_transform.translated(hex_map->map_to_local(cell)));
+	// clear and select cells
+	undo_redo->add_undo_method(this, "deselect_cells");
+	for (const HexMapCellId &cell : selection_manager->get_cells()) {
+		undo_redo->add_undo_method(this, "select_cell", (Vector3i)cell);
 	}
 
-	// create an instance of the multimesh with the transform of our node
-	selection_multimesh_instance = rs->instance_create2(selection_multimesh,
-			get_tree()->get_root()->get_world_3d()->get_scenario());
-	rs->instance_set_transform(
-			selection_multimesh_instance, hex_map->get_global_transform());
-	rs->instance_set_layer_mask(selection_multimesh_instance,
-			/* Node3DEditorViewport::MISC_TOOL_LAYER */ 1 << 24);
+	undo_redo->commit_action();
 }
 
-void HexMapEditorPlugin::_set_selection(
-		bool p_active, const Vector3 &p_begin, const Vector3 &p_end) {
-	selection.active = p_active;
-	selection.begin = p_begin;
-	selection.end = p_end;
-
-	if (is_inside_tree()) {
-		_update_selection();
-	}
-	// XXX split _set_selection out into set & clear selection
-	editor_control->update_selection_menu(true);
-}
-
-void HexMapEditorPlugin::deselect_tiles() {
-	RenderingServer *rs = RS::get_singleton();
-	if (selection_multimesh_instance.is_valid()) {
-		rs->free_rid(selection_multimesh_instance);
-	}
-	selection.cells.clear();
-	selection.active = false;
+void HexMapEditorPlugin::_deselect_cells() {
+	selection_manager->clear();
 	editor_control->update_selection_menu(false);
+}
+
+void HexMapEditorPlugin::_select_cell(Vector3i cell) {
+	selection_manager->set_cell(cell);
+	// XXX slow, only need to do this once
+	editor_control->update_selection_menu(true);
 }
 
 bool HexMapEditorPlugin::do_input_action(
 		Camera3D *p_camera, const Point2 &p_point, bool p_click) {
-	if (!editor_cursor) {
-		return false;
-	}
-	Vector3 edit_plane_point;
-	if (!editor_cursor->update(p_camera, p_point, &edit_plane_point)) {
-		return false;
-	}
-	pointer_cell = editor_cursor->get_cell();
-
-	if (input_action == INPUT_PASTE) {
-		// _update_paste_indicator();
-
-	} else if (input_action == INPUT_SELECT) {
-		if (p_click) {
-			selection.begin = edit_plane_point;
-		}
-		selection.end = edit_plane_point;
-		selection.active = true;
-		_update_selection();
-		editor_control->update_selection_menu(true);
-
-		return true;
-	} else if (input_action == INPUT_PICK) {
-		// XXX allow picking from tiles on map,
-		int item = hex_map->get_cell_item(pointer_cell);
-		if (item >= 0) {
-			// XXX should send a signal back when called; so we probably don't
-			// need to set it ourselves here.
-			mesh_palette->set_mesh(item);
-		}
-		return true;
-	}
-
-	if (input_action == INPUT_PAINT) {
-		List<EditorCursor::CursorCell> tiles = editor_cursor->get_tiles();
-		if (tiles.is_empty()) {
-			return true;
-		}
-		EditorCursor::CursorCell &tile = tiles[0];
-		// XXX disallow painting outside of selection box if selected
-		SetItem si;
-		si.position = tile.cell_id_live;
-		si.new_value = tile.tile;
-		si.new_orientation = tile.orientation;
-		si.old_value = hex_map->get_cell_item(pointer_cell);
-		si.old_orientation = hex_map->get_cell_item_orientation(pointer_cell);
-		set_items.push_back(si);
-		hex_map->set_cell_item(pointer_cell, tile.tile, tile.orientation);
-		return true;
-	} else if (input_action == INPUT_ERASE) {
-		SetItem si;
-		si.position =
-				Vector3i(pointer_cell[0], pointer_cell[1], pointer_cell[2]);
-		si.new_value = -1;
-		si.new_orientation = 0;
-		si.old_value = hex_map->get_cell_item(pointer_cell);
-		si.old_orientation = hex_map->get_cell_item_orientation(pointer_cell);
-		set_items.push_back(si);
-		hex_map->set_cell_item(pointer_cell, -1);
-		return true;
-	}
-
+	// if (!editor_cursor) {
+	// 	return false;
+	// }
+	// Vector3 edit_plane_point;
+	// if (!editor_cursor->update(p_camera, p_point, &edit_plane_point)) {
+	// 	return false;
+	// }
+	// pointer_cell = editor_cursor->get_cell();
+	//
+	// if (input_action == INPUT_PASTE) {
+	// 	// _update_paste_indicator();
+	//
+	// } else if (input_action == INPUT_SELECT) {
+	// 	if (p_click) {
+	// 		selection.begin = edit_plane_point;
+	// 	}
+	// 	selection.end = edit_plane_point;
+	// 	selection.active = true;
+	// 	_update_selection();
+	// 	editor_control->update_selection_menu(true);
+	//
+	// 	return true;
+	// } else if (input_action == INPUT_PICK) {
+	// 	// XXX allow picking from tiles on map,
+	// 	int item = hex_map->get_cell_item(pointer_cell);
+	// 	if (item >= 0) {
+	// 		// XXX should send a signal back when called; so we probably don't
+	// 		// need to set it ourselves here.
+	// 		mesh_palette->set_mesh(item);
+	// 	}
+	// 	return true;
+	// }
+	//
+	// if (input_action == INPUT_PAINT) {
+	// 	// XXX maybe a custom method for this to get paint tile
+	// 	List<EditorCursor::CursorCell> tiles = editor_cursor->get_tiles();
+	// 	if (tiles.is_empty()) {
+	// 		return true;
+	// 	}
+	// 	EditorCursor::CursorCell &tile = tiles[0];
+	// 	// XXX disallow painting outside of selection box if selected
+	// 	SetItem si;
+	// 	si.position = tile.cell_id_live;
+	// 	si.new_value = tile.tile;
+	// 	si.new_orientation = tile.orientation;
+	// 	si.old_value = hex_map->get_cell_item(pointer_cell);
+	// 	si.old_orientation = hex_map->get_cell_item_orientation(pointer_cell);
+	// 	set_items.push_back(si);
+	// 	hex_map->set_cell_item(pointer_cell, tile.tile, tile.orientation);
+	// 	return true;
+	// } else if (input_action == INPUT_ERASE) {
+	// 	SetItem si;
+	// 	si.position =
+	// 			Vector3i(pointer_cell[0], pointer_cell[1], pointer_cell[2]);
+	// 	si.new_value = -1;
+	// 	si.new_orientation = 0;
+	// 	si.old_value = hex_map->get_cell_item(pointer_cell);
+	// 	si.old_orientation = hex_map->get_cell_item_orientation(pointer_cell);
+	// 	set_items.push_back(si);
+	// 	hex_map->set_cell_item(pointer_cell, -1);
+	// 	return true;
+	// }
+	//
 	return false;
 }
 
 void HexMapEditorPlugin::selection_clear() {
-	if (!selection.active) {
-		return;
-	}
+	ERR_FAIL_COND_MSG(selection_manager->is_empty(), "no cells selected");
 
 	EditorUndoRedoManager *undo_redo = get_undo_redo();
 	undo_redo->create_action(TTR("GridMap Delete Selection"));
 
-	for (const Vector3i cell : selection.cells) {
+	for (const Vector3i cell : selection_manager->get_cells()) {
 		undo_redo->add_do_method(
 				hex_map, "set_cell_item", cell, HexMap::INVALID_CELL_ITEM);
 		undo_redo->add_undo_method(hex_map, "set_cell_item", cell,
@@ -268,17 +204,11 @@ void HexMapEditorPlugin::selection_clear() {
 				hex_map->get_cell_item_orientation(cell));
 	}
 
-	undo_redo->add_do_method(
-			this, "_set_selection", false, selection.begin, selection.end);
-	undo_redo->add_undo_method(
-			this, "_set_selection", true, selection.begin, selection.end);
 	undo_redo->commit_action();
 }
 
 void HexMapEditorPlugin::selection_fill() {
-	if (!selection.active) {
-		return;
-	}
+	ERR_FAIL_COND_MSG(selection_manager->is_empty(), "no cells selected");
 
 	List<EditorCursor::CursorCell> tiles = editor_cursor->get_tiles();
 	ERR_FAIL_COND_MSG(
@@ -289,7 +219,7 @@ void HexMapEditorPlugin::selection_fill() {
 	EditorUndoRedoManager *undo_redo = get_undo_redo();
 	undo_redo->create_action(TTR("GridMap Fill Selection"));
 
-	for (const Vector3i cell : selection.cells) {
+	for (const Vector3i cell : selection_manager->get_cells()) {
 		undo_redo->add_do_method(
 				hex_map, "set_cell_item", cell, tile.tile, tile.orientation);
 		undo_redo->add_undo_method(hex_map, "set_cell_item", cell,
@@ -297,10 +227,6 @@ void HexMapEditorPlugin::selection_fill() {
 				hex_map->get_cell_item_orientation(cell));
 	}
 
-	undo_redo->add_do_method(
-			this, "_set_selection", false, selection.begin, selection.end);
-	undo_redo->add_undo_method(
-			this, "_set_selection", true, selection.begin, selection.end);
 	undo_redo->commit_action();
 }
 
@@ -312,11 +238,12 @@ void HexMapEditorPlugin::selection_begin_move() {
 	editor_cursor->clear_tiles();
 	editor_control->reset_orientation();
 
-	if (selection.cells.size() == 0) {
+	Vector<HexMapCellId> cells = selection_manager->get_cells();
+	if (cells.is_empty()) {
 		return;
 	}
 
-	for (const Vector3i cell : selection.cells) {
+	for (const Vector3i &cell : cells) {
 		int cell_item = hex_map->get_cell_item(cell);
 		if (cell_item == HexMap::INVALID_CELL_ITEM) {
 			continue;
@@ -333,7 +260,7 @@ void HexMapEditorPlugin::selection_clone() {
 	// XXX need to distinguish clone from move
 	// when move completes, save the clipboard to allow quick duplicate
 	selection_begin_move();
-	deselect_tiles();
+	_deselect_cells();
 }
 
 void HexMapEditorPlugin::selection_move() {
@@ -343,7 +270,7 @@ void HexMapEditorPlugin::selection_move() {
 	selection_begin_move();
 	// XXX need to be able to undo this
 	selection_clear();
-	deselect_tiles();
+	_deselect_cells();
 }
 
 void HexMapEditorPlugin::_do_paste() {
@@ -390,23 +317,144 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(
 		return EditorPlugin::AFTER_GUI_INPUT_PASS;
 	}
 
+	// try to handle any key event as a shortcut first
+	// XXX add filters to EditorControl callbacks to ensure we only perform
+	// certian actions during the appropriate input state.  Example, do not
+	// move or clone during painting.
+	Ref<InputEventKey> key_event = p_event;
+	if (key_event.is_valid() && editor_control->handle_keypress(key_event)) {
+		return AFTER_GUI_INPUT_STOP;
+	}
+	bool escape_pressed = key_event.is_valid() &&
+		key_event->get_keycode() == Key::KEY_ESCAPE &&
+		key_event->is_pressed();
+
+	// if it's any type of mouse event, update the editor cursor
+	Ref<InputEventMouse> mouse_event = p_event;
+	if (mouse_event.is_valid()) {
+		editor_cursor->update(p_camera, mouse_event->get_position(), nullptr);
+	}
+
+	// grab the common mouse button up/downs to simplify the switch statement
+	// below
+	Ref<InputEventMouseButton> mouse_button_event = p_event;
+	bool mouse_left_pressed = mouse_button_event.is_valid() &&
+			mouse_button_event->get_button_index() ==
+					MouseButton::MOUSE_BUTTON_LEFT &&
+			mouse_button_event->is_pressed();
+	bool mouse_left_released = mouse_button_event.is_valid() &&
+			mouse_button_event->get_button_index() ==
+					MouseButton::MOUSE_BUTTON_LEFT &&
+			mouse_button_event->is_released();
+	bool mouse_right_pressed = mouse_button_event.is_valid() &&
+			mouse_button_event->get_button_index() ==
+					MouseButton::MOUSE_BUTTON_RIGHT &&
+			mouse_button_event->is_pressed();
+	bool shift_pressed = mouse_button_event.is_valid() &&
+			mouse_button_event->is_shift_pressed();
+
+
+	switch (input_state) {
+		// transitions:
+		// - SELECTING (shift + left button down)
+		// - PAINTING (left button down)
+		// - ERASING (right button down)
+		// actions:
+		// - clear selection (escape && have selection)
+		// - clear cursor (escape)
+		case INPUT_STATE_DEFAULT: 
+			if (mouse_left_pressed && shift_pressed) {
+				editor_cursor->hide();
+				input_state = INPUT_STATE_SELECTING;
+				last_selection = selection_manager->get_cells();
+				selection_anchor = editor_cursor->get_pos();
+				selection_manager->clear();
+				selection_manager->set_cell(editor_cursor->get_cell());
+				return AFTER_GUI_INPUT_STOP;
+			} else if (mouse_left_pressed) {
+				input_state = INPUT_STATE_PAINTING;
+				return AFTER_GUI_INPUT_STOP;
+			} else if (mouse_right_pressed) {
+				input_state = INPUT_STATE_ERASING;
+				return AFTER_GUI_INPUT_STOP;
+			} else if (escape_pressed) {
+				if (!selection_manager->is_empty()) {
+					deselect_cells();
+				} else {
+					mesh_palette->clear_selection();
+				}
+				return AFTER_GUI_INPUT_STOP;
+			} 
+			break;
+		case INPUT_STATE_PAINTING:
+			input_state = INPUT_STATE_DEFAULT;
+			break;
+		case INPUT_STATE_ERASING:
+			input_state = INPUT_STATE_DEFAULT;
+			break;
+		// transitions:
+		// - DEFAULT (left button up)
+		// - DEFAULT (escape); clear selection
+		// actions:
+		// - update selection (mouse event)
+		case INPUT_STATE_SELECTING:
+			if (mouse_event.is_valid()) {
+				auto cells = hex_map->local_region_to_map(selection_anchor,
+											  editor_cursor->get_pos());
+				selection_manager->clear();
+				selection_manager->set_cells(cells);
+			}
+			if (mouse_left_released) {
+				EditorUndoRedoManager *undo_redo = get_undo_redo();
+				undo_redo->create_action("HexMap: select cells");
+				// do will set the selection
+				undo_redo->add_do_method(this, "deselect_cells");
+				for (const HexMapCellId &cell : selection_manager->get_cells()) {
+					undo_redo->add_do_method(this, "select_cell", (Vector3i)cell);
+				}
+				// undo will restore last selection
+				undo_redo->add_undo_method(this, "deselect_cells");
+				for (const HexMapCellId &cell : last_selection) {
+					undo_redo->add_undo_method(this, "select_cell", (Vector3i)cell);
+				}
+				undo_redo->commit_action();
+
+				editor_cursor->show();
+				input_state = INPUT_STATE_DEFAULT;
+				return AFTER_GUI_INPUT_STOP;
+			} else if (escape_pressed) {
+				selection_manager->clear();
+				selection_manager->set_cells(last_selection);
+				editor_cursor->show();
+				input_state = INPUT_STATE_DEFAULT;
+				return AFTER_GUI_INPUT_STOP;
+			}
+			break;
+		case INPUT_STATE_MOVING:
+			input_state = INPUT_STATE_DEFAULT;
+			break;
+		case INPUT_STATE_CLONING:
+			input_state = INPUT_STATE_DEFAULT;
+			break;
+	}
+
+	return EditorPlugin::AFTER_GUI_INPUT_PASS;
+
 	Ref<InputEventMouseButton> mb = p_event;
 
 	if (mb.is_valid()) {
 		// XXX allow floor change with mouse-based control
-		// if (mb->get_button_index() == MouseButton::MOUSE_BUTTON_WHEEL_UP &&
-		// (mb->is_command_or_control_pressed())) { 	if (mb->is_pressed()) {
-		// 		floor->set_value(floor->get_value() + mb->get_factor());
-		// 	}
-		//
-		// 	return EditorPlugin::AFTER_GUI_INPUT_STOP; // Eaten.
-		// } else if (mb->get_button_index() ==
-		// MouseButton::MOUSE_BUTTON_WHEEL_DOWN &&
-		// (mb->is_command_or_control_pressed())) { 	if (mb->is_pressed()) {
-		// 		floor->set_value(floor->get_value() - mb->get_factor());
-		// 	}
-		// 	return EditorPlugin::AFTER_GUI_INPUT_STOP;
-		// }
+		// XXX DOES NOT WRH
+		if (mb->get_button_index() == MouseButton::MOUSE_BUTTON_WHEEL_UP &&
+				mb->is_shift_pressed() && mb->is_pressed()) {
+			editor_control->set_plane(editor_control->get_plane() + 1);
+			return EditorPlugin::AFTER_GUI_INPUT_STOP;
+		} else if (mb->get_button_index() ==
+						MouseButton::MOUSE_BUTTON_WHEEL_DOWN &&
+				mb->is_shift_pressed() && mb->is_pressed()) {
+			editor_control->set_plane(editor_control->get_plane() - 1);
+			return EditorPlugin::AFTER_GUI_INPUT_STOP;
+		}
 
 		if (mb->is_pressed()) {
 			// Node3DEditorViewport::NavigationScheme nav_scheme =
@@ -423,7 +471,7 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(
 					return EditorPlugin::AFTER_GUI_INPUT_STOP;
 				} else if (mb->is_shift_pressed() && can_edit) {
 					input_action = INPUT_SELECT;
-					last_selection = selection;
+					// last_selection = selection;
 					editor_cursor->hide();
 				} else if (mb->is_command_or_control_pressed() && can_edit) {
 					input_action = INPUT_PICK;
@@ -436,9 +484,9 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(
 				if (input_action == INPUT_PASTE) {
 					input_action = INPUT_NONE;
 					return EditorPlugin::AFTER_GUI_INPUT_STOP;
-				} else if (selection.active) {
-					deselect_tiles();
-					return EditorPlugin::AFTER_GUI_INPUT_STOP;
+				// } else if (selection.active) {
+				// 	deselect_tiles();
+				// 	return EditorPlugin::AFTER_GUI_INPUT_STOP;
 				} else {
 					input_action = INPUT_ERASE;
 					set_items.clear();
@@ -484,18 +532,18 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(
 				return EditorPlugin::AFTER_GUI_INPUT_PASS;
 			}
 
-			if (mb->get_button_index() == MouseButton::MOUSE_BUTTON_LEFT &&
-					input_action == INPUT_SELECT) {
-				EditorUndoRedoManager *undo_redo = get_undo_redo();
-				undo_redo->create_action(TTR("GridMap Selection"));
-				undo_redo->add_do_method(this, "_set_selection",
-						selection.active, selection.begin, selection.end);
-				undo_redo->add_undo_method(this, "_set_selection",
-						last_selection.active, last_selection.begin,
-						last_selection.end);
-				undo_redo->commit_action();
-				editor_cursor->show();
-			}
+			// if (mb->get_button_index() == MouseButton::MOUSE_BUTTON_LEFT &&
+			// 		input_action == INPUT_SELECT) {
+			// 	EditorUndoRedoManager *undo_redo = get_undo_redo();
+			// 	undo_redo->create_action(TTR("GridMap Selection"));
+			// 	undo_redo->add_do_method(this, "_set_selection",
+			// 			selection.active, selection.begin, selection.end);
+			// 	undo_redo->add_undo_method(this, "_set_selection",
+			// 			last_selection.active, last_selection.begin,
+			// 			last_selection.end);
+			// 	undo_redo->commit_action();
+			// 	editor_cursor->show();
+			// }
 
 			if (mb->get_button_index() == MouseButton::MOUSE_BUTTON_LEFT &&
 					input_action != INPUT_NONE) {
@@ -615,6 +663,8 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 		// subclass, so its destructor is not called with memfree().
 		delete editor_cursor;
 		editor_cursor = nullptr;
+		delete selection_manager;
+		selection_manager = nullptr;
 	}
 
 	// XXX works when no connect() calls made in constructor; waiting on 4.3
@@ -622,9 +672,6 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 	hex_map = Object::cast_to<HexMap>(p_object);
 
 	input_action = INPUT_NONE;
-	selection.active = false;
-	_build_selection_meshes();
-	deselect_tiles();
 	mesh_palette->clear_selection();
 
 	// spatial_editor =
@@ -637,6 +684,7 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 
 	// not a godot Object subclass, so `new` instead of `memnew()`
 	editor_cursor = new EditorCursor(hex_map);
+	selection_manager = new SelectionManager(hex_map);
 
 	// _update_cursor_instance();
 
@@ -660,131 +708,6 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 	_update_mesh_library();
 }
 
-void HexMapEditorPlugin::_build_selection_meshes() {
-	if (selection_tile_mesh.is_valid()) {
-		RS::get_singleton()->free_rid(selection_tile_mesh);
-		selection_tile_mesh = RID();
-	}
-	if (selection_multimesh.is_valid()) {
-		RS::get_singleton()->free_rid(selection_multimesh);
-		selection_multimesh = RID();
-	}
-
-	// we can get called when node is null
-	if (hex_map == nullptr) {
-		return;
-	}
-
-	Array mesh_array;
-	mesh_array.resize(RS::ARRAY_MAX);
-	Array lines_array;
-	lines_array.resize(RS::ARRAY_MAX);
-
-	// Ref<CylinderMesh> m;
-	// m.instantiate();
-	// m->set_top_radius(1.0);
-	// m->set_bottom_radius(1.0);
-	// m->set_height(1.0);
-	// m->set_rings(1);
-	// m->set_radial_segments(6);
-	// mesh_array[RS::ARRAY_VERTEX] = m->_create_mesh_array();
-	//
-	// XXX not exposed; construct by hand
-	//
-	// CylinderMesh::create_mesh_array(mesh_array, 1.0, 1.0, 1, 6, 1);
-
-	/*
-	 *               (0)             Y
-	 *              /   \            |
-	 *           (1)     (5)         o---X
-	 *            |       |           \
-	 *           (2)     (4)           Z
-	 *            | \   / |
-	 *            |  (3)  |
-	 *            |   |   |
-	 *            |  (6)  |
-	 *            | / | \ |
-	 *           (7)  |  (b)
-	 *            |   |   |
-	 *           (8)  |  (a)
-	 *              \ | /
-	 *               (9)
-	 */
-	mesh_array[RS::ARRAY_VERTEX] = lines_array[RS::ARRAY_VERTEX] =
-			PackedVector3Array({
-					Vector3(0.0, 0.5, -1.0), // 0
-					Vector3(-SQRT3_2, 0.5, -0.5), // 1
-					Vector3(-SQRT3_2, 0.5, 0.5), // 2
-					Vector3(0.0, 0.5, 1.0), // 3
-					Vector3(SQRT3_2, 0.5, 0.5), // 4
-					Vector3(SQRT3_2, 0.5, -0.5), // 5
-					Vector3(0.0, -0.5, -1.0), // 6
-					Vector3(-SQRT3_2, -0.5, -0.5), // 7
-					Vector3(-SQRT3_2, -0.5, 0.5), // 8
-					Vector3(0.0, -0.5, 1.0), // 9
-					Vector3(SQRT3_2, -0.5, 0.5), // 10 (0xa)
-					Vector3(SQRT3_2, -0.5, -0.5), // 11 (0xb)
-			});
-
-	// clang-format off
-	mesh_array[RS::ARRAY_INDEX] = PackedInt32Array({
-		// top
-		0, 5, 1,
-		1, 5, 2,
-		2, 5, 4,
-		2, 4, 3,
-		// bottom
-		6, 7, 11,
-		11, 7, 8,
-		8, 10, 11,
-		10, 8, 9,
-		// east
-		4,  5, 11,
-		11, 10, 4,
-		// northeast
-		5, 0,  6,
-		6, 11, 5,
-		// northwest
-		0, 1, 7,
-		7, 6, 0,
-		// west
-		1, 2, 8,
-		8, 7, 1,
-		// southwest
-		2, 3, 9,
-		9, 8, 2,
-		// southeast
-		3, 4, 10,
-		10, 9, 3,
-	});
-	// clang-format on
-
-	lines_array[RS::ARRAY_INDEX] = PackedInt32Array({
-			0, 1, 2, 3, 4, 5, // top
-			11, 6, 7, 8, 9, 10, // bottom
-			11, 5, 0, 6, // northeast face
-			7, 1, 2, 8, // west face
-			9, 3, 4, 10, // southeast face
-	});
-
-	RenderingServer *rs = RS::get_singleton();
-	selection_tile_mesh = rs->mesh_create();
-	rs->mesh_add_surface_from_arrays(
-			selection_tile_mesh, RS::PRIMITIVE_TRIANGLES, mesh_array);
-	rs->mesh_surface_set_material(
-			selection_tile_mesh, 0, selection_mesh_mat->get_rid());
-
-	// add lines around the cell
-	rs->mesh_add_surface_from_arrays(
-			selection_tile_mesh, RS::PRIMITIVE_LINE_STRIP, lines_array);
-	rs->mesh_surface_set_material(
-			selection_tile_mesh, 1, selection_line_mat->get_rid());
-
-	// create the multimesh for rendering the tile mesh in multiple locations.
-	selection_multimesh = rs->multimesh_create();
-	rs->multimesh_set_mesh(selection_multimesh, selection_tile_mesh);
-}
-
 void HexMapEditorPlugin::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_PROCESS: {
@@ -799,10 +722,8 @@ void HexMapEditorPlugin::_notification(int p_what) {
 			Transform3D transform = hex_map->get_global_transform();
 			if (transform != cached_transform) {
 				cached_transform = transform;
-				if (selection.active) {
-					_update_selection();
-				}
 				editor_cursor->update(true);
+				selection_manager->redraw_selection();
 			}
 		} break;
 
@@ -853,8 +774,12 @@ void HexMapEditorPlugin::cursor_changed(Variant p_orientation) {
 }
 
 void HexMapEditorPlugin::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("_set_selection", "active", "begin", "end"),
-			&HexMapEditorPlugin::_set_selection);
+	ClassDB::bind_method(D_METHOD("deselect_cells"),
+	 		&HexMapEditorPlugin::_deselect_cells);
+	ClassDB::bind_method(D_METHOD("select_cell", "cell"),
+	 		&HexMapEditorPlugin::_select_cell);
+	// ClassDB::bind_method(D_METHOD("_set_selection", "active", "begin", "end"),
+	// 		&HexMapEditorPlugin::_set_selection);
 }
 
 HexMapEditorPlugin::HexMapEditorPlugin() {
@@ -863,30 +788,6 @@ HexMapEditorPlugin::HexMapEditorPlugin() {
 	Control *ec = memnew(Control);
 	ec->set_custom_minimum_size(Size2(mw, 0) * EDSCALE);
 	add_child(ec);
-
-	selection_mesh_mat.instantiate();
-	selection_mesh_mat->set_albedo(Color(0.7, 0.7, 1.0, 0.2));
-	selection_mesh_mat->set_shading_mode(
-			StandardMaterial3D::SHADING_MODE_UNSHADED);
-	selection_mesh_mat->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-	selection_mesh_mat->set_transparency(
-			StandardMaterial3D::TRANSPARENCY_ALPHA);
-
-	selection_line_mat.instantiate();
-	selection_line_mat->set_albedo(Color(0.7, 0.7, 1.0, 0.8));
-	// outer_mat->set_on_top_of_alpha(); ->
-	selection_line_mat->set_transparency(
-			godot::BaseMaterial3D::TRANSPARENCY_DISABLED);
-	selection_line_mat->set_render_priority(
-			RenderingServer::MATERIAL_RENDER_PRIORITY_MAX);
-	selection_line_mat->set_flag(
-			BaseMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
-
-	selection_line_mat->set_shading_mode(
-			StandardMaterial3D::SHADING_MODE_UNSHADED);
-	selection_line_mat->set_transparency(
-			StandardMaterial3D::TRANSPARENCY_ALPHA);
-	selection_line_mat->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
 
 	// palette
 	mesh_palette = memnew(MeshLibraryPalette);
@@ -906,7 +807,7 @@ HexMapEditorPlugin::HexMapEditorPlugin() {
 	editor_control->connect("cursor_orientation_changed",
 			callable_mp(this, &HexMapEditorPlugin::cursor_changed));
 	editor_control->connect("deselect",
-			callable_mp(this, &HexMapEditorPlugin::deselect_tiles));
+			callable_mp(this, &HexMapEditorPlugin::deselect_cells));
 	editor_control->connect("selection_fill",
 			callable_mp(this, &HexMapEditorPlugin::selection_fill));
 	editor_control->connect("selection_clear",
@@ -921,14 +822,11 @@ HexMapEditorPlugin::HexMapEditorPlugin() {
 HexMapEditorPlugin::~HexMapEditorPlugin() {
 	ERR_FAIL_NULL(RenderingServer::get_singleton());
 
-	if (selection_multimesh.is_valid()) {
-		RenderingServer::get_singleton()->free_rid(selection_multimesh);
-	}
-	if (selection_tile_mesh.is_valid()) {
-		RenderingServer::get_singleton()->free_rid(selection_tile_mesh);
-	}
-
 	if (editor_cursor != nullptr) {
 		delete editor_cursor;
 	}
+	if (selection_manager != nullptr) {
+		delete selection_manager;
+	}
+	// editor_control & mesh_palette are cleaned up automatically.
 }

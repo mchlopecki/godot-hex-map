@@ -54,7 +54,6 @@ private:
 
 	Ref<Shortcut> editor_shortcut(const String &p_path, const String &p_name,
 			Key p_keycode, bool p_physical);
-	void set_plane(int p_plane);
 	void handle_action(int p_action);
 
 protected:
@@ -63,6 +62,7 @@ public:
 
 	EditAxis get_active_axis() { return active_axis; }
 	int get_plane() { return plane[active_axis]; }
+	void set_plane(int p_plane);
 
 	// handle a keypress event if it matches a shortcut in the menu
 	bool handle_keypress(Ref<InputEventKey> p_event);

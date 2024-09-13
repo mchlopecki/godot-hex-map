@@ -213,21 +213,23 @@ bool EditorCursor::update(
 	origin = local_transform.xform(origin);
 	normal = local_transform.basis.xform(normal).normalized();
 
-	Vector3 pointer_pos;
-	if (!edit_plane.intersects_ray(origin, normal, &pointer_pos)) {
+	Vector3 pos;
+	if (!edit_plane.intersects_ray(origin, normal, &pos)) {
 		return false;
 	}
 	last_update_origin = origin;
 	last_update_normal = normal;
+
 	if (point != nullptr) {
-		*point = pointer_pos;
+		*point = pos;
 	}
 
-	HexMapCellId cell = hex_map->local_to_map(pointer_pos);
+	HexMapCellId cell = hex_map->local_to_map(pos);
 	if (cell == pointer_cell) {
 		return true;
 	}
 	pointer_cell = cell;
+	pointer_pos = pos;
 
 	transform_meshes();
 
@@ -235,17 +237,18 @@ bool EditorCursor::update(
 }
 
 void EditorCursor::update(bool force) {
-	Vector3 pointer_pos;
+	Vector3 pos;
 	if (!edit_plane.intersects_ray(
-				last_update_origin, last_update_normal, &pointer_pos)) {
+				last_update_origin, last_update_normal, &pos)) {
 		return;
 	}
 
-	HexMapCellId cell = hex_map->local_to_map(pointer_pos);
+	HexMapCellId cell = hex_map->local_to_map(pos);
 	if (!force && cell == pointer_cell) {
 		return;
 	}
 	pointer_cell = cell;
+	pointer_pos = pos;
 
 	transform_meshes();
 }
@@ -326,14 +329,6 @@ void EditorCursor::set_depth(int depth) {
 			break;
 	}
 	update();
-}
-
-void EditorCursor::set_pointer(CellId cell) {
-	if (cell == this->pointer_cell) {
-		return;
-	}
-	this->pointer_cell = cell;
-	transform_meshes();
 }
 
 void EditorCursor::set_orientation(TileOrientation orientation) {

@@ -52,8 +52,98 @@
 #include "editor_control.h"
 #include "editor_cursor.h"
 #include "mesh_library_palette.h"
+#include "selection_manager.h"
 
 using namespace godot;
+
+// input states:
+//	- erase_only; default state
+//		- erase_or_paint: tile selected
+//		- erasing: right down
+//		- selecting: shift+left down
+//		- move: EditorControl signal (has selection)
+//		- clone: EditorControl signal (has selection)
+//	- erase_or_paint:
+//		- erase_only: tile selection cleared
+//		- erase_only: escape pressed
+//		- painting: left down
+//		- erasing: right down
+//		- selecting: shift+left down
+//		- move: EditorControl signal (has selection)
+//		- clone: EditorControl signal (has selection)
+//	- painting: actively painting tiles with mouse movement
+//		- erase_or_paint: left mouse up
+//	- erasing: actively erasing tiles with mouse movement
+//		- erase_or_paint: right mouse up && tile selected
+//		- erase_only: right mouse up && no tile selected
+//	- selecting:
+//		- erase_or_paint: left mouse up && tile selected
+//		- erase_or_paint: escape down && tile selected
+//		- erase_only: left mouse up && no tile selected
+//		- erase_only: escape down && no tile selected
+//	- move:
+//		- erase_or_paint: left mouse up && tile selected
+//		- erase_or_paint: escape down && tile selected
+//		- erase_only: left mouse up && no tile selected
+//		- erase_only: escape down && no tile selected
+//	- clone
+//		- erase_or_paint: left mouse up && tile selected
+//		- erase_or_paint: escape down && tile selected
+//		- erase_only: left mouse up && no tile selected
+//		- erase_only: escape down && no tile selected
+//
+// input handling
+// - return pass if no hex_map
+// - input contains a mouse position `InputEventMouse.get_position()`
+//		- update editor_cursor position
+//		- (selecting) update selection
+//		- (painting) paint tile if changed
+//		- (erase) erase tile
+// - input is a mouse button event
+//		- SHIFT + wheel-up: plane up
+//		- SHIFT + wheel-down: plane down
+//		- ALT+CTRL + pan gesture: plane up/down
+//		- left-button down:
+//			- (tile) begin painting tiles
+//			- (move) place tiles, reset cursor
+//			- (clone) place tiles, reset cursor
+//			- SHIFT: begin selection
+//				- save active selection for undo-redo
+//				- hide cursor tiles
+//				- set selection begin/end anc selection active
+//				- update menu to enable selection options
+//			- CTRL: pick tile
+//				- get cell item & orientation
+//				- set cell item in mesh palette
+//				- set cursor orientation
+//		- left-button up:
+//			- (painting) complete painting tiles
+//				- create undo-redo action for changes (MergeMode::MERGE_ALL)
+//			- (selecting) complete selection
+//				- create undo/redo with the last selection
+//				- show the editor cursor
+//		- right-button down:
+//			- begin clear tiles
+//		- right-button up:
+//			- (erasing) complete erasing tiles
+//				- create undo-redo action for changes (MergeMode::MERGE_ALL)
+//	- input is a key event
+//		- escape down
+//			- (selecting) cancel selection
+//				- clear current selection
+//				- restore the previous selection if one was active
+//			- (move)
+//				- restore the tiles to their origin
+//				- reset cursor to mesh palette selection
+//			- (clone)
+//				- reset cursor to mesh palette selection
+//			- (painting) ignore; need to preserve mesh tile
+//			- (erase) ignore
+//			- (active selection) clear selection
+//			- (tile) clear tile selection
+//		- other keys
+//			- editor_control->handle_keypress()
+//
 
 // Figure out how to add EditorSetting for HexMapEditorPlugin
 // Break out MeshLibraryPicker (VBox)
@@ -93,6 +183,16 @@ using namespace godot;
 //					- disabled
 //				- without selection & with last source
 //					- cancel just resets the cursor state
+//
+// SelectionManager
+//	- set_begin(pos)
+//	- set_end(pos)
+//	- show()
+//	- hide()
+//	- is_visible()
+//	- get_cells()
+//	- get_begin()
+//	- get_end()
 //
 //
 // Merge GridManager & TileCursor?
@@ -214,6 +314,19 @@ class HexMapEditorPlugin : public EditorPlugin {
 	MeshLibraryPalette *mesh_palette = nullptr;
 	EditorControl *editor_control = nullptr;
 	EditorCursor *editor_cursor = nullptr;
+	SelectionManager *selection_manager = nullptr;
+	Vector3 selection_anchor;
+	Vector<HexMapCellId> last_selection;
+
+	enum InputState {
+		INPUT_STATE_DEFAULT,
+		INPUT_STATE_PAINTING,
+		INPUT_STATE_ERASING,
+		INPUT_STATE_SELECTING,
+		INPUT_STATE_MOVING,
+		INPUT_STATE_CLONING,
+	};
+	InputState input_state;
 
 	enum InputAction {
 		INPUT_NONE,
@@ -236,24 +349,10 @@ class HexMapEditorPlugin : public EditorPlugin {
 	};
 	List<SetItem> set_items;
 
-	Ref<StandardMaterial3D> selection_mesh_mat;
-	Ref<StandardMaterial3D> selection_line_mat;
-
-	struct Selection {
-		Vector3 begin;
-		Vector3 end;
-		bool active = false;
-		Vector<Vector3i> cells;
-	} selection;
-	Selection last_selection;
-	RID selection_tile_mesh;
-	RID selection_multimesh;
-	RID selection_multimesh_instance;
 
 	// cell index for the pointer
 	HexMap::CellId pointer_cell;
 
-	void _build_selection_meshes();
 	void _update_mesh_library();
 
 	void cell_size_changed(Vector3 cell_size);
@@ -262,7 +361,13 @@ class HexMapEditorPlugin : public EditorPlugin {
 	void plane_changed(int p_axis);
 	void axis_changed(int p_axis);
 	void cursor_changed(Variant p_orientation);
-	void deselect_tiles();
+
+	// manage selection
+	void deselect_cells();
+	void _deselect_cells();
+	void _select_cell(Vector3i);
+
+	// perform actions on selected cells
 	void selection_fill();
 	void selection_clear();
 	void selection_begin_move();
@@ -270,9 +375,6 @@ class HexMapEditorPlugin : public EditorPlugin {
 	void selection_clone();
 
 	void _do_paste();
-	void _update_selection();
-	void _set_selection(bool p_active, const Vector3 &p_begin = Vector3(),
-			const Vector3 &p_end = Vector3());
 
 	bool do_input_action(
 			Camera3D *p_camera, const Point2 &p_point, bool p_click);

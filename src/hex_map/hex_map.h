@@ -31,9 +31,7 @@
 #ifndef GRID_MAP_H
 #define GRID_MAP_H
 
-#include "editor/editor_control.h"
 #include "godot_cpp/classes/physics_material.hpp"
-#include "tile_orientation.h"
 #include <cstdint>
 #include <godot_cpp/classes/array_mesh.hpp>
 #include <godot_cpp/classes/mesh_library.hpp>
@@ -54,6 +52,8 @@
 using namespace godot;
 
 #define RS RenderingServer
+
+class HexMapCellId;
 
 class HexMap : public Node3D {
 	GDCLASS(HexMap, Node3D);
@@ -317,7 +317,9 @@ public:
 	Vector3 map_to_local(const Vector3i &p_map_position) const;
 	// Vector3 map_to_local(const HexMapCellId &p_cell_id) const;
 
-	TypedArray<Vector3i> local_region_to_map(
+	Vector<HexMapCellId> local_region_to_map(
+			Vector3, Vector3, Planes = Planes::All) const;
+	TypedArray<Vector3i> _local_region_to_map(
 			Vector3 p_local_point_a, Vector3 p_local_point_b) const;
 
 	void set_cell_scale(float p_scale);

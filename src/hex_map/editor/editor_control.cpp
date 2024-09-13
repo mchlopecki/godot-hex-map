@@ -190,7 +190,10 @@ void EditorControl::_bind_methods() {
 }
 
 bool EditorControl::handle_keypress(Ref<InputEventKey> p_event) {
-	ERR_FAIL_COND_V(!p_event.is_valid() || !p_event->is_pressed(), false);
+	ERR_FAIL_COND_V(!p_event.is_valid(), false);
+	if (!p_event->is_pressed()) {
+		return false;
+	}
 
 	PopupMenu *popup = menu_button->get_popup();
 	int count = popup->get_item_count();
@@ -306,9 +309,7 @@ EditorControl::EditorControl() {
 	popup->add_shortcut(editor_shortcut("hex_map/selection_move",
 								"Move Selected Tiles", Key::KEY_G, true),
 			Action::ACTION_SELECTION_MOVE);
-	popup->add_shortcut(editor_shortcut("hex_map/deselect", "Deselect Tiles",
-								Key::KEY_ESCAPE, true),
-			Action::ACTION_DESELECT);
+	popup->add_item("Deselect Tiles", Action::ACTION_DESELECT);
 
 	// XXX add popup window for setting maximum pick distance
 }

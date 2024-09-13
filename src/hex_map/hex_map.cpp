@@ -607,10 +607,9 @@ Vector3 HexMap::map_to_local(const Vector3i &p_map_position) const {
 // 	local.z = cell_size.x * (3.0 / 2 * p_cell_id.r);
 // 	return local;
 // }
-
-TypedArray<Vector3i> HexMap::local_region_to_map(
-		Vector3 p_a, Vector3 p_b) const {
-	TypedArray<Vector3i> out;
+Vector<HexMapCellId> HexMap::local_region_to_map(
+		Vector3 p_a, Vector3 p_b, Planes planes) const {
+	Vector<HexMapCellId> cells;
 
 	// shuffle the fields of a & b around so that a is bottom-left, b is
 	// top-right
@@ -690,11 +689,20 @@ TypedArray<Vector3i> HexMap::local_region_to_map(
 			for (int x = min_x; x <= max_x; x++) {
 				Vector3i oddr = Vector3i(x, y, z);
 				Vector3i axial = oddr_to_axial(oddr);
-				out.push_back(axial);
+				cells.push_back(axial);
 			}
 		}
 	}
 
+	return cells;
+}
+
+TypedArray<Vector3i> HexMap::_local_region_to_map(
+		Vector3 p_a, Vector3 p_b) const {
+	TypedArray<Vector3i> out;
+	for (const HexMapCellId &cell : local_region_to_map(p_a, p_b)) {
+		out.append((Vector3i)cell);
+	}
 	return out;
 }
 
@@ -1443,7 +1451,7 @@ void HexMap::_bind_methods() {
 			D_METHOD("map_to_local", "map_position"), &HexMap::map_to_local);
 	ClassDB::bind_method(
 			D_METHOD("local_region_to_map", "local_point_a", "local_point_b"),
-			&HexMap::local_region_to_map);
+			&HexMap::_local_region_to_map);
 
 #ifndef DISABLE_DEPRECATED
 	ClassDB::bind_method(D_METHOD("resource_changed", "resource"),
