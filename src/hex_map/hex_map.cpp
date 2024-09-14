@@ -611,6 +611,8 @@ Vector<HexMapCellId> HexMap::local_region_to_map(
 		Vector3 p_a, Vector3 p_b, Planes planes) const {
 	Vector<HexMapCellId> cells;
 
+	// XXX OddR Iterator, and Planes support
+
 	// shuffle the fields of a & b around so that a is bottom-left, b is
 	// top-right
 	if (p_a.x > p_b.x) {

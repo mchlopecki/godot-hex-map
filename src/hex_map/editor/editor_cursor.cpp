@@ -65,7 +65,6 @@ void EditorCursor::set_tile(
 }
 
 List<EditorCursor::CursorCell> EditorCursor::get_tiles() {
-	RenderingServer *rs = RS::get_singleton();
 	List<CursorCell> out;
 
 	for (const CursorCell &cell : tiles) {
@@ -79,6 +78,21 @@ List<EditorCursor::CursorCell> EditorCursor::get_tiles() {
 	}
 
 	return out;
+}
+
+EditorCursor::CursorCell EditorCursor::get_first_tile() {
+	List<CursorCell> out;
+	if (tiles.is_empty()) {
+		return CursorCell { .tile = -1, };
+	}
+
+	CursorCell &cell = tiles[0];
+	return CursorCell {
+		.cell_id = cell.cell_id + pointer_cell,
+		.cell_id_live = cell.cell_id_live,
+		.tile = cell.tile,
+		.orientation = cell.orientation + orientation,
+	};
 }
 
 // create a mesh and draw a grid of hexagonal cells on it

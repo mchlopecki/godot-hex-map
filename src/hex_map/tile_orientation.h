@@ -28,12 +28,9 @@ public:
 	};
 
 	TileOrientation() = default;
-	constexpr TileOrientation(Value v) :
-			value(v) {}
-	constexpr TileOrientation(int v) :
-			value(static_cast<Value>(v)) {}
-	TileOrientation(Variant v) :
-			value(static_cast<Value>((int)v)) {}
+	constexpr TileOrientation(Value v) : value(v) {}
+	constexpr TileOrientation(int v) : value(static_cast<Value>(v)) {}
+	TileOrientation(Variant v) : value(static_cast<Value>((int)v)) {}
 	constexpr operator Value() const { return value; }
 	constexpr bool operator==(TileOrientation other) const {
 		return value == other.value;
@@ -41,6 +38,7 @@ public:
 	constexpr bool operator!=(TileOrientation other) const {
 		return value != other.value;
 	}
+	constexpr bool operator!=(int other) const { return value != other; }
 	TileOrientation operator+(const TileOrientation &other) const;
 
 	operator Basis() const;

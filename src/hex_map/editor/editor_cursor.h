@@ -67,6 +67,7 @@ public:
 	void hide();
 
 	void clear_tiles();
+	bool is_empty() { return tiles.is_empty(); };
 	void cell_size_changed();
 	void set_axis(EditorControl::EditAxis axis);
 	EditorControl::EditAxis get_axis() { return edit_axis; };
@@ -75,6 +76,7 @@ public:
 			TileOrientation orientation = TileOrientation::Upright0);
 	void set_orientation(TileOrientation orientation);
 	List<CursorCell> get_tiles();
+	CursorCell get_first_tile();
 	HexMapCellId get_cell() { return pointer_cell; };
 	Vector3 get_pos() { return pointer_pos; };
 	int get_tile_count() { return tiles.size(); };
