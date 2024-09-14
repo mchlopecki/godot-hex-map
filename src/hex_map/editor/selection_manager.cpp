@@ -5,6 +5,7 @@
 #include "godot_cpp/classes/sub_viewport.hpp"
 #include "godot_cpp/classes/window.hpp"
 #include "godot_cpp/classes/world3d.hpp"
+#include "godot_cpp/variant/utility_functions.hpp"
 
 void SelectionManager::build_cell_mesh() {
 	mesh_mat.instantiate();
@@ -175,6 +176,35 @@ void SelectionManager::set_cell(HexMapCellId cell) {
 void SelectionManager::set_cells(Vector<HexMapCellId> other) {
 	cells.append_array(other);
 	redraw_selection();
+}
+
+HexMapCellId SelectionManager::get_center() {
+	if (cells.is_empty()) {
+		return HexMapCellId();
+	}
+
+	Vector3 center = cells[0].unit_center();
+	Vector3 min = center, max = center;
+	for (const HexMapCellId &cell : cells) {
+		center = cell.unit_center();
+		if (center.x < min.x) {
+			min.x = center.x;
+		} else if (center.x > max.x) {
+			max.x = center.x;
+		}
+		if (center.y < min.y) {
+			min.y = center.y;
+		} else if (center.y > max.y) {
+			max.y = center.y;
+		}
+		if (center.z < min.z) {
+			min.z = center.z;
+		} else if (center.z > max.z) {
+			max.z = center.z;
+		}
+	}
+
+	return HexMapCellId::from_unit_point((max + min) / 2);
 }
 
 SelectionManager::SelectionManager(HexMap *hex_map) : hex_map(hex_map) {

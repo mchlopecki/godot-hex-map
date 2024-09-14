@@ -97,8 +97,6 @@ EditorCursor::CursorCell EditorCursor::get_first_tile() {
 
 // create a mesh and draw a grid of hexagonal cells on it
 void EditorCursor::build_y_grid() {
-	Vector3 p_cell_size(hex_map->get_cell_size());
-
 	// create the points that make up the top of a hex cell
 	Vector<Vector3> shape_points;
 	shape_points.append(Vector3(0.0, 0, -1.0));
@@ -111,10 +109,9 @@ void EditorCursor::build_y_grid() {
 
 	// pick a point on the middle of an edge to find the closest edge of the
 	// cells
-	float max = hex_map->map_to_local(HexMapCellId(GRID_RADIUS,
-											  -(int)GRID_RADIUS / 2, 0))
-						.length_squared() *
-			0.80; // to smooth the fade
+	float max = HexMapCellId(GRID_RADIUS, -(int)GRID_RADIUS / 2, 0)
+		.unit_center()
+		.length_squared();
 	PackedVector3Array grid_points;
 	PackedColorArray grid_colors;
 	for (const auto cell : HexMapCellId::Origin.get_neighbors(
@@ -143,7 +140,6 @@ void EditorCursor::build_y_grid() {
 }
 
 void EditorCursor::build_r_grid() {
-	Vector3 p_cell_size(hex_map->get_cell_size());
 
 	// create the points that traverse from the center of one edge to the
 	// opposite edge
@@ -154,9 +150,9 @@ void EditorCursor::build_r_grid() {
 	shape_points.append(Vector3(SQRT3_2, 1.0, 0));
 	shape_points.append(Vector3(-SQRT3_2, 1.0, 0));
 
-	float max = hex_map->map_to_local(HexMapCellId(0, 0, GRID_RADIUS))
-						.length_squared() *
-			0.80; // to smooth the fade
+	float max = HexMapCellId(0, 0, GRID_RADIUS)
+		.unit_center()
+		.length_squared();
 	PackedVector3Array grid_points;
 	PackedColorArray grid_colors;
 	for (const auto cell : HexMapCellId::Origin.get_neighbors(

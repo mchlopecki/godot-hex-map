@@ -30,6 +30,7 @@
 
 #include "hex_map.h"
 #include "godot_cpp/variant/basis.hpp"
+#include "godot_cpp/variant/utility_functions.hpp"
 #include "hex_map_cell_id.h"
 #include "tile_orientation.h"
 
@@ -112,6 +113,8 @@ bool HexMap::_set(const StringName &p_name, const Variant &p_value) {
 				Cell cell;
 				cell.cell = cells.decode_u32(offset);
 				offset += 4;
+
+				UtilityFunctions::print("loaded one cell");
 
 				cell_map[key] = cell;
 			}

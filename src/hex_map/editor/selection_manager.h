@@ -36,4 +36,7 @@ public:
 	void set_cell(HexMapCellId);
 	void set_cells(Vector<HexMapCellId>);
 	void redraw_selection(); // for cell size change
+
+	// get cell id at the center of the selection
+	HexMapCellId get_center();
 };

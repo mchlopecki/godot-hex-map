@@ -1,33 +1,3 @@
-/**************************************************************************/
-/*  grid_map_editor_plugin.cpp                                            */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
-/**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
 #include "hex_map_editor_plugin.h"
 #include "editor_control.h"
 #include "editor_cursor.h"
@@ -70,6 +40,9 @@
 #include <godot_cpp/variant/packed_vector3_array.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 
+// XXX selecting too many cells then deleting causes cpu spin/hang
+// XXX maps do not save
+//
 void HexMapEditorPlugin::commit_cell_changes(String desc) {
 	EditorUndoRedoManager *undo_redo = get_undo_redo();
 	undo_redo->create_action(desc);
@@ -167,14 +140,15 @@ void HexMapEditorPlugin::copy_selection_to_cursor() {
 	if (cells.is_empty()) {
 		return;
 	}
+	HexMapCellId center = selection_manager->get_center();
 
 	for (const HexMapCellId &cell : cells) {
 		int tile = hex_map->get_cell_item(cell);
 		if (tile == HexMap::INVALID_CELL_ITEM) {
 			continue;
 		}
-		editor_cursor->set_tile(cell - editor_cursor->get_cell(), tile,
-				hex_map->get_cell_item_orientation(cell));
+		editor_cursor->set_tile(
+				center - cell, tile, hex_map->get_cell_item_orientation(cell));
 	}
 	editor_cursor->update(true);
 	input_state = INPUT_STATE_MOVING;
@@ -342,6 +316,11 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(
 	}
 
 	// try to handle any key event as a shortcut first
+	//
+	// XXX need to make sure keypress events aren't passed through while we're
+	// performing an action.  This can happen right now with paint, move, etc
+	// by hitting `G` becuase there's no selection.
+	//
 	Ref<InputEventKey> key_event = p_event;
 	if (key_event.is_valid() && editor_control->handle_keypress(key_event)) {
 		return AFTER_GUI_INPUT_STOP;
@@ -572,17 +551,17 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 		if (mesh_library.is_valid()) {
 			mesh_library = Ref<MeshLibrary>();
 		}
+		hex_map->set_meta("_editor_floors_", editor_control->get_planes());
 
 		// we use delete here because EditorCursor is not a Godot Object
 		// subclass, so its destructor is not called with memfree().
 		delete editor_cursor;
 		editor_cursor = nullptr;
+		editor_control->update_selection_menu(false);
 		delete selection_manager;
 		selection_manager = nullptr;
 	}
 
-	// XXX works when no connect() calls made in constructor; waiting on 4.3
-	// which will have https://github.com/godotengine/godot-cpp/pull/1446
 	hex_map = Object::cast_to<HexMap>(p_object);
 
 	mesh_palette->clear_selection();
@@ -597,22 +576,13 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 	// not a godot Object subclass, so `new` instead of `memnew()`
 	editor_cursor = new EditorCursor(hex_map);
 	selection_manager = new SelectionManager(hex_map);
-
-	// _update_cursor_instance();
+	Array floors = hex_map->get_meta("_editor_floors_");
+	if (floors.size() == 4) {
+		editor_control->set_planes(floors);
+	}
 
 	set_process(true);
 
-	// XXX Save the editor floor state
-	//
-	// load any previous floor values
-	// TypedArray<int> floors = node->get_meta("_editor_floor_",
-	// TypedArray<int>()); for (int i = 0; i < MIN(floors.size(), AXIS_MAX);
-	// i++) { 	edit_floor[i] = floors[i];
-	// }
-	//
-
-	// hex_map->connect(SNAME("cell_size_changed"),
-	// 		callable_mp(this, &HexMapEditorPlugin::_draw_grids));
 	hex_map->connect("cell_size_changed",
 			callable_mp(this, &HexMapEditorPlugin::cell_size_changed));
 	hex_map->connect("changed",
@@ -664,6 +634,7 @@ void HexMapEditorPlugin::_notification(int p_what) {
 void HexMapEditorPlugin::cell_size_changed(Vector3 cell_size) {
 	ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
 	editor_cursor->cell_size_changed();
+	selection_manager->redraw_selection();
 }
 
 void HexMapEditorPlugin::tile_changed(int p_mesh_id) {
@@ -673,6 +644,7 @@ void HexMapEditorPlugin::tile_changed(int p_mesh_id) {
 		editor_cursor->set_tile(Vector3i(), p_mesh_id);
 		editor_cursor->update(true);
 	}
+	editor_control->reset_orientation();
 }
 
 void HexMapEditorPlugin::plane_changed(int p_plane) {
@@ -695,17 +667,9 @@ void HexMapEditorPlugin::_bind_methods() {
 			D_METHOD("deselect_cells"), &HexMapEditorPlugin::_deselect_cells);
 	ClassDB::bind_method(D_METHOD("select_cell", "cell"),
 			&HexMapEditorPlugin::_select_cell);
-	// ClassDB::bind_method(D_METHOD("_set_selection", "active", "begin",
-	// "end"), 		&HexMapEditorPlugin::_set_selection);
 }
 
 HexMapEditorPlugin::HexMapEditorPlugin() {
-	// int mw = ProjectSettings::get_singleton()->get_setting(
-	// 		"editors/hex_map/palette_min_width", 230);
-	// Control *ec = memnew(Control);
-	// ec->set_custom_minimum_size(Size2(mw, 0));
-	// add_child(ec);
-
 	// palette
 	mesh_palette = memnew(MeshLibraryPalette);
 	mesh_palette->hide();

@@ -5,6 +5,35 @@
 
 const HexMapCellId HexMapCellId::Origin(0.0f, 0.0f, 0.0f);
 
+// based on blog post https://observablehq.com/@jrus/hexround
+static inline HexMapCellId axial_round(real_t q_in, real_t r_in) {
+	int q = round(q_in);
+	int r = round(r_in);
+
+	real_t q_rem = q_in - q;
+	real_t r_rem = r_in - r;
+
+	if (abs(q_rem) >= abs(r_rem)) {
+		q += round(0.5 * r_rem + q_rem);
+	} else {
+		r += round(0.5 * q_rem + r_rem);
+	}
+
+	return HexMapCellId(q, r, 0);
+}
+
+HexMapCellId HexMapCellId::from_unit_point(const Vector3 &point) {
+	// convert x/z point into axial hex coordinates
+	// https://www.redblobgames.com/grids/hexagons/#pixel-to-hex
+	real_t q = (Math_SQRT3 / 3 * point.x - 1.0 / 3 * point.z);
+	real_t r = (2.0 / 3 * point.z);
+	HexMapCellId cell_id = axial_round(q, r);
+
+	cell_id.y = (int)point.y;
+
+	return cell_id;
+}
+
 Vector3 HexMapCellId::unit_center() const {
 	// convert axial hex coordinates to a point
 	// https://www.redblobgames.com/grids/hexagons/#hex-to-pixel

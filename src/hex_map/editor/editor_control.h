@@ -4,6 +4,7 @@
 #include "godot_cpp/classes/label.hpp"
 #include "godot_cpp/classes/menu_button.hpp"
 #include "godot_cpp/classes/spin_box.hpp"
+#include "godot_cpp/variant/array.hpp"
 #include <godot_cpp/classes/control.hpp>
 
 #pragma once
@@ -63,6 +64,14 @@ public:
 	EditAxis get_active_axis() { return active_axis; }
 	int get_plane() { return plane[active_axis]; }
 	void set_plane(int p_plane);
+	Array get_planes() {
+		return Array::make(plane[0], plane[1], plane[2], plane[3]);
+	};
+	void set_planes(Array values) {
+		for (int i = 0; i < AXIS_S + 1; i++) {
+			plane[i] = values[i];
+		}
+	}
 
 	// handle a keypress event if it matches a shortcut in the menu
 	bool handle_keypress(Ref<InputEventKey> p_event);

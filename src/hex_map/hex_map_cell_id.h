@@ -50,6 +50,9 @@ public:
 	// by cell size.
 	Vector3 unit_center() const;
 
+	// get a cell id for a point on a unit hex grid (height=1, radius-1)
+	static HexMapCellId from_unit_point(const Vector3 &point);
+
 	static const HexMapCellId Origin;
 };
 
