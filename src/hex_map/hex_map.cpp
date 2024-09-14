@@ -97,11 +97,11 @@ bool HexMap::_set(const StringName &p_name, const Variant &p_value) {
 		Dictionary d = p_value;
 
 		if (d.has("cells")) {
-			PackedByteArray cells = d["cells"];
+			const PackedByteArray cells = d["cells"];
 			ERR_FAIL_COND_V(cells.size() % 10 != 0, false);
 
 			size_t offset = 0;
-			for (const KeyValue<IndexKey, Cell> &E : cell_map) {
+			while (offset < cells.size()) {
 				IndexKey key;
 				key.x = cells.decode_s16(offset);
 				offset += 2;

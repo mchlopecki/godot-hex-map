@@ -1,10 +1,17 @@
-[gd_scene load_steps=2 format=3 uid="uid://bt0soj2wvavie"]
+[gd_scene load_steps=2 format=4 uid="uid://bt0soj2wvavie"]
 
-[sub_resource type="MeshLibrary" id="MeshLibrary_amnye"]
+[ext_resource type="MeshLibrary" uid="uid://ygm46u2uobsa" path="res://tileset.tres" id="1_43pbi"]
 
 [node name="Node3D" type="Node3D"]
 
+[node name="GridMap" type="GridMap" parent="."]
+mesh_library = ExtResource("1_43pbi")
+
 [node name="HexMap" type="HexMap" parent="."]
-mesh_library = SubResource("MeshLibrary_amnye")
-cell_shape = 1
-cell_size = Vector3(1, 1, 1)
+mesh_library = ExtResource("1_43pbi")
+cell_size = Vector3(1.154, 1, 1.154)
+cell_center_y = false
+data = {
+"cells": PackedByteArray("")
+}
+metadata/_editor_floors_ = [0, 0, 0, 0]
