@@ -36,6 +36,7 @@
 
 #include "hex_map/editor/hex_map_editor_plugin.h"
 #include "hex_map/hex_map.h"
+#include "hex_map/hex_map_cell_id.h"
 #include "test_node.h"
 #include "test_node_editor_plugin.h"
 
@@ -43,6 +44,7 @@ using namespace godot;
 
 void initialize_hexmap_module(ModuleInitializationLevel p_level) {
 	if (p_level == godot::MODULE_INITIALIZATION_LEVEL_SCENE) {
+		ClassDB::register_class<HexMapCellIdRef>();
 		ClassDB::register_class<HexMap>();
 		ClassDB::register_class<TestNode>();
 	}
@@ -66,14 +68,12 @@ void uninitialize_hexmap_module(ModuleInitializationLevel p_level) {
 
 extern "C" {
 // Initialization.
-GDExtensionBool GDE_EXPORT
-hexmap_library_init(GDExtensionInterfaceGetProcAddress p_get_proc_address,
+GDExtensionBool GDE_EXPORT hexmap_library_init(
+		GDExtensionInterfaceGetProcAddress p_get_proc_address,
 		const GDExtensionClassLibraryPtr p_library,
 		GDExtensionInitialization *r_initialization) {
 	godot::GDExtensionBinding::InitObject init_obj(
-			p_get_proc_address,
-			p_library,
-			r_initialization);
+			p_get_proc_address, p_library, r_initialization);
 
 	init_obj.register_initializer(initialize_hexmap_module);
 	init_obj.register_terminator(uninitialize_hexmap_module);

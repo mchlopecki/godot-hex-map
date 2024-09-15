@@ -61,6 +61,7 @@ HexMapCellId::operator String() const {
 	// clang-format off
 	return (String)"{ .q = " + itos(q) +
 		", .r = " + itos(r) +
+		", .s = " + itos(s()) +
 		", .y = " + itos(y) + "}";
 	// clang-format on
 }
@@ -75,3 +76,5 @@ std::ostream &operator<<(std::ostream &os, const HexMapCellId &value) {
 	os << " }";
 	return os;
 }
+
+String HexMapCellIdRef::_to_string() { return (String)this->cell_id; }

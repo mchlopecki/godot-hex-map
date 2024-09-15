@@ -29,11 +29,10 @@
 /**************************************************************************/
 
 #include "hex_map.h"
-#include "godot_cpp/variant/basis.hpp"
-#include "godot_cpp/variant/utility_functions.hpp"
 #include "hex_map_cell_id.h"
 #include "tile_orientation.h"
 
+#include "godot_cpp/variant/basis.hpp"
 #include <godot_cpp/classes/array_mesh.hpp>
 #include <godot_cpp/classes/main_loop.hpp>
 #include <godot_cpp/classes/material.hpp>
@@ -113,8 +112,6 @@ bool HexMap::_set(const StringName &p_name, const Variant &p_value) {
 				Cell cell;
 				cell.cell = cells.decode_u32(offset);
 				offset += 4;
-
-				UtilityFunctions::print("loaded one cell");
 
 				cell_map[key] = cell;
 			}
@@ -569,6 +566,19 @@ static inline Vector3i axial_to_oddr(Vector3i axial) {
 static inline Vector3i oddr_to_axial(Vector3i oddr) {
 	int q = oddr.x - (oddr.z - (oddr.z & 1)) / 2;
 	return Vector3i(q, oddr.y, oddr.z);
+}
+
+HexMapCellId HexMap::local_to_cell_id(const Vector3 &local_position) const {
+	Vector3 unit_pos = local_position / cell_size;
+	return HexMapCellId::from_unit_point(unit_pos);
+}
+
+Ref<HexMapCellIdRef> HexMap::_local_to_cell_id(
+		const Vector3 &p_local_position) const {
+	Ref<HexMapCellIdRef> ref;
+	ref.instantiate();
+	ref->set(local_to_cell_id(p_local_position));
+	return ref;
 }
 
 HexMap::CellId HexMap::local_to_map(const Vector3 &p_local_position) const {
@@ -1457,6 +1467,9 @@ void HexMap::_bind_methods() {
 	ClassDB::bind_method(
 			D_METHOD("local_region_to_map", "local_point_a", "local_point_b"),
 			&HexMap::_local_region_to_map);
+
+	ClassDB::bind_method(D_METHOD("local_to_cell_id", "local_position"),
+			&HexMap::_local_to_cell_id);
 
 #ifndef DISABLE_DEPRECATED
 	ClassDB::bind_method(D_METHOD("resource_changed", "resource"),

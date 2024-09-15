@@ -1,5 +1,7 @@
 #pragma once
 
+#include "godot_cpp/classes/ref_counted.hpp"
+#include "godot_cpp/classes/wrapped.hpp"
 #include "godot_cpp/variant/vector3.hpp"
 #include "hex_map.h"
 
@@ -58,3 +60,20 @@ public:
 
 // added for testing
 std::ostream &operator<<(std::ostream &os, const HexMapCellId &value);
+
+// wrapper to return a HexMapCellId to GDscript
+class HexMapCellIdRef : public RefCounted {
+	GDCLASS(HexMapCellIdRef, RefCounted)
+
+	HexMapCellId cell_id;
+
+public:
+	const HexMapCellId &operator*() const { return cell_id; }
+	HexMapCellId &operator*() { return cell_id; }
+	void set(const HexMapCellId &other) { cell_id = other; };
+
+	String _to_string();
+
+protected:
+	static void _bind_methods() {};
+};

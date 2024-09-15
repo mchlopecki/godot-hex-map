@@ -54,6 +54,7 @@ using namespace godot;
 #define RS RenderingServer
 
 class HexMapCellId;
+class HexMapCellIdRef;
 
 class HexMap : public Node3D {
 	GDCLASS(HexMap, Node3D);
@@ -195,13 +196,6 @@ private:
 
 	void _recreate_octant_data();
 
-	struct BakeLight {
-		RS::LightType type = RS::LightType::LIGHT_DIRECTIONAL;
-		Vector3 pos;
-		Vector3 dir;
-		float param[RS::LIGHT_PARAM_MAX] = {};
-	};
-
 	_FORCE_INLINE_ Vector3 _octant_get_offset(const OctantKey &p_key) const {
 		return Vector3(p_key.x, p_key.y, p_key.z) * cell_size * octant_size;
 	}
@@ -312,6 +306,11 @@ public:
 	Basis get_cell_item_basis(const Vector3i &p_position) const;
 	Basis get_basis_with_orthogonal_index(int p_index) const;
 	TypedArray<Vector3i> get_cell_neighbors(const Vector3i p_cell) const;
+
+	HexMapCellId local_to_cell_id(const Vector3 &local_position) const;
+	Ref<HexMapCellIdRef> _local_to_cell_id(
+			const Vector3 &local_position) const;
+	Vector3 cell_id_to_local(const HexMapCellId &cell_id) const;
 
 	CellId local_to_map(const Vector3 &p_local_position) const;
 	Vector3 map_to_local(const Vector3i &p_map_position) const;
