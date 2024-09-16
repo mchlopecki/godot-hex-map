@@ -575,10 +575,16 @@ HexMapCellId HexMap::local_to_cell_id(const Vector3 &local_position) const {
 
 Ref<HexMapCellIdRef> HexMap::_local_to_cell_id(
 		const Vector3 &p_local_position) const {
-	Ref<HexMapCellIdRef> ref;
-	ref.instantiate();
-	ref->set(local_to_cell_id(p_local_position));
-	return ref;
+	HexMapCellId cell_id = local_to_cell_id(p_local_position);
+	return Ref<HexMapCellIdRef>(memnew(HexMapCellIdRef(cell_id)));
+}
+
+Vector3 HexMap::cell_id_to_local(const HexMapCellId &cell_id) const {
+	return cell_id.unit_center() * cell_size;
+}
+
+Vector3 HexMap::_cell_id_to_local(const Ref<HexMapCellIdRef> cell_id) const {
+	return cell_id_to_local(cell_id->inner());
 }
 
 HexMap::CellId HexMap::local_to_map(const Vector3 &p_local_position) const {
@@ -1470,6 +1476,8 @@ void HexMap::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("local_to_cell_id", "local_position"),
 			&HexMap::_local_to_cell_id);
+	ClassDB::bind_method(D_METHOD("cell_id_to_local", "cell_id"),
+			&HexMap::_cell_id_to_local);
 
 #ifndef DISABLE_DEPRECATED
 	ClassDB::bind_method(D_METHOD("resource_changed", "resource"),

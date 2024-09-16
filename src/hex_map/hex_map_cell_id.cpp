@@ -1,6 +1,8 @@
 #include "hex_map_cell_id.h"
+#include "godot_cpp/core/class_db.hpp"
 #include "godot_cpp/core/math.hpp"
 #include "godot_cpp/variant/string.hpp"
+#include "godot_cpp/variant/utility_functions.hpp"
 #include "hex_map_iter_axial.h"
 
 const HexMapCellId HexMapCellId::Origin(0.0f, 0.0f, 0.0f);
@@ -77,4 +79,57 @@ std::ostream &operator<<(std::ostream &os, const HexMapCellId &value) {
 	return os;
 }
 
-String HexMapCellIdRef::_to_string() { return (String)this->cell_id; }
+Ref<HexMapCellIdRef> HexMapCellIdRef::operator+(
+		const HexMapCellId &delta) const {
+	Ref<HexMapCellIdRef> ref;
+	ref.instantiate();
+	ref->cell_id = cell_id + delta;
+	return ref;
+}
+
+void HexMapCellIdRef::_bind_methods() {
+	// static constructors
+	ClassDB::bind_static_method("HexMapCellIdRef",
+			D_METHOD("from_values", "hash"), &HexMapCellIdRef::_from_values);
+	ClassDB::bind_static_method("HexMapCellIdRef",
+			D_METHOD("from_hash", "hash"), &HexMapCellIdRef::_from_hash);
+
+	// field accessors
+	ClassDB::bind_method(D_METHOD("get_q"), &HexMapCellIdRef::_get_q);
+	ClassDB::bind_method(D_METHOD("get_r"), &HexMapCellIdRef::_get_r);
+	ClassDB::bind_method(D_METHOD("get_s"), &HexMapCellIdRef::_get_s);
+	ClassDB::bind_method(D_METHOD("get_y"), &HexMapCellIdRef::_get_y);
+
+	// directional helpers
+	ClassDB::bind_method(D_METHOD("east"), &HexMapCellIdRef::_east);
+	ClassDB::bind_method(D_METHOD("northeast"), &HexMapCellIdRef::_northeast);
+	ClassDB::bind_method(D_METHOD("northwest"), &HexMapCellIdRef::_northwest);
+	ClassDB::bind_method(D_METHOD("west"), &HexMapCellIdRef::_west);
+	ClassDB::bind_method(D_METHOD("southwest"), &HexMapCellIdRef::_southwest);
+	ClassDB::bind_method(D_METHOD("southeast"), &HexMapCellIdRef::_southeast);
+	ClassDB::bind_method(D_METHOD("up"), &HexMapCellIdRef::_up);
+	ClassDB::bind_method(D_METHOD("down"), &HexMapCellIdRef::_down);
+
+	ClassDB::bind_method(D_METHOD("hash"), &HexMapCellIdRef::_hash);
+	ClassDB::bind_method(
+			D_METHOD("equals", "other"), &HexMapCellIdRef::_equals);
+	ClassDB::bind_method(D_METHOD("get_neighbors", "radius"),
+			&HexMapCellIdRef::_get_neighbors, 1);
+}
+
+Ref<HexMapCellIdRef> HexMapCellIdRef::_from_hash(uint64_t p_hash) {
+	Ref<HexMapCellIdRef> ref;
+	ref.instantiate();
+	ref->cell_id.q = p_hash >> 32;
+	ref->cell_id.r = p_hash >> 16;
+	ref->cell_id.y = p_hash;
+	return ref;
+}
+
+Ref<HexMapIterAxial> HexMapCellIdRef::_get_neighbors(
+		unsigned int radius) const {
+	Ref<HexMapIterAxial> ref;
+	ref.instantiate();
+	ref->set(cell_id.get_neighbors(radius));
+	return ref;
+}

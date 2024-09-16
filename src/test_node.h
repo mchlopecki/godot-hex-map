@@ -14,3 +14,15 @@ public:
 	TestNode(){};
 	~TestNode(){};
 };
+
+class TestObject : public godot::Object {
+	GDCLASS(TestObject, Object)
+
+private:
+protected:
+	static void _bind_methods() {};
+
+public:
+	TestObject(int){};
+	~TestObject(){};
+};

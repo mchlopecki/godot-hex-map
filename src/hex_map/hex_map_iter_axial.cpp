@@ -34,6 +34,20 @@ HexMapIterAxial::HexMapIterAxial(const HexMapCellId center,
 	}
 }
 
+void HexMapIterAxial::set(const HexMapIterAxial &other) {
+	radius = other.radius;
+	y_min = other.y_min;
+	y_max = other.y_max;
+	q_min = other.q_min;
+	q_max = other.q_max;
+	r_min = other.r_min;
+	r_max = other.r_max;
+	s_min = other.s_min;
+	s_max = other.s_max;
+	center = other.center;
+	cell = other.cell;
+}
+
 // prefix increment
 HexMapIterAxial &HexMapIterAxial::operator++() {
 	do {
@@ -47,11 +61,13 @@ HexMapIterAxial &HexMapIterAxial::operator++() {
 			cell.q = q_min;
 			cell.y++;
 		} else if (cell.y == y_max) {
-			cell.q = cell.r = cell.y = (radius + 1);
+			cell.q = q_max + 1;
+			cell.r = r_max + 1;
+			cell.y = y_max + 1;
 		} else {
 			break;
 		}
-	} while (cell.s() < s_min || cell.s() > s_max ||
+	} while (cell.s() < s_min || cell.s() > s_max || cell == center ||
 			center.distance(cell) > radius);
 	return *this;
 }
@@ -72,7 +88,7 @@ HexMapIterAxial HexMapIterAxial::begin() {
 
 HexMapIterAxial HexMapIterAxial::end() {
 	HexMapIterAxial iter = *this;
-	iter.cell = HexMapCellId(radius + 1, radius + 1, radius + 1);
+	iter.cell = HexMapCellId(q_max + 1, r_max + 1, y_max + 1);
 	return iter;
 }
 
@@ -116,4 +132,13 @@ std::ostream &operator<<(std::ostream &os, const HexMapIterAxial &value) {
 	os << "] }";
 
 	return os;
+}
+
+void HexMapIterAxial::_bind_methods() {
+	ClassDB::bind_method(
+			D_METHOD("_iter_init", "_arg"), &HexMapIterAxial::_iter_init);
+	ClassDB::bind_method(
+			D_METHOD("_iter_next", "_arg"), &HexMapIterAxial::_iter_next);
+	ClassDB::bind_method(
+			D_METHOD("_iter_get", "_arg"), &HexMapIterAxial::_iter_get);
 }

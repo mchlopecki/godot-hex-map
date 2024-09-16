@@ -1,0 +1,49 @@
+[gd_scene load_steps=4 format=3 uid="uid://wcaukixhlbo2"]
+
+[ext_resource type="Script" path="res://RayPickerCamera/ray_picker_camera.gd" id="1_1mxd7"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_d0hky"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_y822c"]
+font_size = 18
+outline_size = 3
+outline_color = Color(0, 0, 0, 1)
+shadow_size = 0
+
+[node name="RayPickerCamera" type="Camera3D"]
+script = ExtResource("1_1mxd7")
+
+[node name="RayCast3D" type="RayCast3D" parent="."]
+
+[node name="Label3D" type="Label3D" parent="."]
+transform = Transform3D(1, -6.64895e-16, 1.47403e-16, 1.47404e-16, 0.422618, 0.906308, -6.64895e-16, -0.906308, 0.422618, 2.08165e-12, 14.5, 9.5)
+top_level = true
+visible = false
+no_depth_test = true
+text = "test"
+font_size = 96
+horizontal_alignment = 0
+vertical_alignment = 0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 0
+
+[node name="MarginContainer" type="MarginContainer" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+
+[node name="DebugLabel" type="Label" parent="HBoxContainer/MarginContainer"]
+unique_name_in_owner = true
+material = SubResource("CanvasItemMaterial_d0hky")
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+text = "Test"
+label_settings = SubResource("LabelSettings_y822c")

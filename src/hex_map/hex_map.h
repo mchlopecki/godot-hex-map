@@ -309,8 +309,10 @@ public:
 
 	HexMapCellId local_to_cell_id(const Vector3 &local_position) const;
 	Ref<HexMapCellIdRef> _local_to_cell_id(
-			const Vector3 &local_position) const;
+			const Vector3 &p_local_position) const;
 	Vector3 cell_id_to_local(const HexMapCellId &cell_id) const;
+	Vector3 _cell_id_to_local(
+			const Ref<HexMapCellIdRef> p_local_position) const;
 
 	CellId local_to_map(const Vector3 &p_local_position) const;
 	Vector3 map_to_local(const Vector3i &p_map_position) const;

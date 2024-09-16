@@ -1,6 +1,9 @@
 #pragma once
 
+#include "godot_cpp/classes/ref_counted.hpp"
+#include "godot_cpp/classes/wrapped.hpp"
 #include "godot_cpp/variant/string.hpp"
+#include "godot_cpp/variant/utility_functions.hpp"
 #include "hex_map.h"
 #include "hex_map_cell_id.h"
 
@@ -16,18 +19,18 @@
 //		- not really useful for anything but the grid generator
 //		- these cell coordinates are pretty easy to create, Q = N, R +/- 1
 
-struct HexMapIterAxial {
+struct HexMapIterAxial : public godot::RefCounted {
+	GDCLASS(HexMapIterAxial, godot::RefCounted)
+
 public:
 	HexMapIterAxial(const HexMapCellId center, unsigned int radius,
 			const HexMap::Planes &planes = HexMap::Planes::All);
+	HexMapIterAxial() : HexMapIterAxial(HexMapCellId::Origin, 1) {}
 
+	// c++ iterator functions
 	HexMapCellId operator*() const { return cell; }
 	const HexMapCellId &operator->() { return cell; }
-
-	// Prefix increment
 	HexMapIterAxial &operator++();
-
-	// Postfix increment
 	HexMapIterAxial operator++(int);
 
 	friend bool operator==(
@@ -42,10 +45,30 @@ public:
 	HexMapIterAxial begin();
 	HexMapIterAxial end();
 
+	void set(const HexMapIterAxial &other);
+
+	// Godot custom iterator functions
+	bool _should_continue() { return *this != end(); }
+	bool _iter_init(Variant _arg) {
+		*this = begin();
+		return _should_continue();
+	}
+	bool _iter_next(Variant _arg) {
+		++*this;
+		return _should_continue();
+	}
+	Ref<HexMapCellIdRef> _iter_get(Variant _arg) {
+		return Ref<HexMapCellIdRef>(memnew(HexMapCellIdRef(cell)));
+	}
+
 	operator String() const;
+
 	// added for testing
 	friend std::ostream &operator<<(
 			std::ostream &os, const HexMapIterAxial &value);
+
+protected:
+	static void _bind_methods();
 
 private:
 	unsigned int radius;
