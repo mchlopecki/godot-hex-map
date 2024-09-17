@@ -16,7 +16,6 @@ env = SConscript("godot-cpp/SConstruct")
 
 # tweak this if you want to use different folders, or more folders, to store your source code in.
 env.Append(CPPPATH=["src/"])
-env.Append(CPPDEFINES = [ 'DISABLE_OBJECT_BINDING_GUARD' ] )
 sources = Glob("src/*.cpp")
 sources += Glob("src/hex_map/*.cpp")
 sources += Glob("src/hex_map/editor/*.cpp")

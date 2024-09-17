@@ -575,8 +575,7 @@ HexMapCellId HexMap::local_to_cell_id(const Vector3 &local_position) const {
 
 Ref<HexMapCellIdRef> HexMap::_local_to_cell_id(
 		const Vector3 &p_local_position) const {
-	HexMapCellId cell_id = local_to_cell_id(p_local_position);
-	return Ref<HexMapCellIdRef>(memnew(HexMapCellIdRef(cell_id)));
+	return local_to_cell_id(p_local_position);
 }
 
 Vector3 HexMap::cell_id_to_local(const HexMapCellId &cell_id) const {

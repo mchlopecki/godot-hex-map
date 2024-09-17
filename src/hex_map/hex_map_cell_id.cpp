@@ -79,18 +79,13 @@ std::ostream &operator<<(std::ostream &os, const HexMapCellId &value) {
 	return os;
 }
 
-Ref<HexMapCellIdRef> HexMapCellIdRef::operator+(
-		const HexMapCellId &delta) const {
-	Ref<HexMapCellIdRef> ref;
-	ref.instantiate();
-	ref->cell_id = cell_id + delta;
-	return ref;
-}
-
 void HexMapCellIdRef::_bind_methods() {
 	// static constructors
 	ClassDB::bind_static_method("HexMapCellIdRef",
-			D_METHOD("from_values", "hash"), &HexMapCellIdRef::_from_values);
+			D_METHOD("from_values", "q", "r", "y"),
+			&HexMapCellIdRef::_from_values);
+	ClassDB::bind_static_method("HexMapCellIdRef",
+			D_METHOD("from_vec", "vector"), &HexMapCellIdRef::_from_vector);
 	ClassDB::bind_static_method("HexMapCellIdRef",
 			D_METHOD("from_hash", "hash"), &HexMapCellIdRef::_from_hash);
 
@@ -111,25 +106,87 @@ void HexMapCellIdRef::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("down"), &HexMapCellIdRef::_down);
 
 	ClassDB::bind_method(D_METHOD("hash"), &HexMapCellIdRef::_hash);
+	ClassDB::bind_method(D_METHOD("as_vector"), &HexMapCellIdRef::_as_vector);
+
 	ClassDB::bind_method(
 			D_METHOD("equals", "other"), &HexMapCellIdRef::_equals);
 	ClassDB::bind_method(D_METHOD("get_neighbors", "radius"),
 			&HexMapCellIdRef::_get_neighbors, 1);
 }
 
-Ref<HexMapCellIdRef> HexMapCellIdRef::_from_hash(uint64_t p_hash) {
-	Ref<HexMapCellIdRef> ref;
-	ref.instantiate();
-	ref->cell_id.q = p_hash >> 32;
-	ref->cell_id.r = p_hash >> 16;
-	ref->cell_id.y = p_hash;
-	return ref;
+int16_t HexMapCellIdRef::_get_q() { return cell_id.q; }
+
+int16_t HexMapCellIdRef::_get_r() { return cell_id.r; }
+
+int16_t HexMapCellIdRef::_get_s() { return cell_id.s(); }
+
+int16_t HexMapCellIdRef::_get_y() { return cell_id.y; }
+
+Ref<HexMapCellIdRef> HexMapCellIdRef::_from_values(
+		int16_t p_q, int16_t p_r, int16_t p_y) {
+	return HexMapCellId(p_q, p_r, p_y);
 }
 
-Ref<HexMapIterAxial> HexMapCellIdRef::_get_neighbors(
+Vector3i HexMapCellIdRef::_as_vector() {
+	return Vector3i(cell_id.q, cell_id.r, cell_id.y);
+}
+
+Ref<HexMapCellIdRef> HexMapCellIdRef::_from_vector(Vector3i p_vector) {
+	return HexMapCellId(p_vector.x, p_vector.y, p_vector.z);
+}
+
+uint64_t HexMapCellIdRef::_hash() {
+	uint64_t hash = 0;
+	hash |= (static_cast<uint64_t>(cell_id.q) & 0xffff) << 32;
+	hash |= (static_cast<uint64_t>(cell_id.r) & 0xffff) << 16;
+	hash |= (static_cast<uint64_t>(cell_id.y) & 0xffff);
+	return hash;
+}
+
+Ref<HexMapCellIdRef> HexMapCellIdRef::_from_hash(uint64_t p_hash) {
+	return HexMapCellId(
+			(p_hash >> 32) & 0xffff, (p_hash >> 16) & 0xffff, p_hash & 0xffff);
+}
+
+Ref<HexMapCellIdRef> HexMapCellIdRef::_east() const {
+	return *this + HexMapCellId(1, 0, 0);
+}
+
+Ref<HexMapCellIdRef> HexMapCellIdRef::_northeast() const {
+	return *this + HexMapCellId(1, -1, 0);
+}
+
+Ref<HexMapCellIdRef> HexMapCellIdRef::_northwest() const {
+	return *this + HexMapCellId(0, -1, 0);
+}
+
+Ref<HexMapCellIdRef> HexMapCellIdRef::_west() const {
+	return *this + HexMapCellId(-1, 0, 0);
+}
+
+Ref<HexMapCellIdRef> HexMapCellIdRef::_southwest() const {
+	return *this + HexMapCellId(-1, 1, 0);
+}
+
+Ref<HexMapCellIdRef> HexMapCellIdRef::_southeast() const {
+	return *this + HexMapCellId(0, 1, 0);
+}
+
+Ref<HexMapCellIdRef> HexMapCellIdRef::_down() const {
+	return *this + HexMapCellId(0, 0, -1);
+}
+
+Ref<HexMapCellIdRef> HexMapCellIdRef::_up() const {
+	return *this + HexMapCellId(0, 0, 1);
+}
+
+String HexMapCellIdRef::_to_string() const { return (String)cell_id; };
+
+bool HexMapCellIdRef::_equals(const Ref<HexMapCellIdRef> other) const {
+	return cell_id == other->cell_id;
+}
+
+Ref<HexMapIterAxialRef> HexMapCellIdRef::_get_neighbors(
 		unsigned int radius) const {
-	Ref<HexMapIterAxial> ref;
-	ref.instantiate();
-	ref->set(cell_id.get_neighbors(radius));
-	return ref;
+	return cell_id.get_neighbors(radius);
 }

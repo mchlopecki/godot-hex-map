@@ -15,7 +15,6 @@
 #include <godot_cpp/variant/utility_functions.hpp>
 
 bool TestNodeEditorPlugin::_handles(Object *p_object) const {
-	TestObject o(1);
 	return p_object->is_class("TestNode");
 }
 
@@ -26,50 +25,6 @@ void TestNodeEditorPlugin::_edit(Object *p_object) {
 		ERR_FAIL_NULL(test_node);
 	}
 }
-
-// Ref<Shortcut> ED_SHORTCUT_ARRAY(const String &p_path, const String &p_name,
-// const PackedInt32Array &p_keycodes, bool p_physical) { 	Array events;
-//
-// 	for (int i = 0; i < p_keycodes.size(); i++) {
-// 		Key keycode = (Key)p_keycodes[i];
-//
-// 		Ref<InputEventKey> ie;
-// 		if (keycode != Key::NONE) {
-// 			ie = InputEventKey::create_reference(keycode, p_physical);
-// 			events.push_back(ie);
-// 		}
-// 	}
-//
-// 	if (!EditorSettings::get_singleton()) {
-// 		Ref<Shortcut> sc;
-// 		sc.instantiate();
-// 		sc->set_name(p_name);
-// 		sc->set_events(events);
-// 		sc->set_meta("original", events.duplicate(true));
-// 		return sc;
-// 	}
-//
-// 	Ref<Shortcut> sc = EditorSettings::get_singleton()->get_shortcut(p_path);
-// 	if (sc.is_valid()) {
-// 		sc->set_name(p_name); //keep name (the ones that come from disk have no
-// name) 		sc->set_meta("original", events.duplicate(true)); //to compare
-// against changes 		return sc;
-// 	}
-//
-// 	sc.instantiate();
-// 	sc->set_name(p_name);
-// 	sc->set_events(events);
-// 	sc->set_meta("original", events.duplicate(true)); //to compare against
-// changes 	EditorSettings::get_singleton()->_add_shortcut_default(p_path, sc);
-//
-// 	return sc;
-// }
-//
-// Ref<Shortcut> ED_SHORTCUT(const String &p_path, const String &p_name, Key
-// p_keycode, bool p_physical) { 	PackedInt32Array arr;
-// 	arr.push_back((int32_t)p_keycode);
-// 	return ED_SHORTCUT_ARRAY(p_path, p_name, arr, p_physical);
-// }
 
 Ref<Shortcut> TestNodeEditorPlugin::editor_shortcut(const String &p_path,
 		const String &p_name, Key p_keycode, bool p_physical) {

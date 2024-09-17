@@ -34,20 +34,6 @@ HexMapIterAxial::HexMapIterAxial(const HexMapCellId center,
 	}
 }
 
-void HexMapIterAxial::set(const HexMapIterAxial &other) {
-	radius = other.radius;
-	y_min = other.y_min;
-	y_max = other.y_max;
-	q_min = other.q_min;
-	q_max = other.q_max;
-	r_min = other.r_min;
-	r_max = other.r_max;
-	s_min = other.s_min;
-	s_max = other.s_max;
-	center = other.center;
-	cell = other.cell;
-}
-
 // prefix increment
 HexMapIterAxial &HexMapIterAxial::operator++() {
 	do {
@@ -134,11 +120,28 @@ std::ostream &operator<<(std::ostream &os, const HexMapIterAxial &value) {
 	return os;
 }
 
-void HexMapIterAxial::_bind_methods() {
+void HexMapIterAxialRef::_bind_methods() {
 	ClassDB::bind_method(
-			D_METHOD("_iter_init", "_arg"), &HexMapIterAxial::_iter_init);
+			D_METHOD("_iter_init", "_arg"), &HexMapIterAxialRef::_iter_init);
 	ClassDB::bind_method(
-			D_METHOD("_iter_next", "_arg"), &HexMapIterAxial::_iter_next);
+			D_METHOD("_iter_next", "_arg"), &HexMapIterAxialRef::_iter_next);
 	ClassDB::bind_method(
-			D_METHOD("_iter_get", "_arg"), &HexMapIterAxial::_iter_get);
+			D_METHOD("_iter_get", "_arg"), &HexMapIterAxialRef::_iter_get);
 }
+
+// Godot custom iterator functions
+bool HexMapIterAxialRef::_iter_init(Variant _arg) {
+	iter = iter.begin();
+	return iter != iter.end();
+}
+
+bool HexMapIterAxialRef::_iter_next(Variant _arg) {
+	++iter;
+	return iter != iter.end();
+}
+
+Ref<HexMapCellIdRef> HexMapIterAxialRef::_iter_get(Variant _arg) {
+	return *iter;
+}
+
+String HexMapIterAxialRef::_to_string() const { return iter; };

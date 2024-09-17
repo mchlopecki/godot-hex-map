@@ -8,7 +8,9 @@
 
 using namespace godot;
 
+class HexMapCellIdRef;
 class HexMapIterAxial;
+class HexMapIterAxialRef;
 
 class HexMapCellId {
 public:
@@ -19,12 +21,13 @@ public:
 	int16_t y;
 
 	HexMapCellId() : q(0), r(0), y(0){};
-	HexMapCellId(int q, int r, int y) : q(q), r(r), y(y){};
+	HexMapCellId(int16_t q, int16_t r, int16_t y) : q(q), r(r), y(y){};
 	HexMapCellId(Vector3i v) : q(v.x), r(v.z), y(v.y){};
 
 	// XXX remove this; temporary until we fully switch from Vector3i to
 	// HexMapCellId
-	operator Vector3i() const { return Vector3i(q, y, r); }
+	inline operator Vector3i() const { return Vector3i(q, y, r); }
+	inline operator Ref<HexMapCellIdRef>() const;
 	operator String() const;
 
 	HexMapCellId operator+(const HexMapCellId &other) const {
@@ -75,62 +78,47 @@ public:
 	HexMapCellIdRef(){};
 
 	// c++ helpers
-	const HexMapCellId &inner() const { return cell_id; }
-	Ref<HexMapCellIdRef> operator+(const HexMapCellId &delta) const;
+	inline const HexMapCellId &inner() const { return cell_id; }
+	inline Ref<HexMapCellIdRef> operator+(const HexMapCellId &delta) const {
+		return cell_id + delta;
+	};
 
 	// GDScript static constructors
 	static Ref<HexMapCellIdRef> _from_values(
-			int16_t p_q, int16_t p_r, int16_t p_y) {
-		Ref<HexMapCellIdRef> ref;
-		ref.instantiate();
-		ref->cell_id = HexMapCellId(p_q, p_r, p_y);
-		return ref;
-	}
+			int16_t p_q, int16_t p_r, int16_t p_y);
+	static Ref<HexMapCellIdRef> _from_vector(Vector3i p_vector);
 	static Ref<HexMapCellIdRef> _from_hash(uint64_t p_hash);
 
 	// GDScript field accessors
-	uint16_t _get_q() { return cell_id.q; }
-	uint16_t _get_r() { return cell_id.r; }
-	uint16_t _get_s() { return cell_id.s(); }
-	uint16_t _get_y() { return cell_id.y; }
+	int16_t _get_q();
+	int16_t _get_r();
+	int16_t _get_s();
+	int16_t _get_y();
 
 	// gdscript does not support equality for RefCounted objects.  We need some
 	// way to use cell ids in arrays, hashes, etc.  We provide the hash method
 	// for generating a type that gdscript can handle for equality.
-	uint64_t _hash() {
-		return (uint64_t)cell_id.q << 32 | cell_id.r << 16 | cell_id.y;
-	}
+	uint64_t _hash();
+	Vector3i _as_vector();
 
 	// directional helpers
-	Ref<HexMapCellIdRef> _east() const {
-		return *this + HexMapCellId(1, 0, 0);
-	};
-	Ref<HexMapCellIdRef> _northeast() const {
-		return *this + HexMapCellId(1, -1, 0);
-	};
-	Ref<HexMapCellIdRef> _northwest() const {
-		return *this + HexMapCellId(0, -1, 0);
-	};
-	Ref<HexMapCellIdRef> _west() const {
-		return *this + HexMapCellId(-1, 0, 0);
-	};
-	Ref<HexMapCellIdRef> _southwest() const {
-		return *this + HexMapCellId(-1, 1, 0);
-	};
-	Ref<HexMapCellIdRef> _southeast() const {
-		return *this + HexMapCellId(0, 1, 0);
-	};
-	Ref<HexMapCellIdRef> _down() const {
-		return *this + HexMapCellId(0, 0, -1);
-	};
-	Ref<HexMapCellIdRef> _up() const { return *this + HexMapCellId(0, 0, 1); };
+	Ref<HexMapCellIdRef> _east() const;
+	Ref<HexMapCellIdRef> _northeast() const;
+	Ref<HexMapCellIdRef> _northwest() const;
+	Ref<HexMapCellIdRef> _west() const;
+	Ref<HexMapCellIdRef> _southwest() const;
+	Ref<HexMapCellIdRef> _southeast() const;
+	Ref<HexMapCellIdRef> _down() const;
+	Ref<HexMapCellIdRef> _up() const;
 
-	String _to_string() { return (String)cell_id; };
-	bool _equals(const Ref<HexMapCellIdRef> other) const {
-		return cell_id == other->cell_id;
-	}
-	Ref<HexMapIterAxial> _get_neighbors(unsigned int radius = 1) const;
+	String _to_string() const;
+	bool _equals(const Ref<HexMapCellIdRef> other) const;
+	Ref<HexMapIterAxialRef> _get_neighbors(unsigned int radius = 1) const;
 
 protected:
 	static void _bind_methods();
 };
+
+inline HexMapCellId::operator Ref<HexMapCellIdRef>() const {
+	return Ref<HexMapCellIdRef>(memnew(HexMapCellIdRef(*this)));
+}
