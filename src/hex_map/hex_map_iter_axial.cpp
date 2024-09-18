@@ -3,6 +3,10 @@
 HexMapIterAxial::HexMapIterAxial(const HexMapCellId center,
 		unsigned int radius, const HexMap::Planes &planes) :
 		center(center), radius(radius) {
+	if (!center.in_bounds()) {
+		radius = 0;
+	}
+
 	if (planes.y) {
 		y_min = center.y - radius;
 		y_max = center.y + radius;
@@ -46,15 +50,12 @@ HexMapIterAxial &HexMapIterAxial::operator++() {
 			cell.r = r_min;
 			cell.q = q_min;
 			cell.y++;
-		} else if (cell.y == y_max) {
-			cell.q = q_max + 1;
-			cell.r = r_max + 1;
-			cell.y = y_max + 1;
 		} else {
+			cell = HexMapCellId::Invalid;
 			break;
 		}
 	} while (cell.s() < s_min || cell.s() > s_max || cell == center ||
-			center.distance(cell) > radius);
+			!cell.in_bounds() || center.distance(cell) > radius);
 	return *this;
 }
 
@@ -74,7 +75,7 @@ HexMapIterAxial HexMapIterAxial::begin() {
 
 HexMapIterAxial HexMapIterAxial::end() {
 	HexMapIterAxial iter = *this;
-	iter.cell = HexMapCellId(q_max + 1, r_max + 1, y_max + 1);
+	iter.cell = HexMapCellId::Invalid;
 	return iter;
 }
 
@@ -132,12 +133,12 @@ void HexMapIterAxialRef::_bind_methods() {
 // Godot custom iterator functions
 bool HexMapIterAxialRef::_iter_init(Variant _arg) {
 	iter = iter.begin();
-	return iter != iter.end();
+	return *iter != HexMapCellId::Invalid;
 }
 
 bool HexMapIterAxialRef::_iter_next(Variant _arg) {
 	++iter;
-	return iter != iter.end();
+	return *iter != HexMapCellId::Invalid;
 }
 
 Ref<HexMapCellIdRef> HexMapIterAxialRef::_iter_get(Variant _arg) {

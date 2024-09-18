@@ -1,52 +1,68 @@
 extends GutTest
 
-func test_equals():
-	var a := HexMapCellIdRef.new()
-	var b := HexMapCellIdRef.new()
-	assert_true(a.equals(b))
+var from_values_params = [
+	[0, 0, 0],
+	[100, 200, 300],
+	[100, 200, -300],
+	[100, -200, 300],
+	[100, -200, -300],
+	[-100, 200, 300],
+	[-100, 200, -300],
+	[-100, -200, 300],
+	[-100, -200, -300],
+]
 
-func test_from_values():
-	var b := HexMapCellIdRef.from_values(-1,29,-100)
-	assert_eq(b.get_q(), -1)
-	assert_eq(b.get_r(), 29)
-	assert_eq(b.get_y(), -100)
+func test_from_values(params=use_parameters(from_values_params)):
+	var b := HexMapCellIdRef.from_values(params[0], params[1], params[2]);
+	assert_eq(b.get_q(), params[0])
+	assert_eq(b.get_r(), params[1])
+	assert_eq(b.get_y(), params[2])
 
-func test_hash():
-	var a := HexMapCellIdRef.from_values(-9,-6,-1)
-	var b := HexMapCellIdRef.from_values(-9,-6,-1)
+# helper used for all following tests
+func cell_id(values: Array) -> HexMapCellIdRef:
+	return HexMapCellIdRef.from_values(values[0], values[1], values[2])
+
+var equals_params = [
+	[[0, 0, 0], [0, 0, 0], true],
+	[[0, 0, 0], [0, 0, 1], false],
+	[[-1, -1, -1], [-1, -1, -1], true],
+]
+
+func test_equals(params=use_parameters(equals_params)):
+	var a := cell_id(params[0])
+	var b := cell_id(params[1])
+	assert_eq(a.equals(b), params[2])
+
+
+func test_hash(params=use_parameters(from_values_params)):
+	var a := cell_id(params)
+	var b := cell_id(params)
 	assert_eq(a.hash(), b.hash())
-	b = HexMapCellIdRef.from_values(1,-2,-1)
-	assert_ne(a.hash(), b.hash())
+	var c := cell_id([1,2,3])
+	assert_ne(a.hash(), c.hash())
 
-func test_from_hash():
-	# XXX figure out parameterized tests
-	var signs := [
-		[1, 1, 1],
-		[1, 1, -1],
-		[1, -1, 1],
-		[1, -1, -1],
-		[-1, 1, 1],
-		[-1, 1, -1],
-		[-1, -1, 1],
-		[-1, -1, -1]]
-	for adj in signs:
-		var cell := HexMapCellIdRef.from_values(12 * adj[0], 41 * adj[1], 1 * adj[2])
-		var h := cell.hash()
-		var from_hash := HexMapCellIdRef.from_hash(h)
-		print("cell ", cell, ", hash ", h, ", from_hash ", from_hash)
-		assert_eq(from_hash.get_q(), cell.get_q());
-		assert_eq(from_hash.get_r(), cell.get_r());
-		assert_eq(from_hash.get_y(), cell.get_y());
+func test_from_hash(params=use_parameters(from_values_params)):
+	var cell := cell_id(params)
+	var h := cell.hash()
+	var from_hash := HexMapCellIdRef.from_hash(h)
+	assert_eq(from_hash.get_q(), cell.get_q());
+	assert_eq(from_hash.get_r(), cell.get_r());
+	assert_eq(from_hash.get_y(), cell.get_y());
 
-func test_get_neighbors():
-	# start with origin
-	var cell := HexMapCellIdRef.new()
+var get_neighbors_params =  from_values_params + [
+	# [0, 0, 32767]
+]
+
+func test_get_neighbors(params=use_parameters(get_neighbors_params)):
+	var cell := cell_id(params)
 
 	var neighbors = []
 	for neighbor in cell.get_neighbors():
-		print(neighbor)
+		print("neighbor ", neighbor)
 		neighbors.append(neighbor.hash())
+		assert_lt(neighbors.size(), 20)
 
+	assert_does_not_have(neighbors, cell.hash())
 	assert_eq(neighbors.size(), 8)
 	assert_has(neighbors, cell.east().hash())
 	assert_has(neighbors, cell.northeast().hash())
@@ -57,22 +73,4 @@ func test_get_neighbors():
 	assert_has(neighbors, cell.up().hash())
 	assert_has(neighbors, cell.down().hash())
 
-	# try a new location
-	cell = HexMapCellIdRef.from_values(100,200,300)
-	print(cell)
-
-	neighbors.clear()
-	for neighbor in cell.get_neighbors():
-		print(neighbor)
-		neighbors.append(neighbor.hash())
-
-	assert_eq(neighbors.size(), 8)
-	assert_has(neighbors, cell.east().hash())
-	assert_has(neighbors, cell.northeast().hash())
-	assert_has(neighbors, cell.northwest().hash())
-	assert_has(neighbors, cell.west().hash())
-	assert_has(neighbors, cell.southwest().hash())
-	assert_has(neighbors, cell.southeast().hash())
-	assert_has(neighbors, cell.up().hash())
-	assert_has(neighbors, cell.down().hash())
 

@@ -15,13 +15,13 @@ class HexMapIterAxialRef;
 class HexMapCellId {
 public:
 	// axial coordinates
-	int16_t q, r;
+	int q, r;
 
 	// y coordinate
-	int16_t y;
+	int y;
 
 	HexMapCellId() : q(0), r(0), y(0){};
-	HexMapCellId(int16_t q, int16_t r, int16_t y) : q(q), r(r), y(y){};
+	HexMapCellId(int q, int r, int y) : q(q), r(r), y(y){};
 	HexMapCellId(Vector3i v) : q(v.x), r(v.z), y(v.y){};
 
 	// XXX remove this; temporary until we fully switch from Vector3i to
@@ -44,7 +44,15 @@ public:
 		return a.q != b.q || a.r != b.r || a.y != b.y;
 	}
 
-	int s() const { return -q - r; }
+	// calcualate s coordinate for converting from axial to cube coordinates
+	inline int s() const { return -q - r; }
+
+	// Check to see if the coordinates are within the 16-bit range
+	inline bool in_bounds() const {
+		return ((q >> 15) == 0 || (q >> 15) == -1) &&
+				((r >> 15) == 0 || (r >> 15) == -1) &&
+				((y >> 15) == 0 || (y >> 15) == -1);
+	};
 
 	// calculate the distance between two cells in cell units
 	unsigned distance(const HexMapCellId &) const;
@@ -62,6 +70,7 @@ public:
 	static HexMapCellId from_unit_point(const Vector3 &point);
 
 	static const HexMapCellId Origin;
+	static const HexMapCellId Invalid;
 };
 
 // added for testing
@@ -71,6 +80,8 @@ std::ostream &operator<<(std::ostream &os, const HexMapCellId &value);
 class HexMapCellIdRef : public RefCounted {
 	GDCLASS(HexMapCellIdRef, RefCounted)
 
+	uint64_t INVALID_CELL_ID_HASH = 0xffff000000000000;
+
 	HexMapCellId cell_id;
 
 public:
@@ -78,22 +89,21 @@ public:
 	HexMapCellIdRef(){};
 
 	// c++ helpers
-	inline const HexMapCellId &inner() const { return cell_id; }
+	inline operator const HexMapCellId &() const { return cell_id; }
 	inline Ref<HexMapCellIdRef> operator+(const HexMapCellId &delta) const {
 		return cell_id + delta;
 	};
 
+	// GDScript field accessors
+	int _get_q();
+	int _get_r();
+	int _get_s();
+	int _get_y();
+
 	// GDScript static constructors
-	static Ref<HexMapCellIdRef> _from_values(
-			int16_t p_q, int16_t p_r, int16_t p_y);
+	static Ref<HexMapCellIdRef> _from_values(int p_q, int p_r, int p_y);
 	static Ref<HexMapCellIdRef> _from_vector(Vector3i p_vector);
 	static Ref<HexMapCellIdRef> _from_hash(uint64_t p_hash);
-
-	// GDScript field accessors
-	int16_t _get_q();
-	int16_t _get_r();
-	int16_t _get_s();
-	int16_t _get_y();
 
 	// gdscript does not support equality for RefCounted objects.  We need some
 	// way to use cell ids in arrays, hashes, etc.  We provide the hash method

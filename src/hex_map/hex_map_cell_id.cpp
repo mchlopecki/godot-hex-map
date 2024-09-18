@@ -2,10 +2,11 @@
 #include "godot_cpp/core/class_db.hpp"
 #include "godot_cpp/core/math.hpp"
 #include "godot_cpp/variant/string.hpp"
-#include "godot_cpp/variant/utility_functions.hpp"
 #include "hex_map_iter_axial.h"
+#include <climits>
 
-const HexMapCellId HexMapCellId::Origin(0.0f, 0.0f, 0.0f);
+const HexMapCellId HexMapCellId::Origin(0, 0, 0);
+const HexMapCellId HexMapCellId::Invalid(INT_MAX, INT_MAX, INT_MAX);
 
 // based on blog post https://observablehq.com/@jrus/hexround
 static inline HexMapCellId axial_round(real_t q_in, real_t r_in) {
@@ -54,8 +55,8 @@ unsigned HexMapCellId::distance(const HexMapCellId &other) const {
 	return hex_dist + y_dist;
 }
 
-HexMapIterAxial HexMapCellId::get_neighbors(
-		unsigned int radius, const HexMap::Planes &planes) const {
+HexMapIterAxial HexMapCellId::get_neighbors(unsigned int radius,
+		const HexMap::Planes &planes) const {
 	return HexMapIterAxial(*this, radius, planes);
 }
 
@@ -85,9 +86,11 @@ void HexMapCellIdRef::_bind_methods() {
 			D_METHOD("from_values", "q", "r", "y"),
 			&HexMapCellIdRef::_from_values);
 	ClassDB::bind_static_method("HexMapCellIdRef",
-			D_METHOD("from_vec", "vector"), &HexMapCellIdRef::_from_vector);
+			D_METHOD("from_vec", "vector"),
+			&HexMapCellIdRef::_from_vector);
 	ClassDB::bind_static_method("HexMapCellIdRef",
-			D_METHOD("from_hash", "hash"), &HexMapCellIdRef::_from_hash);
+			D_METHOD("from_hash", "hash"),
+			&HexMapCellIdRef::_from_hash);
 
 	// field accessors
 	ClassDB::bind_method(D_METHOD("get_q"), &HexMapCellIdRef::_get_q);
@@ -111,19 +114,19 @@ void HexMapCellIdRef::_bind_methods() {
 	ClassDB::bind_method(
 			D_METHOD("equals", "other"), &HexMapCellIdRef::_equals);
 	ClassDB::bind_method(D_METHOD("get_neighbors", "radius"),
-			&HexMapCellIdRef::_get_neighbors, 1);
+			&HexMapCellIdRef::_get_neighbors,
+			1);
 }
 
-int16_t HexMapCellIdRef::_get_q() { return cell_id.q; }
+int HexMapCellIdRef::_get_q() { return cell_id.q; }
 
-int16_t HexMapCellIdRef::_get_r() { return cell_id.r; }
+int HexMapCellIdRef::_get_r() { return cell_id.r; }
 
-int16_t HexMapCellIdRef::_get_s() { return cell_id.s(); }
+int HexMapCellIdRef::_get_s() { return cell_id.s(); }
 
-int16_t HexMapCellIdRef::_get_y() { return cell_id.y; }
+int HexMapCellIdRef::_get_y() { return cell_id.y; }
 
-Ref<HexMapCellIdRef> HexMapCellIdRef::_from_values(
-		int16_t p_q, int16_t p_r, int16_t p_y) {
+Ref<HexMapCellIdRef> HexMapCellIdRef::_from_values(int p_q, int p_r, int p_y) {
 	return HexMapCellId(p_q, p_r, p_y);
 }
 
@@ -144,8 +147,9 @@ uint64_t HexMapCellIdRef::_hash() {
 }
 
 Ref<HexMapCellIdRef> HexMapCellIdRef::_from_hash(uint64_t p_hash) {
-	return HexMapCellId(
-			(p_hash >> 32) & 0xffff, (p_hash >> 16) & 0xffff, p_hash & 0xffff);
+	return HexMapCellId((int16_t)((p_hash >> 32) & 0xffff),
+			(int16_t)((p_hash >> 16) & 0xffff),
+			(int16_t)(p_hash & 0xffff));
 }
 
 Ref<HexMapCellIdRef> HexMapCellIdRef::_east() const {
