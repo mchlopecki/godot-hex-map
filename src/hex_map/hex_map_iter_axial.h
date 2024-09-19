@@ -9,7 +9,8 @@
 // HexMap cell iterator using axial coordinates to define a volume to iterate
 struct HexMapIterAxial {
 public:
-	HexMapIterAxial(const HexMapCellId center, unsigned int radius,
+	HexMapIterAxial(const HexMapCellId center,
+			unsigned int radius,
 			const HexMap::Planes &planes = HexMap::Planes::All);
 
 	inline operator Ref<HexMapIterAxialRef>() const;
@@ -20,12 +21,12 @@ public:
 	HexMapIterAxial &operator++();
 	HexMapIterAxial operator++(int);
 
-	friend bool operator==(
-			const HexMapIterAxial &a, const HexMapIterAxial &b) {
+	friend bool operator==(const HexMapIterAxial &a,
+			const HexMapIterAxial &b) {
 		return a.cell == b.cell;
 	};
-	friend bool operator!=(
-			const HexMapIterAxial &a, const HexMapIterAxial &b) {
+	friend bool operator!=(const HexMapIterAxial &a,
+			const HexMapIterAxial &b) {
 		return a.cell != b.cell;
 	};
 
@@ -33,8 +34,8 @@ public:
 	HexMapIterAxial end();
 
 	// added for testing
-	friend std::ostream &operator<<(
-			std::ostream &os, const HexMapIterAxial &value);
+	friend std::ostream &operator<<(std::ostream &os,
+			const HexMapIterAxial &value);
 
 private:
 	unsigned int radius;

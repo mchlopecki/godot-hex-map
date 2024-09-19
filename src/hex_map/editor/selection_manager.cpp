@@ -1,3 +1,5 @@
+#ifdef TOOLS_ENABLED
+
 #include "selection_manager.h"
 #include "godot_cpp/classes/editor_interface.hpp"
 #include "godot_cpp/classes/rendering_server.hpp"
@@ -97,11 +99,30 @@ void SelectionManager::build_cell_mesh() {
 	// clang-format on
 
 	lines_array[RS::ARRAY_INDEX] = PackedInt32Array({
-			0, 1, 2, 3, 4, 5, // top
-			11, 6, 7, 8, 9, 10, // bottom
-			11, 5, 0, 6, // northeast face
-			7, 1, 2, 8, // west face
-			9, 3, 4, 10, // southeast face
+			0,
+			1,
+			2,
+			3,
+			4,
+			5, // top
+			11,
+			6,
+			7,
+			8,
+			9,
+			10, // bottom
+			11,
+			5,
+			0,
+			6, // northeast face
+			7,
+			1,
+			2,
+			8, // west face
+			9,
+			3,
+			4,
+			10, // southeast face
 	});
 
 	RenderingServer *rs = RS::get_singleton();
@@ -149,7 +170,8 @@ void SelectionManager::redraw_selection() {
 			selection_multimesh, cells.size(), RS::MULTIMESH_TRANSFORM_3D);
 	for (int i = 0; i < cells.size(); i++) {
 		Vector3i cell = cells[i];
-		rs->multimesh_instance_set_transform(selection_multimesh, i,
+		rs->multimesh_instance_set_transform(selection_multimesh,
+				i,
 				cell_transform.translated(hex_map->map_to_local(cell)));
 	}
 
@@ -217,3 +239,5 @@ SelectionManager::~SelectionManager() {
 	rs->free_rid(selection_multimesh);
 	rs->free_rid(cell_mesh);
 }
+
+#endif

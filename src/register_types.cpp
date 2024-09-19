@@ -51,6 +51,7 @@ void initialize_hexmap_module(ModuleInitializationLevel p_level) {
 		ClassDB::register_class<TestNode>();
 	}
 
+#ifdef TOOLS_ENABLED
 	if (p_level == godot::MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		ClassDB::register_internal_class<MeshLibraryPalette>();
 		ClassDB::register_internal_class<EditorControl>();
@@ -60,6 +61,7 @@ void initialize_hexmap_module(ModuleInitializationLevel p_level) {
 		ClassDB::register_internal_class<TestNodeEditorPlugin>();
 		EditorPlugins::add_by_type<TestNodeEditorPlugin>();
 	}
+#endif
 }
 
 void uninitialize_hexmap_module(ModuleInitializationLevel p_level) {

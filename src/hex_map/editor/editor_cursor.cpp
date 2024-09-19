@@ -1,3 +1,5 @@
+#ifdef TOOLS_ENABLED
+
 #include "editor_cursor.h"
 #include "../hex_map_cell_id.h"
 #include "../hex_map_iter_axial.h"
@@ -34,8 +36,9 @@ void EditorCursor::clear_tiles() {
 	orientation = TileOrientation::Upright0;
 }
 
-void EditorCursor::set_tile(
-		CellId cell, int tile, TileOrientation orientation) {
+void EditorCursor::set_tile(CellId cell,
+		int tile,
+		TileOrientation orientation) {
 	RenderingServer *rs = RS::get_singleton();
 
 	// remove any duplicate cell in the existing cursor
@@ -83,11 +86,13 @@ List<EditorCursor::CursorCell> EditorCursor::get_tiles() {
 EditorCursor::CursorCell EditorCursor::get_first_tile() {
 	List<CursorCell> out;
 	if (tiles.is_empty()) {
-		return CursorCell { .tile = -1, };
+		return CursorCell{
+			.tile = -1,
+		};
 	}
 
 	CursorCell &cell = tiles[0];
-	return CursorCell {
+	return CursorCell{
 		.cell_id = cell.cell_id + pointer_cell,
 		.cell_id_live = cell.cell_id_live,
 		.tile = cell.tile,
@@ -110,8 +115,8 @@ void EditorCursor::build_y_grid() {
 	// pick a point on the middle of an edge to find the closest edge of the
 	// cells
 	float max = HexMapCellId(GRID_RADIUS, -(int)GRID_RADIUS / 2, 0)
-		.unit_center()
-		.length_squared();
+						.unit_center()
+						.length_squared();
 	PackedVector3Array grid_points;
 	PackedColorArray grid_colors;
 	for (const auto cell : HexMapCellId::Origin.get_neighbors(
@@ -140,7 +145,6 @@ void EditorCursor::build_y_grid() {
 }
 
 void EditorCursor::build_r_grid() {
-
 	// create the points that traverse from the center of one edge to the
 	// opposite edge
 	Array shape_points;
@@ -150,9 +154,7 @@ void EditorCursor::build_r_grid() {
 	shape_points.append(Vector3(SQRT3_2, 1.0, 0));
 	shape_points.append(Vector3(-SQRT3_2, 1.0, 0));
 
-	float max = HexMapCellId(0, 0, GRID_RADIUS)
-		.unit_center()
-		.length_squared();
+	float max = HexMapCellId(0, 0, GRID_RADIUS).unit_center().length_squared();
 	PackedVector3Array grid_points;
 	PackedColorArray grid_colors;
 	for (const auto cell : HexMapCellId::Origin.get_neighbors(
@@ -214,8 +216,9 @@ void EditorCursor::transform_meshes() {
 			hex_map->get_global_transform() * grid_mesh_transform);
 }
 
-bool EditorCursor::update(
-		const Camera3D *camera, const Point2 &pointer, Vector3 *point) {
+bool EditorCursor::update(const Camera3D *camera,
+		const Point2 &pointer,
+		Vector3 *point) {
 	Transform3D local_transform =
 			hex_map->get_global_transform().affine_inverse();
 	Vector3 origin = camera->project_ray_origin(pointer);
@@ -384,3 +387,5 @@ EditorCursor::~EditorCursor() {
 	rs->free_rid(grid_mesh);
 	rs->free_rid(grid_mesh_instance);
 }
+
+#endif

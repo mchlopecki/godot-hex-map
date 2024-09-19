@@ -1,3 +1,5 @@
+#ifdef TOOLS_ENABLED
+
 #include "mesh_library_palette.h"
 #include "godot_cpp/classes/button.hpp"
 #include "godot_cpp/classes/control.hpp"
@@ -27,10 +29,8 @@ MeshLibraryPalette::MeshLibraryPalette() {
 	filter_line_edit->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	filter_line_edit->set_placeholder("Filter Meshes");
 	filter_line_edit->set_clear_button_enabled(true);
-	filter_line_edit->set_right_icon(
-			theme->get_icon("Search", "EditorIcons"));
-	filter_line_edit->connect(
-			"text_changed",
+	filter_line_edit->set_right_icon(theme->get_icon("Search", "EditorIcons"));
+	filter_line_edit->connect("text_changed",
 			callable_mp(this, &MeshLibraryPalette::set_filter));
 	hbox->add_child(filter_line_edit);
 	// XXX gui input up/down pageup/pagedown sent keycode to itemlist
@@ -77,14 +77,13 @@ MeshLibraryPalette::MeshLibraryPalette() {
 	// _mesh_library_palette_input
 }
 
-MeshLibraryPalette::~MeshLibraryPalette() {
-}
+MeshLibraryPalette::~MeshLibraryPalette() {}
 
 void MeshLibraryPalette::_bind_methods() {
 	// not in love with using a signal here, but using a method to update
 	// mesh_library
-	ADD_SIGNAL(MethodInfo("mesh_changed",
-			PropertyInfo(Variant::INT, "mesh_id")));
+	ADD_SIGNAL(
+			MethodInfo("mesh_changed", PropertyInfo(Variant::INT, "mesh_id")));
 }
 
 void MeshLibraryPalette::set_display_mode(int p_mode) {
@@ -222,3 +221,4 @@ void MeshLibraryPalette::update_item_list() {
 	mesh_item_list->sort_items_by_text();
 	mesh_item_list->set_icon_scale(icon_scale_hslider->get_value());
 }
+#endif

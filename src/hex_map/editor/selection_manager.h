@@ -1,3 +1,5 @@
+#ifdef TOOLS_ENABLED
+
 #pragma once
 #include "../hex_map.h"
 #include "../hex_map_cell_id.h"
@@ -40,3 +42,5 @@ public:
 	// get cell id at the center of the selection
 	HexMapCellId get_center();
 };
+
+#endif

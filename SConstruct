@@ -2,37 +2,39 @@
 import os
 import sys
 
+from SCons.Script import ARGUMENTS
+
+target_path = ARGUMENTS.pop("target_path", "demo/addons/hexmap/lib")
+target_name = ARGUMENTS.pop("target_name", "libgdhexmap")
+
 env = SConscript("godot-cpp/SConstruct")
 
-
-
-# For reference:
-# - CCFLAGS are compilation flags shared between C and C++
-# - CFLAGS are for C-specific compilation flags
-# - CXXFLAGS are for C++-specific compilation flags
-# - CPPFLAGS are for pre-processor flags
-# - CPPDEFINES are for pre-processor defines
-# - LINKFLAGS are for linking flags
-
-# tweak this if you want to use different folders, or more folders, to store your source code in.
 env.Append(CPPPATH=["src/"])
-sources = Glob("src/*.cpp")
-sources += Glob("src/hex_map/*.cpp")
-sources += Glob("src/hex_map/editor/*.cpp")
+sources = [
+    Glob("src/*.cpp"),
+    Glob("src/hex_map/*.cpp"),
+    Glob("src/hex_map/editor/*.cpp"),
+]
 
 if env["platform"] == "macos":
-    library = env.SharedLibrary(
-        "demo/bin/libhexmap.{}.{}.framework/libhexmap.{}.{}".format(
-            env["platform"], env["target"], env["platform"], env["target"]
-        ),
-        source=sources,
-    )
+    target = "{}/{}.{}.{}.framework/{}.{}.{}".format(
+            target_path,
+            target_name,
+            env["platform"],
+            env["target"],
+            target_name,
+            env["platform"],
+            env["target"],
+        )
 else:
-    library = env.SharedLibrary(
-        "demo/bin/libhexmap{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
-        source=sources,
+    target = "{}/{}{}{}".format(
+            target_path,
+            target_name,
+            env["suffix"],
+            env["SHLIBSUFFIX"],
     )
 
+library = env.SharedLibrary(target=target, source=sources)
 Default(library)
 
 # ANNOYING

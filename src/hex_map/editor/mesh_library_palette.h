@@ -1,3 +1,5 @@
+#ifdef TOOLS_ENABLED
+
 #include "godot_cpp/classes/button.hpp"
 #include "godot_cpp/classes/control.hpp"
 #include "godot_cpp/classes/h_slider.hpp"
@@ -46,3 +48,5 @@ public:
 	int get_mesh();
 	void set_mesh_library(Ref<MeshLibrary> p_mesh_library);
 };
+
+#endif

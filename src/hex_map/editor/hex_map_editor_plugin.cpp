@@ -1,3 +1,4 @@
+#ifdef TOOLS_ENABLED
 #include "hex_map_editor_plugin.h"
 #include "editor_control.h"
 #include "editor_cursor.h"
@@ -47,15 +48,19 @@ void HexMapEditorPlugin::commit_cell_changes(String desc) {
 	EditorUndoRedoManager *undo_redo = get_undo_redo();
 	undo_redo->create_action(desc);
 	for (const CellChange &change : cells_changed) {
-		undo_redo->add_do_method(hex_map, "set_cell_item",
-				(Vector3i)change.cell_id, change.new_tile,
+		undo_redo->add_do_method(hex_map,
+				"set_cell_item",
+				(Vector3i)change.cell_id,
+				change.new_tile,
 				change.new_orientation);
 	}
 	auto end = --cells_changed.begin();
 	for (auto iter = --cells_changed.end(); iter != end; --iter) {
 		const CellChange &change = *iter;
-		undo_redo->add_undo_method(hex_map, "set_cell_item",
-				(Vector3i)change.cell_id, change.orig_tile,
+		undo_redo->add_undo_method(hex_map,
+				"set_cell_item",
+				(Vector3i)change.cell_id,
+				change.orig_tile,
 				change.orig_orientation);
 	}
 	undo_redo->commit_action();
@@ -98,7 +103,9 @@ void HexMapEditorPlugin::selection_clear() {
 	for (const Vector3i cell : selection_manager->get_cells()) {
 		undo_redo->add_do_method(
 				hex_map, "set_cell_item", cell, HexMap::INVALID_CELL_ITEM);
-		undo_redo->add_undo_method(hex_map, "set_cell_item", cell,
+		undo_redo->add_undo_method(hex_map,
+				"set_cell_item",
+				cell,
 				hex_map->get_cell_item(cell),
 				hex_map->get_cell_item_orientation(cell));
 	}
@@ -121,7 +128,9 @@ void HexMapEditorPlugin::selection_fill() {
 	for (const Vector3i cell : selection_manager->get_cells()) {
 		undo_redo->add_do_method(
 				hex_map, "set_cell_item", cell, tile.tile, tile.orientation);
-		undo_redo->add_undo_method(hex_map, "set_cell_item", cell,
+		undo_redo->add_undo_method(hex_map,
+				"set_cell_item",
+				cell,
 				hex_map->get_cell_item(cell),
 				hex_map->get_cell_item_orientation(cell));
 	}
@@ -186,9 +195,14 @@ void HexMapEditorPlugin::selection_clone_apply() {
 	undo_redo->create_action("HexMap: clone selected tiles");
 
 	for (const auto &cell : editor_cursor->get_tiles()) {
-		undo_redo->add_do_method(hex_map, "set_cell_item", cell.cell_id_live,
-				cell.tile, cell.orientation);
-		undo_redo->add_undo_method(hex_map, "set_cell_item", cell.cell_id_live,
+		undo_redo->add_do_method(hex_map,
+				"set_cell_item",
+				cell.cell_id_live,
+				cell.tile,
+				cell.orientation);
+		undo_redo->add_undo_method(hex_map,
+				"set_cell_item",
+				cell.cell_id_live,
 				hex_map->get_cell_item(cell.cell_id_live),
 				hex_map->get_cell_item_orientation(cell.cell_id_live));
 	}
@@ -256,23 +270,32 @@ void HexMapEditorPlugin::selection_move_apply() {
 
 	// clear original cells first
 	for (const CellChange &change : cells_changed) {
-		undo_redo->add_do_method(hex_map, "set_cell_item",
-				(Vector3i)change.cell_id, HexMap::INVALID_CELL_ITEM);
+		undo_redo->add_do_method(hex_map,
+				"set_cell_item",
+				(Vector3i)change.cell_id,
+				HexMap::INVALID_CELL_ITEM);
 	}
 
 	// set the new cells, and start the undo restoring the new cells
 	for (const auto &cell : editor_cursor->get_tiles()) {
-		undo_redo->add_do_method(hex_map, "set_cell_item", cell.cell_id_live,
-				cell.tile, cell.orientation);
-		undo_redo->add_undo_method(hex_map, "set_cell_item", cell.cell_id_live,
+		undo_redo->add_do_method(hex_map,
+				"set_cell_item",
+				cell.cell_id_live,
+				cell.tile,
+				cell.orientation);
+		undo_redo->add_undo_method(hex_map,
+				"set_cell_item",
+				cell.cell_id_live,
 				hex_map->get_cell_item(cell.cell_id_live),
 				hex_map->get_cell_item_orientation(cell.cell_id_live));
 	}
 
 	// undo the clearing of the original cells
 	for (const CellChange &change : cells_changed) {
-		undo_redo->add_undo_method(hex_map, "set_cell_item",
-				(Vector3i)change.cell_id, change.orig_tile,
+		undo_redo->add_undo_method(hex_map,
+				"set_cell_item",
+				(Vector3i)change.cell_id,
+				change.orig_tile,
 				change.orig_orientation);
 	}
 	cells_changed.clear();
@@ -309,8 +332,8 @@ void HexMapEditorPlugin::_make_visible(bool p_visible) {
 	}
 }
 
-int32_t HexMapEditorPlugin::_forward_3d_gui_input(
-		Camera3D *p_camera, const Ref<InputEvent> &p_event) {
+int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
+		const Ref<InputEvent> &p_event) {
 	if (!hex_map) {
 		return EditorPlugin::AFTER_GUI_INPUT_PASS;
 	}
@@ -711,3 +734,4 @@ HexMapEditorPlugin::~HexMapEditorPlugin() {
 	}
 	// editor_control & mesh_palette are cleaned up automatically.
 }
+#endif

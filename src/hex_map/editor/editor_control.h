@@ -1,3 +1,5 @@
+#ifdef TOOLS_ENABLED
+
 #include "../tile_orientation.h"
 #include "godot_cpp/classes/h_box_container.hpp"
 #include "godot_cpp/classes/input_event_key.hpp"
@@ -53,8 +55,10 @@ private:
 	int plane[AXIS_S + 1] = { 0 };
 	TileOrientation cursor_orientation;
 
-	Ref<Shortcut> editor_shortcut(const String &p_path, const String &p_name,
-			Key p_keycode, bool p_physical);
+	Ref<Shortcut> editor_shortcut(const String &p_path,
+			const String &p_name,
+			Key p_keycode,
+			bool p_physical);
 	void handle_action(int p_action);
 
 protected:
@@ -87,3 +91,4 @@ public:
 	EditorControl();
 	~EditorControl();
 };
+#endif

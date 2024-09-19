@@ -1,3 +1,4 @@
+#ifdef TOOLS_ENABLED
 #pragma once
 
 #include "../hex_map.h"
@@ -45,8 +46,9 @@ private:
 	RID grid_mesh_instance;
 	Transform3D grid_mesh_transform;
 
-	inline void transform_cell_mesh(
-			RenderingServer *rs, MeshLibrary *mesh_library, CursorCell &cell);
+	inline void transform_cell_mesh(RenderingServer *rs,
+			MeshLibrary *mesh_library,
+			CursorCell &cell);
 	void transform_cell_mesh(CursorCell &cell);
 	void transform_meshes();
 	void free_tile_meshes();
@@ -72,7 +74,8 @@ public:
 	void set_axis(EditorControl::EditAxis axis);
 	EditorControl::EditAxis get_axis() { return edit_axis; };
 	void set_depth(int);
-	void set_tile(CellId cell, int tile,
+	void set_tile(CellId cell,
+			int tile,
 			TileOrientation orientation = TileOrientation::Upright0);
 	void set_orientation(TileOrientation orientation);
 	List<CursorCell> get_tiles();
@@ -81,3 +84,4 @@ public:
 	Vector3 get_pos() { return pointer_pos; };
 	int get_tile_count() { return tiles.size(); };
 };
+#endif

@@ -6,7 +6,7 @@ extension_api.json
 *.o
 .DS_Store
 .nobackup*
-demo/bin/libhexmap*
+demo/addons/hexmap/lib/*
 
 *.import
 
