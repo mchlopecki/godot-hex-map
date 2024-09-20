@@ -42,7 +42,7 @@
 #include <godot_cpp/variant/utility_functions.hpp>
 
 // XXX selecting too many cells then deleting causes cpu spin/hang
-// XXX maps do not save
+// XXX middle click in orthographic axis view moves camera; block that
 //
 void HexMapEditorPlugin::commit_cell_changes(String desc) {
 	EditorUndoRedoManager *undo_redo = get_undo_redo();
@@ -157,7 +157,7 @@ void HexMapEditorPlugin::copy_selection_to_cursor() {
 			continue;
 		}
 		editor_cursor->set_tile(
-				center - cell, tile, hex_map->get_cell_item_orientation(cell));
+				cell - center, tile, hex_map->get_cell_item_orientation(cell));
 	}
 	editor_cursor->update(true);
 	input_state = INPUT_STATE_MOVING;
@@ -192,9 +192,13 @@ void HexMapEditorPlugin::selection_clone_cancel() {
 
 void HexMapEditorPlugin::selection_clone_apply() {
 	EditorUndoRedoManager *undo_redo = get_undo_redo();
-	undo_redo->create_action("HexMap: clone selected tiles");
+	undo_redo->create_action("HexMap: clone selected tiles",
+			godot::UndoRedo::MERGE_DISABLE,
+			hex_map);
+	undo_redo->add_do_method(this, "deselect_cells");
 
 	for (const auto &cell : editor_cursor->get_tiles()) {
+		undo_redo->add_do_method(this, "select_cell", cell.cell_id_live);
 		undo_redo->add_do_method(hex_map,
 				"set_cell_item",
 				cell.cell_id_live,
@@ -207,7 +211,6 @@ void HexMapEditorPlugin::selection_clone_apply() {
 				hex_map->get_cell_item_orientation(cell.cell_id_live));
 	}
 
-	undo_redo->add_do_method(this, "deselect_cells");
 	undo_redo->add_undo_method(this, "deselect_cells");
 	for (const HexMapCellId &cell_id : last_selection) {
 		undo_redo->add_undo_method(this, "select_cell", (Vector3i)cell_id);
@@ -266,7 +269,11 @@ void HexMapEditorPlugin::selection_move_cancel() {
 
 void HexMapEditorPlugin::selection_move_apply() {
 	EditorUndoRedoManager *undo_redo = get_undo_redo();
-	undo_redo->create_action("HexMap: move selected tiles");
+	undo_redo->create_action("HexMap: move selected tiles",
+			godot::UndoRedo::MERGE_DISABLE,
+			hex_map);
+
+	undo_redo->add_do_method(this, "deselect_cells");
 
 	// clear original cells first
 	for (const CellChange &change : cells_changed) {
@@ -278,6 +285,7 @@ void HexMapEditorPlugin::selection_move_apply() {
 
 	// set the new cells, and start the undo restoring the new cells
 	for (const auto &cell : editor_cursor->get_tiles()) {
+		undo_redo->add_do_method(this, "select_cell", cell.cell_id_live);
 		undo_redo->add_do_method(hex_map,
 				"set_cell_item",
 				cell.cell_id_live,
@@ -301,7 +309,6 @@ void HexMapEditorPlugin::selection_move_apply() {
 	cells_changed.clear();
 
 	// update selection undo/redo
-	undo_redo->add_do_method(this, "deselect_cells");
 	undo_redo->add_undo_method(this, "deselect_cells");
 	for (const HexMapCellId &cell_id : last_selection) {
 		undo_redo->add_undo_method(this, "select_cell", (Vector3i)cell_id);
