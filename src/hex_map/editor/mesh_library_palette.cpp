@@ -170,6 +170,8 @@ void MeshLibraryPalette::set_mesh_library(Ref<MeshLibrary> p_mesh_library) {
 void MeshLibraryPalette::update_item_list() {
 	float min_size = 128; // XXX scale to UI?
 
+	// clear the selected id
+	mesh_id = -1;
 	mesh_item_list->clear();
 	switch (display_mode) {
 		case DisplayMode::THUMBNAIL:

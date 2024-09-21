@@ -43,7 +43,6 @@
 
 // XXX selecting too many cells then deleting causes cpu spin/hang
 // XXX middle click in orthographic axis view moves camera; block that
-//
 void HexMapEditorPlugin::commit_cell_changes(String desc) {
 	EditorUndoRedoManager *undo_redo = get_undo_redo();
 	undo_redo->create_action(desc);
@@ -547,24 +546,8 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
 void HexMapEditorPlugin::_update_mesh_library() {
 	ERR_FAIL_NULL(hex_map);
 
-	Ref<MeshLibrary> new_mesh_library = hex_map->get_mesh_library();
-	if (new_mesh_library == mesh_library) {
-		return;
-	}
-
-	if (mesh_library.is_valid()) {
-		mesh_library->disconnect("changed",
-				callable_mp(
-						mesh_palette, &MeshLibraryPalette::set_mesh_library));
-	}
-	mesh_library = new_mesh_library;
+	mesh_library = hex_map->get_mesh_library();
 	mesh_palette->set_mesh_library(mesh_library);
-
-	if (mesh_library.is_valid()) {
-		mesh_library->connect("changed",
-				callable_mp(
-						mesh_palette, &MeshLibraryPalette::set_mesh_library));
-	}
 
 	if (editor_cursor) {
 		editor_control->reset_orientation();
@@ -574,30 +557,36 @@ void HexMapEditorPlugin::_update_mesh_library() {
 
 void HexMapEditorPlugin::_edit(Object *p_object) {
 	if (hex_map) {
+		// save off the current floors
+		hex_map->set_meta("_editor_floors_", editor_control->get_planes());
+
+		// disconnect signals
 		hex_map->disconnect("cell_size_changed",
 				callable_mp(this, &HexMapEditorPlugin::cell_size_changed));
 		hex_map->disconnect("mesh_library_changed",
 				callable_mp(this, &HexMapEditorPlugin::_update_mesh_library));
-		if (mesh_library.is_valid()) {
-			mesh_library = Ref<MeshLibrary>();
-			mesh_palette->set_mesh_library(mesh_library);
-		}
-		hex_map->set_meta("_editor_floors_", editor_control->get_planes());
+
+		// clear the mesh library
+		mesh_library = Ref<MeshLibrary>();
+		mesh_palette->set_mesh_library(mesh_library);
+
+		// reset the selection menu
+		editor_control->update_selection_menu(false);
+
+		// clear a couple of other state tracking variables
+		last_selection.clear();
+		cells_changed.clear();
 
 		// we use delete here because EditorCursor is not a Godot Object
 		// subclass, so its destructor is not called with memfree().
 		delete editor_cursor;
 		editor_cursor = nullptr;
-		editor_control->update_selection_menu(false);
+
 		delete selection_manager;
 		selection_manager = nullptr;
 	}
 
 	hex_map = Object::cast_to<HexMap>(p_object);
-
-	mesh_palette->clear_selection();
-	last_selection.clear();
-	cells_changed.clear();
 
 	if (!hex_map) {
 		set_process(false);
