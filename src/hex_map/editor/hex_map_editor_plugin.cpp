@@ -576,10 +576,11 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 	if (hex_map) {
 		hex_map->disconnect("cell_size_changed",
 				callable_mp(this, &HexMapEditorPlugin::cell_size_changed));
-		hex_map->disconnect("changed",
+		hex_map->disconnect("mesh_library_changed",
 				callable_mp(this, &HexMapEditorPlugin::_update_mesh_library));
 		if (mesh_library.is_valid()) {
 			mesh_library = Ref<MeshLibrary>();
+			mesh_palette->set_mesh_library(mesh_library);
 		}
 		hex_map->set_meta("_editor_floors_", editor_control->get_planes());
 
@@ -615,7 +616,7 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 
 	hex_map->connect("cell_size_changed",
 			callable_mp(this, &HexMapEditorPlugin::cell_size_changed));
-	hex_map->connect("changed",
+	hex_map->connect("mesh_library_changed",
 			callable_mp(this, &HexMapEditorPlugin::_update_mesh_library));
 	_update_mesh_library();
 }

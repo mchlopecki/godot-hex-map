@@ -191,12 +191,18 @@ bool HexMap::_get(const StringName &p_name, Variant &r_ret) const {
 
 void HexMap::_get_property_list(List<PropertyInfo> *p_list) const {
 	if (baked_meshes.size()) {
-		p_list->push_back(PropertyInfo(Variant::ARRAY, "baked_meshes",
-				PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE));
+		p_list->push_back(PropertyInfo(Variant::ARRAY,
+				"baked_meshes",
+				PROPERTY_HINT_NONE,
+				"",
+				PROPERTY_USAGE_STORAGE));
 	}
 
-	p_list->push_back(PropertyInfo(Variant::DICTIONARY, "data",
-			PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE));
+	p_list->push_back(PropertyInfo(Variant::DICTIONARY,
+			"data",
+			PROPERTY_HINT_NONE,
+			"",
+			PROPERTY_USAGE_STORAGE));
 }
 
 void HexMap::set_collision_layer(uint32_t p_layer) {
@@ -228,9 +234,11 @@ void HexMap::set_collision_layer_value(int p_layer_number, bool p_value) {
 }
 
 bool HexMap::get_collision_layer_value(int p_layer_number) const {
-	ERR_FAIL_COND_V_MSG(p_layer_number < 1, false,
+	ERR_FAIL_COND_V_MSG(p_layer_number < 1,
+			false,
 			"Collision layer number must be between 1 and 32 inclusive.");
-	ERR_FAIL_COND_V_MSG(p_layer_number > 32, false,
+	ERR_FAIL_COND_V_MSG(p_layer_number > 32,
+			false,
 			"Collision layer number must be between 1 and 32 inclusive.");
 	return get_collision_layer() & (1 << (p_layer_number - 1));
 }
@@ -266,9 +274,11 @@ Ref<PhysicsMaterial> HexMap::get_physics_material() const {
 }
 
 bool HexMap::get_collision_mask_value(int p_layer_number) const {
-	ERR_FAIL_COND_V_MSG(p_layer_number < 1, false,
+	ERR_FAIL_COND_V_MSG(p_layer_number < 1,
+			false,
 			"Collision layer number must be between 1 and 32 inclusive.");
-	ERR_FAIL_COND_V_MSG(p_layer_number > 32, false,
+	ERR_FAIL_COND_V_MSG(p_layer_number > 32,
+			false,
 			"Collision layer number must be between 1 and 32 inclusive.");
 	return get_collision_mask() & (1 << (p_layer_number - 1));
 }
@@ -339,7 +349,7 @@ void HexMap::set_mesh_library(const Ref<MeshLibrary> &p_mesh_library) {
 	}
 
 	_recreate_octant_data();
-	emit_signal("changed");
+	emit_signal("mesh_library_changed");
 }
 
 Ref<MeshLibrary> HexMap::get_mesh_library() const { return mesh_library; }
@@ -419,6 +429,7 @@ void HexMap::set_cell_item(const Vector3i &p_position, int p_item, int p_rot) {
 			cell_map.erase(key);
 			_queue_octants_dirty();
 		}
+		emit_signal("cell_changed", p_position);
 		return;
 	}
 
@@ -482,6 +493,7 @@ void HexMap::set_cell_item(const Vector3i &p_position, int p_item, int p_rot) {
 	c.rot = p_rot;
 
 	cell_map[key] = c;
+	emit_signal("cell_changed", p_position);
 }
 
 int HexMap::get_cell_item(const Vector3i &p_position) const {
@@ -625,8 +637,8 @@ Vector3 HexMap::map_to_local(const Vector3i &p_map_position) const {
 // 	local.z = cell_size.x * (3.0 / 2 * p_cell_id.r);
 // 	return local;
 // }
-Vector<HexMapCellId> HexMap::local_region_to_map(
-		Vector3 p_a, Vector3 p_b, Planes planes) const {
+Vector<HexMapCellId>
+HexMap::local_region_to_map(Vector3 p_a, Vector3 p_b, Planes planes) const {
 	Vector<HexMapCellId> cells;
 
 	// XXX OddR Iterator, and Planes support
@@ -717,8 +729,8 @@ Vector<HexMapCellId> HexMap::local_region_to_map(
 	return cells;
 }
 
-TypedArray<Vector3i> HexMap::_local_region_to_map(
-		Vector3 p_a, Vector3 p_b) const {
+TypedArray<Vector3i> HexMap::_local_region_to_map(Vector3 p_a,
+		Vector3 p_b) const {
 	TypedArray<Vector3i> out;
 	for (const HexMapCellId &cell : local_region_to_map(p_a, p_b)) {
 		out.append((Vector3i)cell);
@@ -730,7 +742,8 @@ void HexMap::_octant_transform(const OctantKey &p_key) {
 	ERR_FAIL_COND(!octant_map.has(p_key));
 	Octant &g = *octant_map[p_key];
 	PhysicsServer3D::get_singleton()->body_set_state(g.static_body,
-			PhysicsServer3D::BODY_STATE_TRANSFORM, get_global_transform());
+			PhysicsServer3D::BODY_STATE_TRANSFORM,
+			get_global_transform());
 
 	if (g.collision_debug_instance.is_valid()) {
 		RS::get_singleton()->instance_set_transform(
@@ -1054,9 +1067,11 @@ void HexMap::_update_physics_bodies_characteristics() {
 	}
 	for (const KeyValue<OctantKey, Octant *> &E : octant_map) {
 		PhysicsServer3D::get_singleton()->body_set_param(E.value->static_body,
-				PhysicsServer3D::BODY_PARAM_FRICTION, friction);
+				PhysicsServer3D::BODY_PARAM_FRICTION,
+				friction);
 		PhysicsServer3D::get_singleton()->body_set_param(E.value->static_body,
-				PhysicsServer3D::BODY_PARAM_BOUNCE, bounce);
+				PhysicsServer3D::BODY_PARAM_BOUNCE,
+				bounce);
 	}
 }
 
@@ -1064,7 +1079,8 @@ void HexMap::_octant_enter_world(const OctantKey &p_key) {
 	ERR_FAIL_COND(!octant_map.has(p_key));
 	Octant &g = *octant_map[p_key];
 	PhysicsServer3D::get_singleton()->body_set_state(g.static_body,
-			PhysicsServer3D::BODY_STATE_TRANSFORM, get_global_transform());
+			PhysicsServer3D::BODY_STATE_TRANSFORM,
+			get_global_transform());
 	PhysicsServer3D::get_singleton()->body_set_space(
 			g.static_body, get_world_3d()->get_space());
 
@@ -1141,7 +1157,8 @@ void HexMap::_octant_exit_world(const OctantKey &p_key) {
 	ERR_FAIL_COND(!octant_map.has(p_key));
 	Octant &g = *octant_map[p_key];
 	PhysicsServer3D::get_singleton()->body_set_state(g.static_body,
-			PhysicsServer3D::BODY_STATE_TRANSFORM, get_global_transform());
+			PhysicsServer3D::BODY_STATE_TRANSFORM,
+			get_global_transform());
 	PhysicsServer3D::get_singleton()->body_set_space(g.static_body, RID());
 
 	if (g.collision_debug_instance.is_valid()) {
@@ -1453,7 +1470,8 @@ void HexMap::_bind_methods() {
 
 	ClassDB::bind_method(
 			D_METHOD("set_cell_item", "position", "item", "orientation"),
-			&HexMap::set_cell_item, DEFVAL(0));
+			&HexMap::set_cell_item,
+			DEFVAL(0));
 	ClassDB::bind_method(
 			D_METHOD("get_cell_item", "position"), &HexMap::get_cell_item);
 	ClassDB::bind_method(D_METHOD("get_cell_item_orientation", "position"),
@@ -1507,52 +1525,81 @@ void HexMap::_bind_methods() {
 
 	ClassDB::bind_method(
 			D_METHOD("clear_baked_meshes"), &HexMap::clear_baked_meshes);
-	ClassDB::bind_method(D_METHOD("make_baked_meshes", "gen_lightmap_uv",
+	ClassDB::bind_method(D_METHOD("make_baked_meshes",
+								 "gen_lightmap_uv",
 								 "lightmap_uv_texel_size"),
-			&HexMap::make_baked_meshes, DEFVAL(false), DEFVAL(0.1));
+			&HexMap::make_baked_meshes,
+			DEFVAL(false),
+			DEFVAL(0.1));
 
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "mesh_library",
-						 PROPERTY_HINT_RESOURCE_TYPE, "MeshLibrary"),
-			"set_mesh_library", "get_mesh_library");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "physics_material",
-						 PROPERTY_HINT_RESOURCE_TYPE, "PhysicsMaterial"),
-			"set_physics_material", "get_physics_material");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT,
+						 "mesh_library",
+						 PROPERTY_HINT_RESOURCE_TYPE,
+						 "MeshLibrary"),
+			"set_mesh_library",
+			"get_mesh_library");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT,
+						 "physics_material",
+						 PROPERTY_HINT_RESOURCE_TYPE,
+						 "PhysicsMaterial"),
+			"set_physics_material",
+			"get_physics_material");
 	ADD_GROUP("Cell", "cell_");
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "cell_size",
-						 PROPERTY_HINT_NONE, "suffix:m"),
-			"set_cell_size", "get_cell_size");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "cell_octant_size",
-						 PROPERTY_HINT_RANGE, "1,1024,1"),
-			"set_octant_size", "get_octant_size");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "cell_center_x"), "set_center_x",
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3,
+						 "cell_size",
+						 PROPERTY_HINT_NONE,
+						 "suffix:m"),
+			"set_cell_size",
+			"get_cell_size");
+	ADD_PROPERTY(PropertyInfo(Variant::INT,
+						 "cell_octant_size",
+						 PROPERTY_HINT_RANGE,
+						 "1,1024,1"),
+			"set_octant_size",
+			"get_octant_size");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "cell_center_x"),
+			"set_center_x",
 			"get_center_x");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "cell_center_y"), "set_center_y",
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "cell_center_y"),
+			"set_center_y",
 			"get_center_y");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "cell_center_z"), "set_center_z",
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "cell_center_z"),
+			"set_center_z",
 			"get_center_z");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "cell_scale"), "set_cell_scale",
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "cell_scale"),
+			"set_cell_scale",
 			"get_cell_scale");
 	ADD_GROUP("Collision", "collision_");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_layer",
+	ADD_PROPERTY(PropertyInfo(Variant::INT,
+						 "collision_layer",
 						 PROPERTY_HINT_LAYERS_3D_PHYSICS),
-			"set_collision_layer", "get_collision_layer");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_mask",
+			"set_collision_layer",
+			"get_collision_layer");
+	ADD_PROPERTY(PropertyInfo(Variant::INT,
+						 "collision_mask",
 						 PROPERTY_HINT_LAYERS_3D_PHYSICS),
-			"set_collision_mask", "get_collision_mask");
+			"set_collision_mask",
+			"get_collision_mask");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "collision_priority"),
-			"set_collision_priority", "get_collision_priority");
+			"set_collision_priority",
+			"get_collision_priority");
 	ADD_GROUP("Navigation", "");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "bake_navigation"),
-			"set_bake_navigation", "is_baking_navigation");
+			"set_bake_navigation",
+			"is_baking_navigation");
 
 	BIND_CONSTANT(INVALID_CELL_ITEM);
 
 	ADD_SIGNAL(MethodInfo(
 			"cell_size_changed", PropertyInfo(Variant::VECTOR3, "cell_size")));
 	ADD_SIGNAL(MethodInfo("cell_shape_changed",
-			PropertyInfo(Variant::INT, "cell_shape", PROPERTY_HINT_ENUM,
+			PropertyInfo(Variant::INT,
+					"cell_shape",
+					PROPERTY_HINT_ENUM,
 					"Square,Hexagon")));
-	ADD_SIGNAL(MethodInfo("changed"));
+	ADD_SIGNAL(MethodInfo("mesh_library_changed"));
+	ADD_SIGNAL(MethodInfo(
+			"cell_changed", PropertyInfo(Variant::VECTOR3I, "cell")));
 }
 
 void HexMap::set_cell_scale(float p_scale) {
@@ -1634,8 +1681,8 @@ void HexMap::clear_baked_meshes() {
 	_recreate_octant_data();
 }
 
-void HexMap::make_baked_meshes(
-		bool p_gen_lightmap_uv, float p_lightmap_uv_texel_size) {
+void HexMap::make_baked_meshes(bool p_gen_lightmap_uv,
+		float p_lightmap_uv_texel_size) {
 	if (!mesh_library.is_valid()) {
 		return;
 	}
