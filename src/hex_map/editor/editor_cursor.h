@@ -16,7 +16,7 @@ using namespace godot;
 
 class EditorCursor {
 public:
-	using CellId = HexMap::CellId;
+	using CellId = HexMapCellId;
 
 	// representation of a tile state
 	struct CursorCell {

@@ -172,7 +172,7 @@ void SelectionManager::redraw_selection() {
 		Vector3i cell = cells[i];
 		rs->multimesh_instance_set_transform(selection_multimesh,
 				i,
-				cell_transform.translated(hex_map->map_to_local(cell)));
+				cell_transform.translated(hex_map->cell_id_to_local(cell)));
 	}
 
 	// transform the multimesh to match the HexMap transform

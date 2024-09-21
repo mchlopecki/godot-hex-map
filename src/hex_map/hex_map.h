@@ -60,7 +60,7 @@ class HexMap : public Node3D {
 	GDCLASS(HexMap, Node3D);
 
 public:
-	using CellId = Vector3i;
+	using CellId = HexMapCellId;
 
 private:
 	enum {
@@ -218,10 +218,6 @@ private:
 	void _queue_octants_dirty();
 	void _update_octants_callback();
 
-#ifndef DISABLE_DEPRECATED
-	void resource_changed(const Ref<Resource> &p_res);
-#endif
-
 	void _clear_internal();
 
 	Vector3 _get_offset() const;
@@ -305,7 +301,6 @@ public:
 	int get_cell_item_orientation(const Vector3i &p_position) const;
 	Basis get_cell_item_basis(const Vector3i &p_position) const;
 	Basis get_basis_with_orthogonal_index(int p_index) const;
-	TypedArray<Vector3i> get_cell_neighbors(const Vector3i p_cell) const;
 
 	HexMapCellId local_to_cell_id(const Vector3 &local_position) const;
 	Ref<HexMapCellIdRef> _local_to_cell_id(
@@ -314,14 +309,10 @@ public:
 	Vector3 _cell_id_to_local(
 			const Ref<HexMapCellIdRef> p_local_position) const;
 
-	CellId local_to_map(const Vector3 &p_local_position) const;
-	Vector3 map_to_local(const Vector3i &p_map_position) const;
-	// Vector3 map_to_local(const HexMapCellId &p_cell_id) const;
-
-	Vector<HexMapCellId> local_region_to_map(
-			Vector3, Vector3, Planes = Planes::All) const;
-	TypedArray<Vector3i> _local_region_to_map(
-			Vector3 p_local_point_a, Vector3 p_local_point_b) const;
+	Vector<HexMapCellId>
+			local_region_to_map(Vector3, Vector3, Planes = Planes::All) const;
+	TypedArray<Vector3i> _local_region_to_map(Vector3 p_local_point_a,
+			Vector3 p_local_point_b) const;
 
 	void set_cell_scale(float p_scale);
 	float get_cell_scale() const;

@@ -187,19 +187,18 @@ void EditorCursor::transform_meshes() {
 	Ref<MeshLibrary> mesh_library = hex_map->get_mesh_library();
 	Transform3D global_transform = hex_map->get_global_transform();
 
-	// XXX there is a bug where the cursor cell can end up below the grid
-	Vector3 origin = hex_map->map_to_local(pointer_cell);
+	Vector3 origin = hex_map->cell_id_to_local(pointer_cell);
 
 	for (CursorCell &cell : tiles) {
 		Transform3D transform;
 		transform.origin = origin;
 		transform.basis = (Basis)this->orientation;
-		transform.translate_local(hex_map->map_to_local(cell.cell_id));
+		transform.translate_local(hex_map->cell_id_to_local(cell.cell_id));
 
 		// apply the tile rotation
 		transform.basis = (Basis)cell.orientation * transform.basis;
 
-		cell.cell_id_live = hex_map->local_to_map(transform.origin);
+		cell.cell_id_live = hex_map->local_to_cell_id(transform.origin);
 
 		assert(cell.cell_id.y < 0 || origin.y < 0 || transform.origin.y >= 0);
 
@@ -210,7 +209,7 @@ void EditorCursor::transform_meshes() {
 	}
 
 	// update the grid transform also
-	grid_mesh_transform.set_origin(hex_map->map_to_local(pointer_cell));
+	grid_mesh_transform.set_origin(hex_map->cell_id_to_local(pointer_cell));
 	RenderingServer::get_singleton()->instance_set_transform(
 			grid_mesh_instance,
 			hex_map->get_global_transform() * grid_mesh_transform);
@@ -237,7 +236,7 @@ bool EditorCursor::update(const Camera3D *camera,
 		*point = pos;
 	}
 
-	HexMapCellId cell = hex_map->local_to_map(pos);
+	HexMapCellId cell = hex_map->local_to_cell_id(pos);
 	if (cell == pointer_cell) {
 		return true;
 	}
@@ -256,7 +255,7 @@ void EditorCursor::update(bool force) {
 		return;
 	}
 
-	HexMapCellId cell = hex_map->local_to_map(pos);
+	HexMapCellId cell = hex_map->local_to_cell_id(pos);
 	if (!force && cell == pointer_cell) {
 		return;
 	}

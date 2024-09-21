@@ -536,21 +536,6 @@ Basis HexMap::get_basis_with_orthogonal_index(int p_index) const {
 	return TileOrientation(p_index);
 }
 
-TypedArray<Vector3i> HexMap::get_cell_neighbors(const Vector3i cell) const {
-	TypedArray<Vector3i> out;
-	// each of the six horizontal directions
-	out.push_back(cell + Vector3(1, 0, 0));
-	out.push_back(cell + Vector3(1, 0, -1));
-	out.push_back(cell + Vector3(0, 0, -1));
-	out.push_back(cell + Vector3(-1, 0, 0));
-	out.push_back(cell + Vector3(-1, 0, 1));
-	out.push_back(cell + Vector3(0, 0, 1));
-	// and up and down
-	out.push_back(cell + Vector3(0, 1, 0));
-	out.push_back(cell + Vector3(0, -1, 0));
-	return out;
-}
-
 // based on blog post https://observablehq.com/@jrus/hexround
 static inline Vector2i axial_round(real_t q_in, real_t r_in) {
 	int q = round(q_in);
@@ -598,34 +583,6 @@ Vector3 HexMap::_cell_id_to_local(const Ref<HexMapCellIdRef> cell_id) const {
 	return cell_id_to_local(**cell_id);
 }
 
-HexMap::CellId HexMap::local_to_map(const Vector3 &p_local_position) const {
-	// convert x/z point into axial hex coordinates
-	// https://www.redblobgames.com/grids/hexagons/#pixel-to-hex
-	real_t q = (Math_SQRT3 / 3 * p_local_position.x -
-					   1.0 / 3 * p_local_position.z) /
-			cell_size.x;
-	real_t r = (2.0 / 3 * p_local_position.z) / cell_size.x;
-	Vector2i hex = axial_round(q, r);
-
-	// map index for hex cells using (q, r) axial coordinates for the cell are:
-	// (q, level, r).  We do it this way as q and r best map to x and z
-	// respectively.
-	return Vector3i(hex.x, floor(p_local_position.y / cell_size.y), hex.y);
-}
-
-Vector3 HexMap::map_to_local(const Vector3i &p_map_position) const {
-	Vector3 offset = _get_offset();
-
-	// convert axial hex coordinates to a point
-	// https://www.redblobgames.com/grids/hexagons/#hex-to-pixel
-	Vector3 local;
-	local.x = cell_size.x *
-			(Math_SQRT3 * p_map_position.x + SQRT3_2 * p_map_position.z);
-	local.y = p_map_position.y * cell_size.y + offset.y;
-	local.z = cell_size.x * (3.0 / 2 * p_map_position.z);
-	return local;
-}
-
 // Vector3 HexMap::map_to_local(const HexMapCellId &p_cell_id) const {
 // 	Vector3 offset = _get_offset();
 //
@@ -654,13 +611,13 @@ HexMap::local_region_to_map(Vector3 p_a, Vector3 p_b, Planes planes) const {
 	if (p_a.z > p_b.z) {
 		SWAP(p_a.z, p_b.z);
 	}
-	Vector3i bottom_left = local_to_map(p_a);
-	Vector3i top_right = local_to_map(p_b);
+	Vector3i bottom_left = local_to_cell_id(p_a);
+	Vector3i top_right = local_to_cell_id(p_b);
 
 	// we need the x coordinate of the center of the corner cells
 	// later. grab them now before we switch coordinate systems.
-	real_t left_x_center = map_to_local(bottom_left).x;
-	real_t right_x_center = map_to_local(top_right).x;
+	real_t left_x_center = cell_id_to_local(bottom_left).x;
+	real_t right_x_center = cell_id_to_local(top_right).x;
 
 	// we're going to use a different coordinate system for this
 	// operation.  It's much easier to walk the region when we use
@@ -839,11 +796,11 @@ bool HexMap::_octant_update(const OctantKey &p_key) {
 			continue;
 		}
 
-		Vector3 map_pos = Vector3(E.x, E.y, E.z);
+		HexMapCellId map_pos(E.x, E.z, E.y);
 		Transform3D cell_transform;
 
 		cell_transform.basis = TileOrientation(c.rot);
-		cell_transform.set_origin(map_to_local(map_pos));
+		cell_transform.set_origin(cell_id_to_local(map_pos));
 		cell_transform.basis.scale(
 				Vector3(cell_scale, cell_scale, cell_scale));
 		if (baked_meshes.size() == 0) {
@@ -1381,10 +1338,6 @@ void HexMap::clear() {
 	clear_baked_meshes();
 }
 
-#ifndef DISABLE_DEPRECATED
-void HexMap::resource_changed(const Ref<Resource> &p_res) {}
-#endif
-
 void HexMap::_update_octants_callback() {
 	if (!awaiting_update) {
 		return;
@@ -1480,13 +1433,7 @@ void HexMap::_bind_methods() {
 			&HexMap::get_cell_item_basis);
 	ClassDB::bind_method(D_METHOD("get_basis_with_orthogonal_index", "index"),
 			&HexMap::get_basis_with_orthogonal_index);
-	ClassDB::bind_method(D_METHOD("get_cell_neighbors", "cell"),
-			&HexMap::get_cell_neighbors);
 
-	ClassDB::bind_method(
-			D_METHOD("local_to_map", "local_position"), &HexMap::local_to_map);
-	ClassDB::bind_method(
-			D_METHOD("map_to_local", "map_position"), &HexMap::map_to_local);
 	ClassDB::bind_method(
 			D_METHOD("local_region_to_map", "local_point_a", "local_point_b"),
 			&HexMap::_local_region_to_map);
@@ -1495,11 +1442,6 @@ void HexMap::_bind_methods() {
 			&HexMap::_local_to_cell_id);
 	ClassDB::bind_method(D_METHOD("cell_id_to_local", "cell_id"),
 			&HexMap::_cell_id_to_local);
-
-#ifndef DISABLE_DEPRECATED
-	ClassDB::bind_method(D_METHOD("resource_changed", "resource"),
-			&HexMap::resource_changed);
-#endif
 
 	ClassDB::bind_method(
 			D_METHOD("set_center_x", "enable"), &HexMap::set_center_x);
@@ -1649,7 +1591,7 @@ Array HexMap::get_meshes() const {
 
 		IndexKey ik = E.key;
 
-		Vector3 cellpos = map_to_local(Vector3(ik.x, ik.y, ik.z));
+		Vector3 cellpos = cell_id_to_local(HexMapCellId(ik.x, ik.z, ik.y));
 
 		Transform3D xform;
 

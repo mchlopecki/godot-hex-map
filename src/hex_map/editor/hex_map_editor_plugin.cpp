@@ -197,15 +197,16 @@ void HexMapEditorPlugin::selection_clone_apply() {
 	undo_redo->add_do_method(this, "deselect_cells");
 
 	for (const auto &cell : editor_cursor->get_tiles()) {
-		undo_redo->add_do_method(this, "select_cell", cell.cell_id_live);
+		undo_redo->add_do_method(
+				this, "select_cell", (Vector3i)cell.cell_id_live);
 		undo_redo->add_do_method(hex_map,
 				"set_cell_item",
-				cell.cell_id_live,
+				(Vector3i)cell.cell_id_live,
 				cell.tile,
 				cell.orientation);
 		undo_redo->add_undo_method(hex_map,
 				"set_cell_item",
-				cell.cell_id_live,
+				(Vector3i)cell.cell_id_live,
 				hex_map->get_cell_item(cell.cell_id_live),
 				hex_map->get_cell_item_orientation(cell.cell_id_live));
 	}
@@ -284,15 +285,16 @@ void HexMapEditorPlugin::selection_move_apply() {
 
 	// set the new cells, and start the undo restoring the new cells
 	for (const auto &cell : editor_cursor->get_tiles()) {
-		undo_redo->add_do_method(this, "select_cell", cell.cell_id_live);
+		undo_redo->add_do_method(
+				this, "select_cell", (Vector3i)cell.cell_id_live);
 		undo_redo->add_do_method(hex_map,
 				"set_cell_item",
-				cell.cell_id_live,
+				(Vector3i)cell.cell_id_live,
 				cell.tile,
 				cell.orientation);
 		undo_redo->add_undo_method(hex_map,
 				"set_cell_item",
-				cell.cell_id_live,
+				(Vector3i)cell.cell_id_live,
 				hex_map->get_cell_item(cell.cell_id_live),
 				hex_map->get_cell_item_orientation(cell.cell_id_live));
 	}

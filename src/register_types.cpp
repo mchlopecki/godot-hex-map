@@ -8,8 +8,6 @@
 #include "hex_map/hex_map.h"
 #include "hex_map/hex_map_cell_id.h"
 #include "hex_map/hex_map_iter_axial.h"
-#include "test_node.h"
-#include "test_node_editor_plugin.h"
 
 using namespace godot;
 
@@ -18,7 +16,6 @@ void initialize_hexmap_module(ModuleInitializationLevel p_level) {
 		ClassDB::register_class<HexMapCellIdRef>();
 		ClassDB::register_class<HexMapIterAxialRef>();
 		ClassDB::register_class<HexMap>();
-		ClassDB::register_class<TestNode>();
 	}
 
 #ifdef TOOLS_ENABLED
@@ -27,9 +24,6 @@ void initialize_hexmap_module(ModuleInitializationLevel p_level) {
 		ClassDB::register_internal_class<EditorControl>();
 		ClassDB::register_internal_class<HexMapEditorPlugin>();
 		EditorPlugins::add_by_type<HexMapEditorPlugin>();
-
-		ClassDB::register_internal_class<TestNodeEditorPlugin>();
-		EditorPlugins::add_by_type<TestNodeEditorPlugin>();
 	}
 #endif
 }

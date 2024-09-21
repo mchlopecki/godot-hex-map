@@ -6,9 +6,6 @@
 
 using namespace godot;
 
-// XXX converting this into a godot object so we can expose it to GDScript
-// XXX cannot convert to a godot object because we cannot bind a function in
-// HexMap that returns an GDExtension class.
 class TileOrientation {
 public:
 	enum Value : uint8_t {
