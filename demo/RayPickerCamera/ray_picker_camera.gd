@@ -16,18 +16,13 @@ func _ready() -> void:
 	map = AStar3D.new()
 	points = {};
 
-	var id := 0;
 	for cell in hex_map.get_used_cells():
-		map.add_point(id, cell)
-		points[cell] = id
-		id += 1
+		map.add_point(cell.hash(), hex_map.cell_id_to_local(cell))
 
 	for cell in hex_map.get_used_cells():
-		var cell_id = points[cell]
-		for neighbor in hex_map.get_cell_neighbors(cell):
-			var neighbor_id = points.get(neighbor)
-			if neighbor_id != null:
-				map.connect_points(cell_id, neighbor_id)
+		for neighbor in cell.get_neighbors():
+			if hex_map.get_cell_item(neighbor) != -1:
+				map.connect_points(cell.hash(), neighbor.hash())
 
 
 	# label all of the cells
@@ -38,7 +33,7 @@ func _ready() -> void:
 			if hex_map.get_cell_item(above) != -1:
 				continue
 
-			var coords = hex_map.map_to_local(cell);
+			var coords = hex_map.cell_id_to_local(cell);
 			var clabel := Label3D.new();
 			clabel.no_depth_test = true
 			clabel.text = str(cell)
@@ -66,7 +61,7 @@ func _process(_delta: float) -> void:
 
 	var collison_point = raycast.get_collision_point()
 	var local = collider.to_local(collison_point)
-	var cell = hex_map.local_to_map(local)
+	var cell = hex_map.local_to_cell_id(local)
 	if cell == cursor_cell:
 		return
 	cursor_cell = cell;

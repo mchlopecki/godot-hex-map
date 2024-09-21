@@ -496,20 +496,23 @@ void HexMap::set_cell_item(const Vector3i &p_position, int p_item, int p_rot) {
 	emit_signal("cell_changed", p_position);
 }
 
-int HexMap::get_cell_item(const Vector3i &p_position) const {
-	ERR_FAIL_INDEX_V(ABS(p_position.x), 1 << 20, INVALID_CELL_ITEM);
-	ERR_FAIL_INDEX_V(ABS(p_position.y), 1 << 20, INVALID_CELL_ITEM);
-	ERR_FAIL_INDEX_V(ABS(p_position.z), 1 << 20, INVALID_CELL_ITEM);
+int HexMap::get_cell_item(const HexMapCellId &cell_id) const {
+	ERR_FAIL_COND_V_MSG(
+			!cell_id.in_bounds(), INVALID_CELL_ITEM, "cell id not in bounds");
 
 	IndexKey key;
-	key.x = p_position.x;
-	key.y = p_position.y;
-	key.z = p_position.z;
+	key.x = cell_id.q;
+	key.y = cell_id.y;
+	key.z = cell_id.r;
 
 	if (!cell_map.has(key)) {
 		return INVALID_CELL_ITEM;
 	}
 	return cell_map[key].item;
+}
+
+int HexMap::_get_cell_item(const Ref<HexMapCellIdRef> p_position) const {
+	return get_cell_item(**p_position);
 }
 
 int HexMap::get_cell_item_orientation(const Vector3i &p_position) const {
@@ -1426,7 +1429,7 @@ void HexMap::_bind_methods() {
 			&HexMap::set_cell_item,
 			DEFVAL(0));
 	ClassDB::bind_method(
-			D_METHOD("get_cell_item", "position"), &HexMap::get_cell_item);
+			D_METHOD("get_cell_item", "position"), &HexMap::_get_cell_item);
 	ClassDB::bind_method(D_METHOD("get_cell_item_orientation", "position"),
 			&HexMap::get_cell_item_orientation);
 	ClassDB::bind_method(D_METHOD("get_cell_item_basis", "position"),
@@ -1551,24 +1554,24 @@ void HexMap::set_cell_scale(float p_scale) {
 
 float HexMap::get_cell_scale() const { return cell_scale; }
 
-TypedArray<Vector3i> HexMap::get_used_cells() const {
-	TypedArray<Vector3i> a;
+Array HexMap::get_used_cells() const {
+	Array a;
 	a.resize(cell_map.size());
 	int i = 0;
 	for (const KeyValue<IndexKey, Cell> &E : cell_map) {
-		Vector3i p(E.key.x, E.key.y, E.key.z);
-		a[i++] = p;
+		HexMapCellId cell_id(E.key.x, E.key.z, E.key.y);
+		a[i++] = static_cast<Ref<HexMapCellIdRef>>(cell_id);
 	}
 
 	return a;
 }
 
 TypedArray<Vector3i> HexMap::get_used_cells_by_item(int p_item) const {
-	TypedArray<Vector3i> a;
+	Array a;
 	for (const KeyValue<IndexKey, Cell> &E : cell_map) {
 		if ((int)E.value.item == p_item) {
-			Vector3i p(E.key.x, E.key.y, E.key.z);
-			a.push_back(p);
+			HexMapCellId cell_id(E.key.x, E.key.z, E.key.y);
+			a.push_back(static_cast<Ref<HexMapCellIdRef>>(cell_id));
 		}
 	}
 

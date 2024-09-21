@@ -297,7 +297,8 @@ public:
 	bool get_center_z() const;
 
 	void set_cell_item(const Vector3i &p_position, int p_item, int p_rot = 0);
-	int get_cell_item(const Vector3i &p_position) const;
+	int get_cell_item(const HexMapCellId &cell_id) const;
+	int _get_cell_item(const Ref<HexMapCellIdRef> p_local_position) const;
 	int get_cell_item_orientation(const Vector3i &p_position) const;
 	Basis get_cell_item_basis(const Vector3i &p_position) const;
 	Basis get_basis_with_orthogonal_index(int p_index) const;
@@ -317,7 +318,7 @@ public:
 	void set_cell_scale(float p_scale);
 	float get_cell_scale() const;
 
-	TypedArray<Vector3i> get_used_cells() const;
+	Array get_used_cells() const;
 	TypedArray<Vector3i> get_used_cells_by_item(int p_item) const;
 
 	Array get_meshes() const;
