@@ -596,7 +596,7 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 	// not a godot Object subclass, so `new` instead of `memnew()`
 	editor_cursor = new EditorCursor(hex_map);
 	selection_manager = new SelectionManager(hex_map);
-	Array floors = hex_map->get_meta("_editor_floors_");
+	Array floors = hex_map->get_meta("_editor_floors_", Array());
 	if (floors.size() == 4) {
 		editor_control->set_planes(floors);
 	}
