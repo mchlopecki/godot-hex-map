@@ -1,3 +1,5 @@
+#include "godot_cpp/classes/packed_scene.hpp"
+#include "godot_cpp/classes/resource.hpp"
 #ifdef TOOLS_ENABLED
 
 #pragma once
@@ -28,6 +30,8 @@
 #include "selection_manager.h"
 
 using namespace godot;
+
+// XXX move palette to bottom panel for HexGrid
 
 // input states:
 //	- erase_only; default state
@@ -288,6 +292,7 @@ class HexMapEditorPlugin : public EditorPlugin {
 	EditorControl *editor_control = nullptr;
 	EditorCursor *editor_cursor = nullptr;
 	SelectionManager *selection_manager = nullptr;
+	Control *bottom_panel = nullptr;
 	Vector3 selection_anchor;
 	Vector<HexMapCellId> last_selection;
 
@@ -326,7 +331,7 @@ class HexMapEditorPlugin : public EditorPlugin {
 
 	void _update_mesh_library();
 
-	void cell_size_changed(Vector3 cell_size);
+	void cell_size_changed();
 	// callbacks used by signals from EditorControl
 	void tile_changed(int p_mesh_id);
 	void plane_changed(int p_axis);

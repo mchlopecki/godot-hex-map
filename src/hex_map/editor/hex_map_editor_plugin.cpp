@@ -1,14 +1,18 @@
+#include "godot_cpp/classes/packed_scene.hpp"
+#include "hex_map/hex_map_cell_id.h"
+#include "profiling.h"
 #ifdef TOOLS_ENABLED
-#include "hex_map_editor_plugin.h"
 #include "editor_control.h"
 #include "editor_cursor.h"
 #include "godot_cpp/classes/global_constants.hpp"
 #include "godot_cpp/classes/input_event_mouse.hpp"
+#include "godot_cpp/classes/resource_loader.hpp"
 #include "godot_cpp/classes/undo_redo.hpp"
 #include "godot_cpp/core/error_macros.hpp"
 #include "godot_cpp/variant/callable_method_pointer.hpp"
 #include "godot_cpp/variant/transform3d.hpp"
 #include "godot_cpp/variant/vector3i.hpp"
+#include "hex_map_editor_plugin.h"
 #include "selection_manager.h"
 
 #include <cassert>
@@ -48,8 +52,8 @@ void HexMapEditorPlugin::commit_cell_changes(String desc) {
 	undo_redo->create_action(desc);
 	for (const CellChange &change : cells_changed) {
 		undo_redo->add_do_method(hex_map,
-				"set_cell_item",
-				(Vector3i)change.cell_id,
+				"set_cell_item_v",
+				change.cell_id,
 				change.new_tile,
 				change.new_orientation);
 	}
@@ -57,8 +61,8 @@ void HexMapEditorPlugin::commit_cell_changes(String desc) {
 	for (auto iter = --cells_changed.end(); iter != end; --iter) {
 		const CellChange &change = *iter;
 		undo_redo->add_undo_method(hex_map,
-				"set_cell_item",
-				(Vector3i)change.cell_id,
+				"set_cell_item_v",
+				change.cell_id,
 				change.orig_tile,
 				change.orig_orientation);
 	}
@@ -83,27 +87,32 @@ void HexMapEditorPlugin::deselect_cells() {
 }
 
 void HexMapEditorPlugin::_deselect_cells() {
+	ERR_FAIL_COND_MSG(selection_manager == nullptr,
+			"HexMap: SelectionManager not present");
 	selection_manager->clear();
 	editor_control->update_selection_menu(false);
 }
 
 void HexMapEditorPlugin::_select_cell(Vector3i cell) {
+	ERR_FAIL_COND_MSG(selection_manager == nullptr,
+			"HexMap: SelectionManager not present");
 	selection_manager->set_cell(cell);
 	// XXX slow, only need to do this once
 	editor_control->update_selection_menu(true);
 }
 
 void HexMapEditorPlugin::selection_clear() {
-	ERR_FAIL_COND_MSG(selection_manager->is_empty(), "no cells selected");
+	ERR_FAIL_COND_MSG(selection_manager == nullptr,
+			"HexMap: SelectionManager not present");
 
 	EditorUndoRedoManager *undo_redo = get_undo_redo();
 	undo_redo->create_action("HexMap: clear selected tiles");
 
-	for (const Vector3i cell : selection_manager->get_cells()) {
+	for (const HexMapCellId cell : selection_manager->get_cells()) {
 		undo_redo->add_do_method(
-				hex_map, "set_cell_item", cell, HexMap::INVALID_CELL_ITEM);
+				hex_map, "set_cell_item_v", cell, HexMap::INVALID_CELL_ITEM);
 		undo_redo->add_undo_method(hex_map,
-				"set_cell_item",
+				"set_cell_item_v",
 				cell,
 				hex_map->get_cell_item(cell),
 				hex_map->get_cell_item_orientation(cell));
@@ -124,16 +133,17 @@ void HexMapEditorPlugin::selection_fill() {
 	EditorUndoRedoManager *undo_redo = get_undo_redo();
 	undo_redo->create_action("HexMap: fill selected tiles");
 
-	for (const Vector3i cell : selection_manager->get_cells()) {
+	for (const HexMapCellId cell : selection_manager->get_cells()) {
 		undo_redo->add_do_method(
-				hex_map, "set_cell_item", cell, tile.tile, tile.orientation);
+				hex_map, "set_cell_item_v", cell, tile.tile, tile.orientation);
 		undo_redo->add_undo_method(hex_map,
-				"set_cell_item",
+				"set_cell_item_v",
 				cell,
 				hex_map->get_cell_item(cell),
 				hex_map->get_cell_item_orientation(cell));
 	}
 
+	auto prof = profiling_begin("fill: commit action");
 	undo_redo->commit_action();
 }
 
@@ -197,16 +207,15 @@ void HexMapEditorPlugin::selection_clone_apply() {
 	undo_redo->add_do_method(this, "deselect_cells");
 
 	for (const auto &cell : editor_cursor->get_tiles()) {
-		undo_redo->add_do_method(
-				this, "select_cell", (Vector3i)cell.cell_id_live);
+		undo_redo->add_do_method(this, "select_cell", cell.cell_id_live);
 		undo_redo->add_do_method(hex_map,
-				"set_cell_item",
-				(Vector3i)cell.cell_id_live,
+				"set_cell_item_v",
+				cell.cell_id_live,
 				cell.tile,
 				cell.orientation);
 		undo_redo->add_undo_method(hex_map,
-				"set_cell_item",
-				(Vector3i)cell.cell_id_live,
+				"set_cell_item_v",
+				cell.cell_id_live,
 				hex_map->get_cell_item(cell.cell_id_live),
 				hex_map->get_cell_item_orientation(cell.cell_id_live));
 	}
@@ -235,10 +244,14 @@ void HexMapEditorPlugin::selection_move() {
 	copy_selection_to_cursor();
 	last_selection = selection_manager->get_cells();
 
-	for (const Vector3i cell_id : selection_manager->get_cells()) {
+	for (const HexMapCellId &cell_id : selection_manager->get_cells()) {
+		int tile = hex_map->get_cell_item(cell_id);
+		if (tile == HexMap::INVALID_CELL_ITEM) {
+			continue;
+		}
 		cells_changed.push_back(CellChange{
 				.cell_id = cell_id,
-				.orig_tile = hex_map->get_cell_item(cell_id),
+				.orig_tile = tile,
 				.orig_orientation =
 						hex_map->get_cell_item_orientation(cell_id),
 		});
@@ -278,23 +291,22 @@ void HexMapEditorPlugin::selection_move_apply() {
 	// clear original cells first
 	for (const CellChange &change : cells_changed) {
 		undo_redo->add_do_method(hex_map,
-				"set_cell_item",
-				(Vector3i)change.cell_id,
+				"set_cell_item_v",
+				change.cell_id,
 				HexMap::INVALID_CELL_ITEM);
 	}
 
 	// set the new cells, and start the undo restoring the new cells
 	for (const auto &cell : editor_cursor->get_tiles()) {
-		undo_redo->add_do_method(
-				this, "select_cell", (Vector3i)cell.cell_id_live);
+		undo_redo->add_do_method(this, "select_cell", cell.cell_id_live);
 		undo_redo->add_do_method(hex_map,
-				"set_cell_item",
-				(Vector3i)cell.cell_id_live,
+				"set_cell_item_v",
+				cell.cell_id_live,
 				cell.tile,
 				cell.orientation);
 		undo_redo->add_undo_method(hex_map,
-				"set_cell_item",
-				(Vector3i)cell.cell_id_live,
+				"set_cell_item_v",
+				cell.cell_id_live,
 				hex_map->get_cell_item(cell.cell_id_live),
 				hex_map->get_cell_item_orientation(cell.cell_id_live));
 	}
@@ -302,8 +314,8 @@ void HexMapEditorPlugin::selection_move_apply() {
 	// undo the clearing of the original cells
 	for (const CellChange &change : cells_changed) {
 		undo_redo->add_undo_method(hex_map,
-				"set_cell_item",
-				(Vector3i)change.cell_id,
+				"set_cell_item_v",
+				change.cell_id,
 				change.orig_tile,
 				change.orig_orientation);
 	}
@@ -571,6 +583,7 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 		// clear the mesh library
 		mesh_library = Ref<MeshLibrary>();
 		mesh_palette->set_mesh_library(mesh_library);
+		// bottom_panel->set("mesh_library", mesh_library);
 
 		// reset the selection menu
 		editor_control->update_selection_menu(false);
@@ -586,6 +599,7 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 
 		delete selection_manager;
 		selection_manager = nullptr;
+		// remove_control_from_bottom_panel(bottom_panel);
 	}
 
 	hex_map = Object::cast_to<HexMap>(p_object);
@@ -594,6 +608,9 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 		set_process(false);
 		return;
 	}
+
+	// add_control_to_bottom_panel(bottom_panel, "HexMap");
+	// bottom_panel->set("mesh_library", mesh_library);
 
 	// not a godot Object subclass, so `new` instead of `memnew()`
 	editor_cursor = new EditorCursor(hex_map);
@@ -653,7 +670,7 @@ void HexMapEditorPlugin::_notification(int p_what) {
 	}
 }
 
-void HexMapEditorPlugin::cell_size_changed(Vector3 cell_size) {
+void HexMapEditorPlugin::cell_size_changed() {
 	ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
 	editor_cursor->cell_size_changed();
 	selection_manager->redraw_selection();
@@ -720,10 +737,20 @@ HexMapEditorPlugin::HexMapEditorPlugin() {
 	editor_control->connect("selection_clone",
 			callable_mp(this, &HexMapEditorPlugin::selection_clone));
 	add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, editor_control);
+
+	// Ref<PackedScene> panel_scene = ResourceLoader::get_singleton()->load(
+	// 		"res://addons/hexmap/gui/"
+	// 		"hex_map_editor_bottom_panel.tscn");
+	// bottom_panel = (Control *)panel_scene->instantiate();
 }
 
 HexMapEditorPlugin::~HexMapEditorPlugin() {
 	ERR_FAIL_NULL(RenderingServer::get_singleton());
+
+	// if (bottom_panel) {
+	// 	remove_control_from_bottom_panel(bottom_panel);
+	// 	memfree(bottom_panel);
+	// }
 
 	if (editor_cursor != nullptr) {
 		delete editor_cursor;

@@ -313,7 +313,7 @@ void EditorCursor::set_axis(EditorControl::EditAxis axis) {
 			break;
 	}
 
-	grid_mesh_transform.scale(hex_map->get_cell_size());
+	grid_mesh_transform.scale(hex_map->get_cell_scale());
 	RenderingServer::get_singleton()->instance_set_transform(
 			grid_mesh_instance, grid_mesh_transform);
 
@@ -322,7 +322,7 @@ void EditorCursor::set_axis(EditorControl::EditAxis axis) {
 }
 
 void EditorCursor::set_depth(int depth) {
-	Vector3 cell_size = hex_map->get_cell_size();
+	Vector3 cell_scale = hex_map->get_cell_scale();
 	real_t cell_depth;
 
 	switch (edit_axis) {
@@ -330,14 +330,14 @@ void EditorCursor::set_depth(int depth) {
 			// the y plane is at the bottom of the cell, but to avoid floating
 			// point errors during raycast, we pull it slightly higher into the
 			// cell.
-			edit_plane.d = depth * cell_size.y + (cell_size.y * 0.1);
+			edit_plane.d = depth * cell_scale.y + (cell_scale.y * 0.1);
 			break;
 		case EditorControl::AXIS_Q:
 		case EditorControl::AXIS_R:
 		case EditorControl::AXIS_S:
 			// Q/R/S plane goes through the center of the cell, so no floating
 			// point concerns here.
-			edit_plane.d = depth * cell_size.x * 1.5;
+			edit_plane.d = depth * cell_scale.x * 1.5;
 			break;
 	}
 	update();

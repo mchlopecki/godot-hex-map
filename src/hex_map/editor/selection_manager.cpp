@@ -156,13 +156,10 @@ void SelectionManager::redraw_selection() {
 	RenderingServer *rs = RS::get_singleton();
 
 	// Scaling and translation for the center of the cell mesh.
-	Vector3 cell_center = Vector3(
-			hex_map->get_center_x() ? 0 : hex_map->get_cell_size().x / 2.0,
-			hex_map->get_center_y() ? 0 : hex_map->get_cell_size().y / 2.0,
-			hex_map->get_center_z() ? 0 : hex_map->get_cell_size().z / 2.0);
+	Vector3 cell_center = Vector3(0, hex_map->get_cell_height() / 2, 0);
 	Transform3D cell_transform =
 			Transform3D()
-					.scaled_local(hex_map->get_cell_size())
+					.scaled_local(hex_map->get_cell_scale())
 					.translated(cell_center);
 
 	// Add the cells to our selection multimesh

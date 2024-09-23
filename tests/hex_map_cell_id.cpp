@@ -49,3 +49,14 @@ TEST_CASE("HexMapCellId::distance(const HexMapCellId &other)") {
 	CHECK(HexMapCellId(0, 0, 0).distance(HexMapCellId(123, -24, 21)) ==
 			123 + 21);
 }
+
+TEST_CASE("HexMapCellId::operator Vector3i() reversability") {
+	HexMapCellId hex(1, 2, 3);
+	Vector3i vector = hex;
+	HexMapCellId after = vector;
+	CHECK_MESSAGE(after == hex,
+			"vector round trip did not work",
+			hex,
+			vector,
+			after);
+}
