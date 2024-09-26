@@ -214,173 +214,173 @@ using namespace godot;
 #define RS RenderingServer
 
 class HexMap : public Node3D {
-	GDCLASS(HexMap, Node3D);
+    GDCLASS(HexMap, Node3D);
 
-	using CellKey = HexMapCellId::Key;
-	using Octant = HexMapOctant;
-	friend Octant;
-	using OctantKey = Octant::Key;
+    using CellKey = HexMapCellId::Key;
+    using Octant = HexMapOctant;
+    friend Octant;
+    using OctantKey = Octant::Key;
 
 public:
-	using CellId = HexMapCellId;
-	using Planes = HexMapPlanes;
+    using CellId = HexMapCellId;
+    using Planes = HexMapPlanes;
 
 private:
-	/**
-	 * @brief A Cell is a single cell in the cube map space; it is defined by
-	 * its coordinates and the populating Item, identified by int id.
-	 */
-	union Cell {
-		struct {
-			unsigned int item : 16;
-			unsigned int rot : 4;
-		};
-		uint32_t cell = 0;
+    /**
+     * @brief A Cell is a single cell in the cube map space; it is defined by
+     * its coordinates and the populating Item, identified by int id.
+     */
+    union Cell {
+        struct {
+            unsigned int item : 16;
+            unsigned int rot : 4;
+        };
+        uint32_t cell = 0;
 
-		Basis get_basis() const { return TileOrientation(rot); }
-	};
+        Basis get_basis() const { return TileOrientation(rot); }
+    };
 
-	struct BakedMesh {
-		Ref<Mesh> mesh;
-		RID instance;
-	};
+    struct BakedMesh {
+        Ref<Mesh> mesh;
+        RID instance;
+    };
 
-	real_t cell_radius = 1.0;
-	real_t cell_height = 1.0;
-	int octant_size = 8;
-	bool center_y = false;
+    real_t cell_radius = 1.0;
+    real_t cell_height = 1.0;
+    int octant_size = 8;
+    bool center_y = false;
 
-	Ref<MeshLibrary> mesh_library;
+    Ref<MeshLibrary> mesh_library;
 
-	Ref<StandardMaterial3D> collision_debug_mat;
-	uint32_t collision_layer = 1;
-	uint32_t collision_mask = 1;
-	real_t collision_priority = 1.0;
-	bool collision_debug = false;
-	Ref<PhysicsMaterial> physics_material;
-	real_t physics_body_friction = 1.0;
-	real_t physics_body_bounce = 0.0;
+    Ref<StandardMaterial3D> collision_debug_mat;
+    uint32_t collision_layer = 1;
+    uint32_t collision_mask = 1;
+    real_t collision_priority = 1.0;
+    bool collision_debug = false;
+    Ref<PhysicsMaterial> physics_material;
+    real_t physics_body_friction = 1.0;
+    real_t physics_body_bounce = 0.0;
 
-	RID navigation_source_geometry_parser;
+    RID navigation_source_geometry_parser;
 
-	HashMap<CellKey, Cell> cell_map;
-	HashMap<OctantKey, Octant *> octants;
-	Vector<BakedMesh> baked_meshes;
+    HashMap<CellKey, Cell> cell_map;
+    HashMap<OctantKey, Octant *> octants;
+    Vector<BakedMesh> baked_meshes;
 
-	// updated cells to be emitted with the next "cells_changed" signal
-	HashSet<CellKey> updated_cells;
+    // updated cells to be emitted with the next "cells_changed" signal
+    HashSet<CellKey> updated_cells;
 
-	void _recreate_octant_data();
-	void update_octant_meshes();
+    void _recreate_octant_data();
+    void update_octant_meshes();
 
-	void update_physics_bodies_collision_properties();
-	void update_physics_bodies_characteristics();
+    void update_physics_bodies_collision_properties();
+    void update_physics_bodies_characteristics();
 
-	bool awaiting_update = false;
-	void update_dirty_octants();
-	void update_dirty_octants_callback();
+    bool awaiting_update = false;
+    void update_dirty_octants();
+    void update_dirty_octants_callback();
 
-	void _clear_internal();
+    void _clear_internal();
 
-	Vector3 _get_offset() const;
+    Vector3 _get_offset() const;
 
 protected:
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
+    bool _set(const StringName &p_name, const Variant &p_value);
+    bool _get(const StringName &p_name, Variant &r_ret) const;
+    void _get_property_list(List<PropertyInfo> *p_list) const;
 
-	void _notification(int p_what);
-	void _update_visibility();
-	static void _bind_methods();
+    void _notification(int p_what);
+    void _update_visibility();
+    static void _bind_methods();
 
 public:
-	enum { INVALID_CELL_ITEM = -1 };
+    enum { INVALID_CELL_ITEM = -1 };
 
-	void set_collision_debug(bool value);
-	bool get_collision_debug() const;
+    void set_collision_debug(bool value);
+    bool get_collision_debug() const;
 
-	void set_collision_layer(uint32_t p_layer);
-	uint32_t get_collision_layer() const;
+    void set_collision_layer(uint32_t p_layer);
+    uint32_t get_collision_layer() const;
 
-	void set_collision_mask(uint32_t p_mask);
-	uint32_t get_collision_mask() const;
+    void set_collision_mask(uint32_t p_mask);
+    uint32_t get_collision_mask() const;
 
-	void set_collision_layer_value(int p_layer_number, bool p_value);
-	bool get_collision_layer_value(int p_layer_number) const;
+    void set_collision_layer_value(int p_layer_number, bool p_value);
+    bool get_collision_layer_value(int p_layer_number) const;
 
-	void set_collision_mask_value(int p_layer_number, bool p_value);
-	bool get_collision_mask_value(int p_layer_number) const;
+    void set_collision_mask_value(int p_layer_number, bool p_value);
+    bool get_collision_mask_value(int p_layer_number) const;
 
-	void set_collision_priority(real_t p_priority);
-	real_t get_collision_priority() const;
+    void set_collision_priority(real_t p_priority);
+    real_t get_collision_priority() const;
 
-	void set_physics_material(Ref<PhysicsMaterial> p_material);
-	Ref<PhysicsMaterial> get_physics_material() const;
+    void set_physics_material(Ref<PhysicsMaterial> p_material);
+    Ref<PhysicsMaterial> get_physics_material() const;
 
-	void set_mesh_library(const Ref<MeshLibrary> &p_mesh_library);
-	Ref<MeshLibrary> get_mesh_library() const;
+    void set_mesh_library(const Ref<MeshLibrary> &p_mesh_library);
+    Ref<MeshLibrary> get_mesh_library() const;
 
-	void set_cell_height(real_t p_height);
-	real_t get_cell_height() const;
+    void set_cell_height(real_t p_height);
+    real_t get_cell_height() const;
 
-	void set_cell_radius(real_t p_radius);
-	real_t get_cell_radius() const;
+    void set_cell_radius(real_t p_radius);
+    real_t get_cell_radius() const;
 
-	// get the scaling factor for the cell from a radius 1, height 1 cell
-	Vector3 get_cell_scale() const;
+    // get the scaling factor for the cell from a radius 1, height 1 cell
+    Vector3 get_cell_scale() const;
 
-	// get the offset applied to a mesh in a cell
-	Vector3 get_cell_mesh_offset() const;
+    // get the offset applied to a mesh in a cell
+    Vector3 get_cell_mesh_offset() const;
 
-	// get the cell transform for a specific cell id
-	Transform3D get_cell_transform(const CellId &cell_id) const;
+    // get the cell transform for a specific cell id
+    Transform3D get_cell_transform(const CellId &cell_id) const;
 
-	void set_octant_size(int p_size);
-	int get_octant_size() const;
+    void set_octant_size(int p_size);
+    int get_octant_size() const;
 
-	void set_center_y(bool p_enable);
-	bool get_center_y() const;
+    void set_center_y(bool p_enable);
+    bool get_center_y() const;
 
-	void set_cell_item(const HexMapCellId &cell_id, int p_item, int p_rot = 0);
-	void _set_cell_item(const Ref<HexMapCellIdWrapper> cell_id,
-			int p_item,
-			int p_rot = 0);
-	void _set_cell_item_v(const Vector3i &cell_id, int p_item, int p_rot = 0);
-	int get_cell_item(const HexMapCellId &cell_id) const;
-	int _get_cell_item(const Ref<HexMapCellIdWrapper> p_cell_id) const;
-	int get_cell_item_orientation(const HexMapCellId &cell_id) const;
-	int _get_cell_item_orientation(
-			const Ref<HexMapCellIdWrapper> cell_id) const;
+    void set_cell_item(const HexMapCellId &cell_id, int p_item, int p_rot = 0);
+    void _set_cell_item(const Ref<HexMapCellIdWrapper> cell_id,
+            int p_item,
+            int p_rot = 0);
+    void _set_cell_item_v(const Vector3i &cell_id, int p_item, int p_rot = 0);
+    int get_cell_item(const HexMapCellId &cell_id) const;
+    int _get_cell_item(const Ref<HexMapCellIdWrapper> p_cell_id) const;
+    int get_cell_item_orientation(const HexMapCellId &cell_id) const;
+    int _get_cell_item_orientation(
+            const Ref<HexMapCellIdWrapper> cell_id) const;
 
-	HexMapCellId local_to_cell_id(const Vector3 &local_position) const;
-	Ref<HexMapCellIdWrapper> _local_to_cell_id(
-			const Vector3 &p_local_position) const;
-	Vector3 cell_id_to_local(const HexMapCellId &cell_id) const;
-	Vector3 _cell_id_to_local(
-			const Ref<HexMapCellIdWrapper> p_local_position) const;
+    HexMapCellId local_to_cell_id(const Vector3 &local_position) const;
+    Ref<HexMapCellIdWrapper> _local_to_cell_id(
+            const Vector3 &p_local_position) const;
+    Vector3 cell_id_to_local(const HexMapCellId &cell_id) const;
+    Vector3 _cell_id_to_local(
+            const Ref<HexMapCellIdWrapper> p_local_position) const;
 
-	Vector<HexMapCellId>
-			local_region_to_map(Vector3, Vector3, Planes = Planes::All) const;
-	TypedArray<Vector3i> _local_region_to_map(Vector3 p_local_point_a,
-			Vector3 p_local_point_b) const;
+    Vector<HexMapCellId>
+            local_region_to_map(Vector3, Vector3, Planes = Planes::All) const;
+    TypedArray<Vector3i> _local_region_to_map(Vector3 p_local_point_a,
+            Vector3 p_local_point_b) const;
 
-	Array get_used_cells() const;
-	TypedArray<Vector3i> get_used_cells_by_item(int p_item) const;
+    Array get_used_cells() const;
+    TypedArray<Vector3i> get_used_cells_by_item(int p_item) const;
 
-	void clear_baked_meshes();
-	void make_baked_meshes(bool p_gen_lightmap_uv = false,
-			float p_lightmap_uv_texel_size = 0.1);
-	Array get_bake_meshes();
-	RID get_bake_mesh_instance(int p_idx);
+    void clear_baked_meshes();
+    void make_baked_meshes(bool p_gen_lightmap_uv = false,
+            float p_lightmap_uv_texel_size = 0.1);
+    Array get_bake_meshes();
+    RID get_bake_mesh_instance(int p_idx);
 
-	bool generate_navigation_source_geometry(Ref<NavigationMesh>,
-			Ref<NavigationMeshSourceGeometryData3D>,
-			Node *) const;
+    bool generate_navigation_source_geometry(Ref<NavigationMesh>,
+            Ref<NavigationMeshSourceGeometryData3D>,
+            Node *) const;
 
-	void clear();
+    void clear();
 
-	HexMap();
-	~HexMap();
+    HexMap();
+    ~HexMap();
 };
 
 #endif // GRID_MAP_H

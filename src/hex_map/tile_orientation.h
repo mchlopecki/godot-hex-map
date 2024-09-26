@@ -8,44 +8,44 @@ using namespace godot;
 
 class TileOrientation {
 public:
-	enum Value : uint8_t {
-		Upright0, // No flip, 0 degrees rotation
-		Upright60, // No flip, 60 degrees rotation
-		Upright120, // No flip, 120 degrees rotation
-		Upright180, // No flip, 180 degrees rotation
-		Upright240, // No flip, 240 degrees rotation
-		Upright300, // No flip, 300 degrees rotation
+    enum Value : uint8_t {
+        Upright0, // No flip, 0 degrees rotation
+        Upright60, // No flip, 60 degrees rotation
+        Upright120, // No flip, 120 degrees rotation
+        Upright180, // No flip, 180 degrees rotation
+        Upright240, // No flip, 240 degrees rotation
+        Upright300, // No flip, 300 degrees rotation
 
-		Flipped0, // Flipped, 0 degrees rotation
-		Flipped60, // Flipped, 60 degrees rotation
-		Flipped120, // Flipped, 120 degrees rotation
-		Flipped180, // Flipped, 180 degrees rotation
-		Flipped240, // Flipped, 240 degrees rotation
-		Flipped300 // Flipped, 300 degrees rotation
-	};
+        Flipped0, // Flipped, 0 degrees rotation
+        Flipped60, // Flipped, 60 degrees rotation
+        Flipped120, // Flipped, 120 degrees rotation
+        Flipped180, // Flipped, 180 degrees rotation
+        Flipped240, // Flipped, 240 degrees rotation
+        Flipped300 // Flipped, 300 degrees rotation
+    };
 
-	TileOrientation() = default;
-	constexpr TileOrientation(Value v) : value(v) {}
-	constexpr TileOrientation(int v) : value(static_cast<Value>(v)) {}
-	TileOrientation(Variant v) : value(static_cast<Value>((int)v)) {}
-	constexpr operator Value() const { return value; }
-	constexpr bool operator==(TileOrientation other) const {
-		return value == other.value;
-	}
-	constexpr bool operator!=(TileOrientation other) const {
-		return value != other.value;
-	}
-	constexpr bool operator!=(int other) const { return value != other; }
-	TileOrientation operator+(const TileOrientation &other) const;
+    TileOrientation() = default;
+    constexpr TileOrientation(Value v) : value(v) {}
+    constexpr TileOrientation(int v) : value(static_cast<Value>(v)) {}
+    TileOrientation(Variant v) : value(static_cast<Value>((int)v)) {}
+    constexpr operator Value() const { return value; }
+    constexpr bool operator==(TileOrientation other) const {
+        return value == other.value;
+    }
+    constexpr bool operator!=(TileOrientation other) const {
+        return value != other.value;
+    }
+    constexpr bool operator!=(int other) const { return value != other; }
+    TileOrientation operator+(const TileOrientation &other) const;
 
-	operator Basis() const;
-	operator int() const { return value; }
-	operator Variant() const { return Variant(value); }
+    operator Basis() const;
+    operator int() const { return value; }
+    operator Variant() const { return Variant(value); }
 
-	// steps > 0 rotate counter clockwise, steps < 0 rotate clockwise
-	void rotate(int steps);
-	void flip();
+    // steps > 0 rotate counter clockwise, steps < 0 rotate clockwise
+    void rotate(int steps);
+    void flip();
 
 private:
-	Value value = Upright0;
+    Value value = Upright0;
 };

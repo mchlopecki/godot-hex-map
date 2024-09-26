@@ -13,40 +13,40 @@
 using namespace godot;
 
 class MeshLibraryPalette : public godot::VBoxContainer {
-	GDCLASS(MeshLibraryPalette, godot::VBoxContainer);
+    GDCLASS(MeshLibraryPalette, godot::VBoxContainer);
 
-	enum DisplayMode {
-		THUMBNAIL,
-		LIST,
-	};
+    enum DisplayMode {
+        THUMBNAIL,
+        LIST,
+    };
 
 private:
-	Ref<MeshLibrary> mesh_library;
-	LineEdit *filter_line_edit = nullptr;
-	Button *mode_thumbnail_button = nullptr;
-	Button *mode_list_button = nullptr;
-	HSlider *icon_scale_hslider = nullptr;
-	ItemList *mesh_item_list = nullptr;
-	DisplayMode display_mode = DisplayMode::THUMBNAIL;
-	int mesh_id = 2;
+    Ref<MeshLibrary> mesh_library;
+    LineEdit *filter_line_edit = nullptr;
+    Button *mode_thumbnail_button = nullptr;
+    Button *mode_list_button = nullptr;
+    HSlider *icon_scale_hslider = nullptr;
+    ItemList *mesh_item_list = nullptr;
+    DisplayMode display_mode = DisplayMode::THUMBNAIL;
+    int mesh_id = 2;
 
-	void update_item_list();
+    void update_item_list();
 
 protected:
 public:
-	MeshLibraryPalette();
-	~MeshLibraryPalette();
+    MeshLibraryPalette();
+    ~MeshLibraryPalette();
 
-	static void _bind_methods();
+    static void _bind_methods();
 
-	void clear_selection();
-	void set_display_mode(int p_mode);
-	void set_filter(String p_text);
-	void set_icon_scale(float p_scale);
-	void selection_changed(int p_index);
-	void set_mesh(int p_mesh_id, bool update = true);
-	int get_mesh();
-	void set_mesh_library(Ref<MeshLibrary> p_mesh_library);
+    void clear_selection();
+    void set_display_mode(int p_mode);
+    void set_filter(String p_text);
+    void set_icon_scale(float p_scale);
+    void selection_changed(int p_index);
+    void set_mesh(int p_mesh_id, bool update = true);
+    int get_mesh();
+    void set_mesh_library(Ref<MeshLibrary> p_mesh_library);
 };
 
 #endif

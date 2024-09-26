@@ -284,89 +284,89 @@ using namespace godot;
 //		- changed(axis, floor)
 //
 class HexMapEditorPlugin : public EditorPlugin {
-	GDCLASS(HexMapEditorPlugin, EditorPlugin);
+    GDCLASS(HexMapEditorPlugin, EditorPlugin);
 
-	HexMap *hex_map = nullptr;
-	Ref<MeshLibrary> mesh_library = nullptr;
-	MeshLibraryPalette *mesh_palette = nullptr;
-	EditorControl *editor_control = nullptr;
-	EditorCursor *editor_cursor = nullptr;
-	SelectionManager *selection_manager = nullptr;
-	Control *bottom_panel = nullptr;
-	Vector3 selection_anchor;
-	Vector<HexMapCellId> last_selection;
+    HexMap *hex_map = nullptr;
+    Ref<MeshLibrary> mesh_library = nullptr;
+    MeshLibraryPalette *mesh_palette = nullptr;
+    EditorControl *editor_control = nullptr;
+    EditorCursor *editor_cursor = nullptr;
+    SelectionManager *selection_manager = nullptr;
+    Control *bottom_panel = nullptr;
+    Vector3 selection_anchor;
+    Vector<HexMapCellId> last_selection;
 
-	// Tried using UndoRedo with MERGE_ALL to maintain the list of cells
-	// painted/erased while the mouse moved.  This does not work properly
-	// because UndoRedo::create_action() will only merge the action if the
-	// last update happened within 800ms.  If the delay is greater than 800ms,
-	// it will create a new action instead of merging.
-	//
-	// https://github.com/godotengine/godot-proposals/issues/8527
-	//
-	// So we have to track updated tiles ourselves.  This vector is also used
-	// by move to save off the original cell positions for cancel, undo/redo.
-	struct CellChange {
-		HexMapCellId cell_id;
-		int orig_tile = 0;
-		TileOrientation orig_orientation;
-		int new_tile = 0;
-		TileOrientation new_orientation;
-	};
-	Vector<CellChange> cells_changed;
+    // Tried using UndoRedo with MERGE_ALL to maintain the list of cells
+    // painted/erased while the mouse moved.  This does not work properly
+    // because UndoRedo::create_action() will only merge the action if the
+    // last update happened within 800ms.  If the delay is greater than 800ms,
+    // it will create a new action instead of merging.
+    //
+    // https://github.com/godotengine/godot-proposals/issues/8527
+    //
+    // So we have to track updated tiles ourselves.  This vector is also used
+    // by move to save off the original cell positions for cancel, undo/redo.
+    struct CellChange {
+        HexMapCellId cell_id;
+        int orig_tile = 0;
+        TileOrientation orig_orientation;
+        int new_tile = 0;
+        TileOrientation new_orientation;
+    };
+    Vector<CellChange> cells_changed;
 
-	enum InputState {
-		INPUT_STATE_DEFAULT,
-		INPUT_STATE_PAINTING,
-		INPUT_STATE_ERASING,
-		INPUT_STATE_SELECTING,
-		INPUT_STATE_MOVING,
-		INPUT_STATE_CLONING,
-	};
-	InputState input_state = INPUT_STATE_DEFAULT;
+    enum InputState {
+        INPUT_STATE_DEFAULT,
+        INPUT_STATE_PAINTING,
+        INPUT_STATE_ERASING,
+        INPUT_STATE_SELECTING,
+        INPUT_STATE_MOVING,
+        INPUT_STATE_CLONING,
+    };
+    InputState input_state = INPUT_STATE_DEFAULT;
 
-	double accumulated_floor_delta = 0.0; // used for touch/drag input
+    double accumulated_floor_delta = 0.0; // used for touch/drag input
 
-	void commit_cell_changes(String);
+    void commit_cell_changes(String);
 
-	void _update_mesh_library();
+    void _update_mesh_library();
 
-	void cell_size_changed();
-	// callbacks used by signals from EditorControl
-	void tile_changed(int p_mesh_id);
-	void plane_changed(int p_axis);
-	void axis_changed(int p_axis);
-	void cursor_changed(Variant p_orientation);
+    void cell_size_changed();
+    // callbacks used by signals from EditorControl
+    void tile_changed(int p_mesh_id);
+    void plane_changed(int p_axis);
+    void axis_changed(int p_axis);
+    void cursor_changed(Variant p_orientation);
 
-	// manage selection
-	void deselect_cells();
-	void _deselect_cells();
-	void _select_cell(Vector3i);
+    // manage selection
+    void deselect_cells();
+    void _deselect_cells();
+    void _select_cell(Vector3i);
 
-	// perform actions on selected cells
-	void selection_fill();
-	void selection_clear();
-	void copy_selection_to_cursor();
-	void selection_move();
-	void selection_move_cancel();
-	void selection_move_apply();
-	void selection_clone();
-	void selection_clone_cancel();
-	void selection_clone_apply();
+    // perform actions on selected cells
+    void selection_fill();
+    void selection_clear();
+    void copy_selection_to_cursor();
+    void selection_move();
+    void selection_move_cancel();
+    void selection_move_apply();
+    void selection_clone();
+    void selection_clone_cancel();
+    void selection_clone_apply();
 
 protected:
-	void _notification(int p_what);
-	static void _bind_methods();
+    void _notification(int p_what);
+    static void _bind_methods();
 
 public:
-	virtual void _make_visible(bool visible) override;
-	virtual bool _handles(Object *object) const override;
-	virtual void _edit(Object *p_object) override;
-	virtual int32_t _forward_3d_gui_input(Camera3D *viewport_camera,
-			const Ref<InputEvent> &event) override;
+    virtual void _make_visible(bool visible) override;
+    virtual bool _handles(Object *object) const override;
+    virtual void _edit(Object *p_object) override;
+    virtual int32_t _forward_3d_gui_input(Camera3D *viewport_camera,
+            const Ref<InputEvent> &event) override;
 
-	HexMapEditorPlugin();
-	~HexMapEditorPlugin();
+    HexMapEditorPlugin();
+    ~HexMapEditorPlugin();
 };
 
 #endif
