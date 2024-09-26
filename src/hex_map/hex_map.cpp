@@ -36,7 +36,6 @@
 #include "hex_map/octant.h"
 #include "hex_map_cell_id.h"
 #include "profiling.h"
-#include "tile_orientation.h"
 
 #include "godot_cpp/variant/basis.hpp"
 #include <godot_cpp/classes/array_mesh.hpp>
@@ -353,6 +352,14 @@ void HexMap::set_center_y(bool p_enable) {
 }
 
 bool HexMap::get_center_y() const { return center_y; }
+
+void HexMap::set_navigation_bake_only_navmesh_tiles(bool value) {
+    navigation_bake_only_navmesh_tiles = value;
+}
+
+bool HexMap::get_navigation_bake_only_navmesh_tiles() const {
+    return navigation_bake_only_navmesh_tiles;
+}
 
 void HexMap::set_cell_item(const HexMapCellId &cell_id,
         int p_item,
@@ -790,6 +797,16 @@ void HexMap::_bind_methods() {
             D_METHOD("get_cell_radius"), &HexMap::get_cell_radius);
 
     ClassDB::bind_method(
+            D_METHOD("set_center_y", "enable"), &HexMap::set_center_y);
+    ClassDB::bind_method(D_METHOD("get_center_y"), &HexMap::get_center_y);
+
+    ClassDB::bind_method(
+            D_METHOD("set_navigation_bake_only_navmesh_tiles", "enable"),
+            &HexMap::set_navigation_bake_only_navmesh_tiles);
+    ClassDB::bind_method(D_METHOD("get_navigation_bake_only_navmesh_tiles"),
+            &HexMap::get_navigation_bake_only_navmesh_tiles);
+
+    ClassDB::bind_method(
             D_METHOD("set_octant_size", "size"), &HexMap::set_octant_size);
     ClassDB::bind_method(
             D_METHOD("get_octant_size"), &HexMap::get_octant_size);
@@ -815,10 +832,6 @@ void HexMap::_bind_methods() {
             &HexMap::_local_to_cell_id);
     ClassDB::bind_method(D_METHOD("cell_id_to_local", "cell_id"),
             &HexMap::_cell_id_to_local);
-
-    ClassDB::bind_method(
-            D_METHOD("set_center_y", "enable"), &HexMap::set_center_y);
-    ClassDB::bind_method(D_METHOD("get_center_y"), &HexMap::get_center_y);
 
     ClassDB::bind_method(D_METHOD("clear"), &HexMap::clear);
 
@@ -893,6 +906,12 @@ void HexMap::_bind_methods() {
     ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "collision_priority"),
             "set_collision_priority",
             "get_collision_priority");
+    ADD_GROUP("Navigation", "navigation_");
+
+    ADD_PROPERTY(
+            PropertyInfo(Variant::BOOL, "navigation_bake_only_navmesh_tiles"),
+            "set_navigation_bake_only_navmesh_tiles",
+            "get_navigation_bake_only_navmesh_tiles");
 
     BIND_CONSTANT(INVALID_CELL_ITEM);
 
@@ -967,6 +986,21 @@ bool HexMap::generate_navigation_source_geometry(Ref<NavigationMesh>,
 
     for (const auto &it : cell_map) {
         const Cell &cell = it.value;
+
+        if (navigation_bake_only_navmesh_tiles) {
+            // If there's a tile in the cell above this one, do not include
+            // this tile, otherwise when a navigable mesh has a non-navigable
+            // on top, the nav mesh incorrectly cuts through that upper tile.
+            if (it.key.y < SHRT_MAX && cell_map.has(it.key.get_cell_above())) {
+                continue;
+            }
+
+            // if the cell doesn't have a navmesh, skip it
+            if (!mesh_library->get_item_navigation_mesh(cell.item)
+                            .is_valid()) {
+                continue;
+            }
+        }
 
         Ref<Mesh> mesh = mesh_library->get_item_mesh(cell.item);
         if (!mesh.is_valid()) {

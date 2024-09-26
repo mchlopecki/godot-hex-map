@@ -261,6 +261,8 @@ private:
     real_t physics_body_friction = 1.0;
     real_t physics_body_bounce = 0.0;
 
+    bool navigation_bake_only_navmesh_tiles = false;
+
     RID navigation_source_geometry_parser;
 
     HashMap<CellKey, Cell> cell_map;
@@ -326,14 +328,15 @@ public:
     void set_cell_radius(real_t p_radius);
     real_t get_cell_radius() const;
 
-    // get the scaling factor for the cell from a radius 1, height 1 cell
+    void set_navigation_bake_only_navmesh_tiles(bool);
+    bool get_navigation_bake_only_navmesh_tiles() const;
+
+    // get the scaling factor for the cell from a radius 1, height 1
+    // cell
     Vector3 get_cell_scale() const;
 
     // get the offset applied to a mesh in a cell
     Vector3 get_cell_mesh_offset() const;
-
-    // get the cell transform for a specific cell id
-    Transform3D get_cell_transform(const CellId &cell_id) const;
 
     void set_octant_size(int p_size);
     int get_octant_size() const;

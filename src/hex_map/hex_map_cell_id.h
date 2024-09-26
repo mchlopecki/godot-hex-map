@@ -7,6 +7,7 @@
 #include "godot_cpp/variant/variant.hpp"
 #include "godot_cpp/variant/vector3.hpp"
 #include "planes.h"
+#include <climits>
 #include <cstdint>
 
 using namespace godot;
@@ -29,7 +30,12 @@ public:
             r = cell_id.r;
             y = cell_id.y;
         }
-        Key() {};
+        _FORCE_INLINE_ Key(uint16_t q, uint16_t r, uint16_t y) {
+            this->q = q;
+            this->r = r;
+            this->y = y;
+        }
+        Key(){};
 
         _FORCE_INLINE_ bool operator<(const Key &other) const {
             return key < other.key;
@@ -44,6 +50,7 @@ public:
         _FORCE_INLINE_ explicit operator Vector3i() const {
             return Vector3i(q, y, r);
         }
+        _FORCE_INLINE_ Key get_cell_above() const { return Key(q, r, y + 1); }
     };
 
     // axial coordinates
@@ -52,8 +59,8 @@ public:
     // y coordinate
     int32_t y;
 
-    HexMapCellId() : q(0), r(0), y(0) {};
-    HexMapCellId(int q, int r, int y) : q(q), r(r), y(y) {};
+    HexMapCellId() : q(0), r(0), y(0){};
+    HexMapCellId(int q, int r, int y) : q(q), r(r), y(y){};
     _FORCE_INLINE_ HexMapCellId(const Vector3i v) : q(v.x), r(v.z), y(v.y) {};
 
     // vector3i is the fastest way to get to a Variant type that isn't malloc
@@ -131,8 +138,8 @@ class HexMapCellIdWrapper : public RefCounted {
     CellId cell_id;
 
 public:
-    HexMapCellIdWrapper(const CellId &cell_id) : cell_id(cell_id) {};
-    HexMapCellIdWrapper() {};
+    HexMapCellIdWrapper(const CellId &cell_id) : cell_id(cell_id){};
+    HexMapCellIdWrapper(){};
 
     // c++ helpers
     inline operator const CellId &() const { return cell_id; }
