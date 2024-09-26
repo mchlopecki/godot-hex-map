@@ -1,8 +1,9 @@
+#include "godot_cpp/core/error_macros.hpp"
 #ifdef TOOLS_ENABLED
 
-#include "editor_cursor.h"
 #include "../hex_map_cell_id.h"
 #include "../hex_map_iter_axial.h"
+#include "editor_cursor.h"
 #include "godot_cpp/classes/camera3d.hpp"
 #include "godot_cpp/classes/editor_interface.hpp"
 #include "godot_cpp/classes/editor_plugin.hpp"
@@ -218,6 +219,8 @@ void EditorCursor::transform_meshes() {
 bool EditorCursor::update(const Camera3D *camera,
         const Point2 &pointer,
         Vector3 *point) {
+    ERR_FAIL_COND_V_MSG(
+            camera == nullptr, false, "null camera in EditorCursor.update()");
     Transform3D local_transform =
             hex_map->get_global_transform().affine_inverse();
     Vector3 origin = camera->project_ray_origin(pointer);

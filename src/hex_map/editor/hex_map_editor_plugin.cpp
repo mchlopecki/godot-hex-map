@@ -373,8 +373,10 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
             key_event->is_pressed();
 
     // if it's any type of mouse event, update the editor cursor
+    // Note: the check for a null camera is necessary because of the event we
+    // generate during NOTIFICATION_APPLICATION_FOCUS_OUT
     Ref<InputEventMouse> mouse_event = p_event;
-    if (mouse_event.is_valid()) {
+    if (mouse_event.is_valid() && p_camera != nullptr) {
         editor_cursor->update(p_camera, mouse_event->get_position(), nullptr);
     }
 
