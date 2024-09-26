@@ -342,21 +342,22 @@ public:
 	bool get_center_y() const;
 
 	void set_cell_item(const HexMapCellId &cell_id, int p_item, int p_rot = 0);
-	void _set_cell_item(const Ref<HexMapCellIdRef> cell_id,
+	void _set_cell_item(const Ref<HexMapCellIdWrapper> cell_id,
 			int p_item,
 			int p_rot = 0);
 	void _set_cell_item_v(const Vector3i &cell_id, int p_item, int p_rot = 0);
 	int get_cell_item(const HexMapCellId &cell_id) const;
-	int _get_cell_item(const Ref<HexMapCellIdRef> p_cell_id) const;
+	int _get_cell_item(const Ref<HexMapCellIdWrapper> p_cell_id) const;
 	int get_cell_item_orientation(const HexMapCellId &cell_id) const;
-	int _get_cell_item_orientation(const Ref<HexMapCellIdRef> cell_id) const;
+	int _get_cell_item_orientation(
+			const Ref<HexMapCellIdWrapper> cell_id) const;
 
 	HexMapCellId local_to_cell_id(const Vector3 &local_position) const;
-	Ref<HexMapCellIdRef> _local_to_cell_id(
+	Ref<HexMapCellIdWrapper> _local_to_cell_id(
 			const Vector3 &p_local_position) const;
 	Vector3 cell_id_to_local(const HexMapCellId &cell_id) const;
 	Vector3 _cell_id_to_local(
-			const Ref<HexMapCellIdRef> p_local_position) const;
+			const Ref<HexMapCellIdWrapper> p_local_position) const;
 
 	Vector<HexMapCellId>
 			local_region_to_map(Vector3, Vector3, Planes = Planes::All) const;
@@ -372,7 +373,7 @@ public:
 	Array get_bake_meshes();
 	RID get_bake_mesh_instance(int p_idx);
 
-	bool navigation_source_geometry_parser_callback(Ref<NavigationMesh>,
+	bool generate_navigation_source_geometry(Ref<NavigationMesh>,
 			Ref<NavigationMeshSourceGeometryData3D>,
 			Node *) const;
 

@@ -360,30 +360,30 @@ void HexMap::set_cell_item(const HexMapCellId &cell_id,
 	auto prof = profiling_begin("set cell item");
 	ERR_FAIL_COND_MSG(!cell_id.in_bounds(), "cell id is not in bounds");
 
+	// Convert the cell id into a key.  If the cell is already set to the
+	// specified values, just return.
 	CellKey cell_key(cell_id);
-	// XXX tired of seeing weird behavior here; maybe fixed?
-	assert(cell_key.zero == 0);
-
 	Cell *current_cell = cell_map.getptr(cell_key);
 	if (current_cell != nullptr && p_item == current_cell->item &&
 			p_rot == current_cell->rot) {
 		return;
 	}
 
+	// look up the cell octant
 	OctantKey octant_key(cell_id, octant_size);
 	Octant **octant_ptr = octants.getptr(octant_key);
 	Octant *octant = octant_ptr ? *octant_ptr : nullptr;
 
 	if (p_item >= 0) {
+		// set the cell
 		Cell cell = {
 			.item = static_cast<unsigned int>(p_item),
 			.rot = static_cast<unsigned int>(p_rot),
 		};
-
 		cell_map.insert(cell_key, cell);
 		updated_cells.insert(cell_key);
 
-		// possibly create a new octant
+		// create a new octant if one doesn't already exist for this cell
 		if (octant == nullptr) {
 			octant = new Octant(*this);
 			octants.insert(octant_key, octant);
@@ -393,30 +393,24 @@ void HexMap::set_cell_item(const HexMapCellId &cell_id,
 			}
 		}
 
-		// figure out the transform for the center of the cell with rotation
-		Transform3D cell_transform;
-		cell_transform.set_origin(cell_id_to_local(cell_id));
-		cell_transform.basis = TileOrientation(p_rot);
-
 		// add a cell to the octant, and schedule an update
 		octant->add_cell(cell_key);
 		update_dirty_octants();
+
 	} else if (current_cell != nullptr) {
+		// clear the cell
 		cell_map.erase(cell_key);
 		updated_cells.insert(cell_key);
 
 		ERR_FAIL_COND_MSG(octant == nullptr, "octant for cell does not exist");
-		{
-			auto profiler = profiling_begin("outer remove_cell()");
-			octant->remove_cell(cell_key);
-		}
+		octant->remove_cell(cell_key);
 		update_dirty_octants();
 	}
 
 	return;
 }
 
-void HexMap::_set_cell_item(const Ref<HexMapCellIdRef> cell_id,
+void HexMap::_set_cell_item(const Ref<HexMapCellIdWrapper> cell_id,
 		int p_item,
 		int p_rot) {
 	ERR_FAIL_COND_MSG(!cell_id.is_valid(), "null cell id");
@@ -439,7 +433,7 @@ int HexMap::get_cell_item(const HexMapCellId &cell_id) const {
 	return cell_map[key].item;
 }
 
-int HexMap::_get_cell_item(const Ref<HexMapCellIdRef> p_cell_id) const {
+int HexMap::_get_cell_item(const Ref<HexMapCellIdWrapper> p_cell_id) const {
 	return get_cell_item(**p_cell_id);
 }
 
@@ -454,7 +448,7 @@ int HexMap::get_cell_item_orientation(const HexMapCellId &cell_id) const {
 }
 
 int HexMap::_get_cell_item_orientation(
-		const Ref<HexMapCellIdRef> p_cell_id) const {
+		const Ref<HexMapCellIdWrapper> p_cell_id) const {
 	return get_cell_item_orientation(**p_cell_id);
 }
 
@@ -492,7 +486,7 @@ HexMapCellId HexMap::local_to_cell_id(const Vector3 &local_position) const {
 	return HexMapCellId::from_unit_point(unit_pos);
 }
 
-Ref<HexMapCellIdRef> HexMap::_local_to_cell_id(
+Ref<HexMapCellIdWrapper> HexMap::_local_to_cell_id(
 		const Vector3 &p_local_position) const {
 	return local_to_cell_id(p_local_position);
 }
@@ -501,7 +495,8 @@ Vector3 HexMap::cell_id_to_local(const HexMapCellId &cell_id) const {
 	return cell_id.unit_center() * get_cell_scale() + get_cell_mesh_offset();
 }
 
-Vector3 HexMap::_cell_id_to_local(const Ref<HexMapCellIdRef> cell_id) const {
+Vector3 HexMap::_cell_id_to_local(
+		const Ref<HexMapCellIdWrapper> cell_id) const {
 	return cell_id_to_local(**cell_id);
 }
 
@@ -915,7 +910,7 @@ Array HexMap::get_used_cells() const {
 	int i = 0;
 	for (const KeyValue<CellKey, Cell> &E : cell_map) {
 		HexMapCellId cell_id(E.key);
-		a[i++] = static_cast<Ref<HexMapCellIdRef>>(cell_id);
+		a[i++] = static_cast<Ref<HexMapCellIdWrapper>>(cell_id);
 	}
 
 	return a;
@@ -926,7 +921,7 @@ TypedArray<Vector3i> HexMap::get_used_cells_by_item(int p_item) const {
 	for (const KeyValue<CellKey, Cell> &E : cell_map) {
 		if ((int)E.value.item == p_item) {
 			HexMapCellId cell_id(E.key);
-			a.push_back(static_cast<Ref<HexMapCellIdRef>>(cell_id));
+			a.push_back(static_cast<Ref<HexMapCellIdWrapper>>(cell_id));
 		}
 	}
 
@@ -965,7 +960,7 @@ RID HexMap::get_bake_mesh_instance(int p_idx) {
 	return baked_meshes[p_idx].instance;
 }
 
-bool HexMap::navigation_source_geometry_parser_callback(Ref<NavigationMesh>,
+bool HexMap::generate_navigation_source_geometry(Ref<NavigationMesh>,
 		Ref<NavigationMeshSourceGeometryData3D> source_geometry_data,
 		Node *) const {
 	UtilityFunctions::print("navigation source generator");
@@ -1014,8 +1009,7 @@ HexMap::HexMap() {
 	NavigationServer3D *ns = NavigationServer3D::get_singleton();
 	navigation_source_geometry_parser = ns->source_geometry_parser_create();
 	ns->source_geometry_parser_set_callback(navigation_source_geometry_parser,
-			callable_mp(this,
-					&HexMap::navigation_source_geometry_parser_callback));
+			callable_mp(this, &HexMap::generate_navigation_source_geometry));
 }
 
 HexMap::~HexMap() {

@@ -142,7 +142,7 @@ bool HexMapIterAxialRef::_iter_next(Variant _arg) {
 	return *iter != HexMapCellId::Invalid;
 }
 
-Ref<HexMapCellIdRef> HexMapIterAxialRef::_iter_get(Variant _arg) {
+Ref<HexMapCellIdWrapper> HexMapIterAxialRef::_iter_get(Variant _arg) {
 	return *iter;
 }
 

@@ -13,14 +13,14 @@ var from_values_params = [
 ]
 
 func test_from_values(params=use_parameters(from_values_params)):
-	var b := HexMapCellIdRef.from_values(params[0], params[1], params[2]);
+	var b := HexMapCellId.from_values(params[0], params[1], params[2]);
 	assert_eq(b.get_q(), params[0])
 	assert_eq(b.get_r(), params[1])
 	assert_eq(b.get_y(), params[2])
 
 # helper used for all following tests
-func cell_id(values: Array) -> HexMapCellIdRef:
-	return HexMapCellIdRef.from_values(values[0], values[1], values[2])
+func cell_id(values: Array) -> HexMapCellId:
+	return HexMapCellId.from_values(values[0], values[1], values[2])
 
 var equals_params = [
 	[[0, 0, 0], [0, 0, 0], true],
@@ -44,7 +44,7 @@ func test_hash(params=use_parameters(from_values_params)):
 func test_from_hash(params=use_parameters(from_values_params)):
 	var cell := cell_id(params)
 	var h := cell.hash()
-	var from_hash := HexMapCellIdRef.from_hash(h)
+	var from_hash := HexMapCellId.from_hash(h)
 	assert_eq(from_hash.get_q(), cell.get_q());
 	assert_eq(from_hash.get_r(), cell.get_r());
 	assert_eq(from_hash.get_y(), cell.get_y());

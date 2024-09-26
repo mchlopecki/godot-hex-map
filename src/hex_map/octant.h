@@ -20,21 +20,17 @@ private:
 		RID multimesh_instance; // need scene scenario
 	};
 
-	// XXX ichange this to only hold CellKey, RID & Transform3D
-
-	// XXX due to the amount of data needed from the HexMap instance, it looks
-	// like we'll need to just keep a pointer to it here, and probably should
-	// mark this class as friend.
 	HexMap &hex_map;
 	HashSet<CellKey> cells;
 	Vector<struct MultiMesh> multimeshes;
 
-	RID physics_body; // need instance_id, space
-	RID collision_debug_mesh; // need to know if debug is enabled
-	RID collision_debug_mesh_instance; // need scene scenario
+	RID physics_body;
+	RID collision_debug_mesh;
+	RID collision_debug_mesh_instance;
 
+	// XXX to be implemented
 	Ref<Mesh> baked_mesh;
-	RID baked_mesh_instance; // need scene scenario
+	RID baked_mesh_instance;
 
 	bool dirty = false;
 
@@ -70,20 +66,10 @@ public:
 		_FORCE_INLINE_ operator uint64_t() const { return key; }
 	};
 
-	//
-	// create the static body
-	// [punted] set collision properties & physics material
-	//
-	// need hexmap instance id for static body
 	HexMapOctant(HexMap &hex_map);
 	~HexMapOctant();
 
-	// add meshes to scene, add static body to space
-	// can only check if debugging collisions here
-	//
-	// need hexmap world3d for scene scenario & space
 	void enter_world();
-	// clear scenario for meshes, switch body to invalid space
 	void exit_world();
 
 	void update_collision_properties();
@@ -91,21 +77,9 @@ public:
 	void update_transform();
 	void update_visibility();
 
-	// clear baked
-	// rebuild static body
-	// rebuild meshes; multimesh will free when we call multimesh_allocate_data
-	// re-enter world? if we don't exit the world, we won't need HexMap to
-	// enter
-	// mark clean
-	//
-	// need MeshLibrary to rebuild multimesh, and multimesh is per mesh
 	void update();
 
-	// add cell to cells
-	// mark dirty
 	void add_cell(const CellKey);
-
-	// remove cell, mark dirty, return bool if empty
 	void remove_cell(const CellKey);
 
 	inline bool is_empty() const { return cells.is_empty(); };

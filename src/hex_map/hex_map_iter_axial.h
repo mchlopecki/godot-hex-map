@@ -60,7 +60,7 @@ public:
 	// GDScript custom iterator functions
 	bool _iter_init(Variant _arg);
 	bool _iter_next(Variant _arg);
-	Ref<HexMapCellIdRef> _iter_get(Variant _arg);
+	Ref<HexMapCellIdWrapper> _iter_get(Variant _arg);
 
 protected:
 	static void _bind_methods();

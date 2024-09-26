@@ -13,12 +13,9 @@
 #include "godot_cpp/templates/vector.hpp"
 #include "godot_cpp/variant/packed_vector3_array.hpp"
 #include "godot_cpp/variant/transform3d.hpp"
-#include "godot_cpp/variant/utility_functions.hpp"
 #include "hex_map.h"
 #include "profiling.h"
 #include <cassert>
-
-// next, report shapes out for NavMesh baking
 
 void HexMapOctant::rebuild() {
 	auto profiler = profiling_begin("Octant::rebuild()");

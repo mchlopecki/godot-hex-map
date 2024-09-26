@@ -11,7 +11,7 @@
 
 using namespace godot;
 
-class HexMapCellIdRef;
+class HexMapCellIdWrapper;
 class HexMapIterAxial;
 class HexMapIterAxialRef;
 
@@ -60,7 +60,7 @@ public:
 	// heavy (like Ref<HexMapCellIdRef>)
 	inline operator Vector3i() const { return Vector3i(q, y, r); }
 	inline operator Variant() const { return (Vector3i) * this; }
-	inline operator Ref<HexMapCellIdRef>() const;
+	inline operator Ref<HexMapCellIdWrapper>() const;
 	operator String() const;
 
 	HexMapCellId operator+(const HexMapCellId &other) const {
@@ -117,20 +117,26 @@ public:
 std::ostream &operator<<(std::ostream &os, const HexMapCellId &value);
 
 // wrapper to return a HexMapCellId to GDscript
-class HexMapCellIdRef : public RefCounted {
-	GDCLASS(HexMapCellIdRef, RefCounted)
+class HexMapCellIdWrapper : public RefCounted {
+	// doing a bit of a dance here to get the class to be named
+	// `HexMapCellId` in GDScript.  The GDCLASSS() macro assigns the GDScript
+	// name based on the argument passed in.  We do come `using` magic to
+	// switch the names around.
+	using CellId = HexMapCellId;
+	using HexMapCellId = HexMapCellIdWrapper;
+	GDCLASS(HexMapCellId, RefCounted)
 
 	uint64_t INVALID_CELL_ID_HASH = 0xffff000000000000;
 
-	HexMapCellId cell_id;
+	CellId cell_id;
 
 public:
-	HexMapCellIdRef(const HexMapCellId &cell_id) : cell_id(cell_id){};
-	HexMapCellIdRef(){};
+	HexMapCellIdWrapper(const CellId &cell_id) : cell_id(cell_id){};
+	HexMapCellIdWrapper(){};
 
 	// c++ helpers
-	inline operator const HexMapCellId &() const { return cell_id; }
-	inline Ref<HexMapCellIdRef> operator+(const HexMapCellId &delta) const {
+	inline operator const CellId &() const { return cell_id; }
+	inline Ref<HexMapCellIdWrapper> operator+(const CellId &delta) const {
 		return cell_id + delta;
 	};
 
@@ -141,9 +147,9 @@ public:
 	int _get_y();
 
 	// GDScript static constructors
-	static Ref<HexMapCellIdRef> _from_values(int p_q, int p_r, int p_y);
-	static Ref<HexMapCellIdRef> _from_vector(Vector3i p_vector);
-	static Ref<HexMapCellIdRef> _from_hash(uint64_t p_hash);
+	static Ref<HexMapCellIdWrapper> _from_values(int p_q, int p_r, int p_y);
+	static Ref<HexMapCellIdWrapper> _from_vector(Vector3i p_vector);
+	static Ref<HexMapCellIdWrapper> _from_hash(uint64_t p_hash);
 
 	// gdscript does not support equality for RefCounted objects.  We need some
 	// way to use cell ids in arrays, hashes, etc.  We provide the hash method
@@ -152,23 +158,23 @@ public:
 	Vector3i _as_vector();
 
 	// directional helpers
-	Ref<HexMapCellIdRef> _east() const;
-	Ref<HexMapCellIdRef> _northeast() const;
-	Ref<HexMapCellIdRef> _northwest() const;
-	Ref<HexMapCellIdRef> _west() const;
-	Ref<HexMapCellIdRef> _southwest() const;
-	Ref<HexMapCellIdRef> _southeast() const;
-	Ref<HexMapCellIdRef> _down() const;
-	Ref<HexMapCellIdRef> _up() const;
+	Ref<HexMapCellIdWrapper> _east() const;
+	Ref<HexMapCellIdWrapper> _northeast() const;
+	Ref<HexMapCellIdWrapper> _northwest() const;
+	Ref<HexMapCellIdWrapper> _west() const;
+	Ref<HexMapCellIdWrapper> _southwest() const;
+	Ref<HexMapCellIdWrapper> _southeast() const;
+	Ref<HexMapCellIdWrapper> _down() const;
+	Ref<HexMapCellIdWrapper> _up() const;
 
 	String _to_string() const;
-	bool _equals(const Ref<HexMapCellIdRef> other) const;
+	bool _equals(const Ref<HexMapCellIdWrapper> other) const;
 	Ref<HexMapIterAxialRef> _get_neighbors(unsigned int radius = 1) const;
 
 protected:
 	static void _bind_methods();
 };
 
-inline HexMapCellId::operator Ref<HexMapCellIdRef>() const {
-	return Ref<HexMapCellIdRef>(memnew(HexMapCellIdRef(*this)));
+inline HexMapCellId::operator Ref<HexMapCellIdWrapper>() const {
+	return Ref<HexMapCellIdWrapper>(memnew(HexMapCellIdWrapper(*this)));
 }
