@@ -1,19 +1,4 @@
-#include "godot_cpp/classes/packed_scene.hpp"
-#include "hex_map/hex_map_cell_id.h"
-#include "profiling.h"
 #ifdef TOOLS_ENABLED
-#include "editor_control.h"
-#include "editor_cursor.h"
-#include "godot_cpp/classes/global_constants.hpp"
-#include "godot_cpp/classes/input_event_mouse.hpp"
-#include "godot_cpp/classes/resource_loader.hpp"
-#include "godot_cpp/classes/undo_redo.hpp"
-#include "godot_cpp/core/error_macros.hpp"
-#include "godot_cpp/variant/callable_method_pointer.hpp"
-#include "godot_cpp/variant/transform3d.hpp"
-#include "godot_cpp/variant/vector3i.hpp"
-#include "hex_map_editor_plugin.h"
-#include "selection_manager.h"
 
 #include <cassert>
 #include <cstdint>
@@ -26,24 +11,40 @@
 #include <godot_cpp/classes/editor_plugin.hpp>
 #include <godot_cpp/classes/editor_settings.hpp>
 #include <godot_cpp/classes/editor_undo_redo_manager.hpp>
+#include <godot_cpp/classes/global_constants.hpp>
 #include <godot_cpp/classes/input_event_key.hpp>
+#include <godot_cpp/classes/input_event_mouse.hpp>
 #include <godot_cpp/classes/input_event_mouse_button.hpp>
 #include <godot_cpp/classes/input_event_mouse_motion.hpp>
 #include <godot_cpp/classes/input_event_pan_gesture.hpp>
 #include <godot_cpp/classes/line_edit.hpp>
 #include <godot_cpp/classes/object.hpp>
+#include <godot_cpp/classes/packed_scene.hpp>
 #include <godot_cpp/classes/popup_menu.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
+#include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/scene_tree.hpp>
 #include <godot_cpp/classes/shortcut.hpp>
 #include <godot_cpp/classes/theme.hpp>
+#include <godot_cpp/classes/undo_redo.hpp>
 #include <godot_cpp/classes/v_separator.hpp>
 #include <godot_cpp/classes/world3d.hpp>
 #include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/core/error_macros.hpp>
+#include <godot_cpp/variant/callable_method_pointer.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
 #include <godot_cpp/variant/packed_vector3_array.hpp>
+#include <godot_cpp/variant/transform3d.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
+#include <godot_cpp/variant/vector3i.hpp>
+
+#include "editor_control.h"
+#include "editor_cursor.h"
+#include "hex_map/cell_id.h"
+#include "hex_map_editor_plugin.h"
+#include "profiling.h"
+#include "selection_manager.h"
 
 // XXX selecting too many cells then deleting causes cpu spin/hang
 // XXX middle click in orthographic axis view moves camera; block that
@@ -97,7 +98,7 @@ void HexMapEditorPlugin::_select_cell(Vector3i cell) {
     ERR_FAIL_COND_MSG(selection_manager == nullptr,
             "HexMap: SelectionManager not present");
     selection_manager->set_cell(cell);
-    // XXX slow, only need to do this once
+    // XXX repetive, really only need to do this once during undo/redo
     editor_control->update_selection_menu(true);
 }
 
@@ -466,7 +467,6 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
         // transitions:
         // - DEFAULT (left button up)
         // actions:
-        // actions:
         // - change cells, and add them to the cells_changed list
         // - commit changes on mouse up
         case INPUT_STATE_ERASING: {
@@ -498,7 +498,7 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
             if (mouse_event.is_valid()) {
                 // XXX selection along Q/S axis currently selects cube instead
                 // of plane.
-                auto cells = hex_map->local_region_to_map(
+                auto cells = hex_map->local_region_to_cell_ids(
                         selection_anchor, editor_cursor->get_pos());
                 selection_manager->clear();
                 selection_manager->set_cells(cells);
@@ -532,6 +532,12 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                 return AFTER_GUI_INPUT_STOP;
             }
             break;
+
+        // transitions:
+        // - DEFAULT (left click, escape)
+        // actions:
+        // - apply selection move
+        // - restore selected cells (cancel)
         case INPUT_STATE_MOVING:
             if (mouse_left_pressed) {
                 selection_move_apply();
@@ -543,6 +549,12 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                 return AFTER_GUI_INPUT_STOP;
             }
             break;
+
+        // transitions:
+        // - DEFAULT (left click, escape)
+        // actions:
+        // - apply selection clone
+        // - cancel selection clone
         case INPUT_STATE_CLONING:
             if (mouse_left_pressed) {
                 selection_clone_apply();
@@ -559,7 +571,7 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
     return EditorPlugin::AFTER_GUI_INPUT_PASS;
 }
 
-void HexMapEditorPlugin::_update_mesh_library() {
+void HexMapEditorPlugin::update_mesh_library() {
     ERR_FAIL_NULL(hex_map);
 
     mesh_library = hex_map->get_mesh_library();
@@ -580,7 +592,7 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
         hex_map->disconnect("cell_size_changed",
                 callable_mp(this, &HexMapEditorPlugin::cell_size_changed));
         hex_map->disconnect("mesh_library_changed",
-                callable_mp(this, &HexMapEditorPlugin::_update_mesh_library));
+                callable_mp(this, &HexMapEditorPlugin::update_mesh_library));
 
         // clear the mesh library
         mesh_library = Ref<MeshLibrary>();
@@ -627,8 +639,8 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
     hex_map->connect("cell_size_changed",
             callable_mp(this, &HexMapEditorPlugin::cell_size_changed));
     hex_map->connect("mesh_library_changed",
-            callable_mp(this, &HexMapEditorPlugin::_update_mesh_library));
-    _update_mesh_library();
+            callable_mp(this, &HexMapEditorPlugin::update_mesh_library));
+    update_mesh_library();
 }
 
 void HexMapEditorPlugin::_notification(int p_what) {

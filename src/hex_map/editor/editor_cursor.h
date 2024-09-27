@@ -2,8 +2,6 @@
 #pragma once
 
 #include "../hex_map.h"
-#include "../hex_map_cell_id.h"
-#include "../tile_orientation.h"
 #include "editor_control.h"
 #include "godot_cpp/classes/camera3d.hpp"
 #include "godot_cpp/classes/standard_material3d.hpp"
@@ -16,7 +14,8 @@ using namespace godot;
 
 class EditorCursor {
 public:
-    using CellId = HexMapCellId;
+    using CellId = HexMap::CellId;
+    using TileOrientation = HexMap::TileOrientation;
 
     // representation of a tile state
     struct CursorCell {
@@ -63,6 +62,10 @@ public:
 
     bool update(const Camera3D *camera, const Point2 &pointer, Vector3 *point);
     void update(bool force = false);
+
+    // using the data from the last update() determine where the pointer
+    // coordinates would intercept the edit plane.
+    bool get_point_intercept(const Point2 &, Vector3 *point) const;
 
     // XXX add support to hide tiles independently of grid
     void show();

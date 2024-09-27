@@ -1,24 +1,25 @@
 #ifdef TOOLS_ENABLED
 
-#include "editor_cursor.h"
-#include "../hex_map_cell_id.h"
-#include "../hex_map_iter_axial.h"
-#include "godot_cpp/classes/camera3d.hpp"
-#include "godot_cpp/classes/editor_interface.hpp"
-#include "godot_cpp/classes/editor_plugin.hpp"
-#include "godot_cpp/classes/mesh_library.hpp"
-#include "godot_cpp/classes/rendering_server.hpp"
-#include "godot_cpp/classes/scene_tree.hpp"
-#include "godot_cpp/classes/sub_viewport.hpp"
-#include "godot_cpp/classes/window.hpp"
-#include "godot_cpp/classes/world3d.hpp"
-#include "godot_cpp/core/defs.hpp"
-#include "godot_cpp/core/error_macros.hpp"
-#include "godot_cpp/variant/color.hpp"
-#include "godot_cpp/variant/transform3d.hpp"
-#include "godot_cpp/variant/vector2.hpp"
-#include "godot_cpp/variant/vector3.hpp"
 #include <cassert>
+#include <godot_cpp/classes/camera3d.hpp>
+#include <godot_cpp/classes/editor_interface.hpp>
+#include <godot_cpp/classes/editor_plugin.hpp>
+#include <godot_cpp/classes/mesh_library.hpp>
+#include <godot_cpp/classes/rendering_server.hpp>
+#include <godot_cpp/classes/scene_tree.hpp>
+#include <godot_cpp/classes/sub_viewport.hpp>
+#include <godot_cpp/classes/window.hpp>
+#include <godot_cpp/classes/world3d.hpp>
+#include <godot_cpp/core/defs.hpp>
+#include <godot_cpp/core/error_macros.hpp>
+#include <godot_cpp/variant/color.hpp>
+#include <godot_cpp/variant/transform3d.hpp>
+#include <godot_cpp/variant/vector2.hpp>
+#include <godot_cpp/variant/vector3.hpp>
+
+#include "../cell_id.h"
+#include "../iter_axial.h"
+#include "editor_cursor.h"
 
 #define GRID_RADIUS 40u
 

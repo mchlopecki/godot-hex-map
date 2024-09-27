@@ -6,7 +6,7 @@
 
 using namespace godot;
 
-class TileOrientation {
+class HexMapTileOrientation {
 public:
     enum Value : uint8_t {
         Upright0, // No flip, 0 degrees rotation
@@ -24,19 +24,19 @@ public:
         Flipped300 // Flipped, 300 degrees rotation
     };
 
-    TileOrientation() = default;
-    constexpr TileOrientation(Value v) : value(v) {}
-    constexpr TileOrientation(int v) : value(static_cast<Value>(v)) {}
-    TileOrientation(Variant v) : value(static_cast<Value>((int)v)) {}
+    HexMapTileOrientation() = default;
+    constexpr HexMapTileOrientation(Value v) : value(v) {}
+    constexpr HexMapTileOrientation(int v) : value(static_cast<Value>(v)) {}
+    HexMapTileOrientation(Variant v) : value(static_cast<Value>((int)v)) {}
     constexpr operator Value() const { return value; }
-    constexpr bool operator==(TileOrientation other) const {
+    constexpr bool operator==(HexMapTileOrientation other) const {
         return value == other.value;
     }
-    constexpr bool operator!=(TileOrientation other) const {
+    constexpr bool operator!=(HexMapTileOrientation other) const {
         return value != other.value;
     }
     constexpr bool operator!=(int other) const { return value != other; }
-    TileOrientation operator+(const TileOrientation &other) const;
+    HexMapTileOrientation operator+(const HexMapTileOrientation &other) const;
 
     operator Basis() const;
     operator int() const { return value; }

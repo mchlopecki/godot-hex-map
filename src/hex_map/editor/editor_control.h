@@ -1,6 +1,6 @@
 #ifdef TOOLS_ENABLED
 
-#include "../tile_orientation.h"
+#include "../hex_map.h"
 #include "godot_cpp/classes/h_box_container.hpp"
 #include "godot_cpp/classes/input_event_key.hpp"
 #include "godot_cpp/classes/label.hpp"
@@ -53,7 +53,7 @@ private:
     // plane value for each axis
     EditAxis active_axis = AXIS_Y;
     int plane[AXIS_S + 1] = { 0 };
-    TileOrientation cursor_orientation;
+    HexMap::TileOrientation cursor_orientation;
 
     Ref<Shortcut> editor_shortcut(const String &p_path,
             const String &p_name,
@@ -85,7 +85,7 @@ public:
 
     // reset cursor orientation
     void reset_orientation() {
-        cursor_orientation = TileOrientation::Upright0;
+        cursor_orientation = HexMap::TileOrientation::Upright0;
     }
 
     EditorControl();

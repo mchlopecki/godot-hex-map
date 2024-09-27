@@ -2,7 +2,6 @@
 
 #pragma once
 #include "../hex_map.h"
-#include "../hex_map_cell_id.h"
 #include "godot_cpp/classes/standard_material3d.hpp"
 #include "godot_cpp/templates/vector.hpp"
 #include "godot_cpp/variant/rid.hpp"
@@ -31,12 +30,12 @@ public:
     bool is_visible();
 
     bool is_empty() const { return cells.is_empty(); };
-    const Vector<HexMapCellId> get_cells() const { return cells; }
+    const Vector<HexMap::CellId> get_cells() const { return cells; }
 
     // does not currently handle de-duplication
     void clear();
-    void set_cell(HexMapCellId);
-    void set_cells(Vector<HexMapCellId>);
+    void set_cell(HexMap::CellId);
+    void set_cells(Vector<HexMap::CellId>);
     void redraw_selection(); // for cell size change
 
     // get cell id at the center of the selection

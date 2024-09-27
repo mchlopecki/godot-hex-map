@@ -1,13 +1,15 @@
 #ifdef TOOLS_ENABLED
 
+#include <godot_cpp/classes/editor_interface.hpp>
+#include <godot_cpp/classes/rendering_server.hpp>
+#include <godot_cpp/classes/scene_tree.hpp>
+#include <godot_cpp/classes/sub_viewport.hpp>
+#include <godot_cpp/classes/window.hpp>
+#include <godot_cpp/classes/world3d.hpp>
+
 #include "selection_manager.h"
-#include "godot_cpp/classes/editor_interface.hpp"
-#include "godot_cpp/classes/rendering_server.hpp"
-#include "godot_cpp/classes/scene_tree.hpp"
-#include "godot_cpp/classes/sub_viewport.hpp"
-#include "godot_cpp/classes/window.hpp"
-#include "godot_cpp/classes/world3d.hpp"
-#include "godot_cpp/variant/utility_functions.hpp"
+
+using CellId = HexMap::CellId;
 
 void SelectionManager::build_cell_mesh() {
     mesh_mat.instantiate();
@@ -187,24 +189,24 @@ void SelectionManager::clear() {
             selection_multimesh_instance, false);
 }
 
-void SelectionManager::set_cell(HexMapCellId cell) {
+void SelectionManager::set_cell(CellId cell) {
     cells.append(cell);
     redraw_selection();
 }
 
-void SelectionManager::set_cells(Vector<HexMapCellId> other) {
+void SelectionManager::set_cells(Vector<CellId> other) {
     cells.append_array(other);
     redraw_selection();
 }
 
-HexMapCellId SelectionManager::get_center() {
+CellId SelectionManager::get_center() {
     if (cells.is_empty()) {
-        return HexMapCellId();
+        return CellId();
     }
 
     Vector3 center = cells[0].unit_center();
     Vector3 min = center, max = center;
-    for (const HexMapCellId &cell : cells) {
+    for (const CellId &cell : cells) {
         center = cell.unit_center();
         if (center.x < min.x) {
             min.x = center.x;
@@ -223,7 +225,7 @@ HexMapCellId SelectionManager::get_center() {
         }
     }
 
-    return HexMapCellId::from_unit_point((max + min) / 2);
+    return CellId::from_unit_point((max + min) / 2);
 }
 
 SelectionManager::SelectionManager(HexMap *hex_map) : hex_map(hex_map) {

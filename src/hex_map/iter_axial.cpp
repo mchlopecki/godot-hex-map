@@ -1,4 +1,4 @@
-#include "hex_map_iter_axial.h"
+#include "iter_axial.h"
 
 HexMapIterAxial::HexMapIterAxial(const HexMapCellId center,
         unsigned int radius,

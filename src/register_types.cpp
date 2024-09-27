@@ -4,10 +4,10 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
+#include "hex_map/cell_id.h"
 #include "hex_map/editor/hex_map_editor_plugin.h"
 #include "hex_map/hex_map.h"
-#include "hex_map/hex_map_cell_id.h"
-#include "hex_map/hex_map_iter_axial.h"
+#include "hex_map/iter_axial.h"
 
 using namespace godot;
 

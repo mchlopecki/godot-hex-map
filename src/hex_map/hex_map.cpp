@@ -1,38 +1,3 @@
-/**************************************************************************/
-/*  grid_map.cpp                                                          */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
-/**************************************************************************/
-/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-#include "hex_map.h"
-#include "hex_map/octant.h"
-#include "hex_map_cell_id.h"
-#include "profiling.h"
-
 #include <godot_cpp/classes/array_mesh.hpp>
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/main_loop.hpp>
@@ -62,6 +27,11 @@
 #include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/variant/variant.hpp>
 #include <godot_cpp/variant/vector3.hpp>
+
+#include "cell_id.h"
+#include "hex_map.h"
+#include "hex_map/octant.h"
+#include "profiling.h"
 
 bool HexMap::_set(const StringName &p_name, const Variant &p_value) {
     String name = p_name;
@@ -501,18 +471,9 @@ Vector3 HexMap::_cell_id_to_local(
     return cell_id_to_local(**cell_id);
 }
 
-// Vector3 HexMap::map_to_local(const HexMapCellId &p_cell_id) const {
-// 	Vector3 offset = _get_offset();
-//
-// 	// convert axial hex coordinates to a point
-// 	// https://www.redblobgames.com/grids/hexagons/#hex-to-pixel
-// 	Vector3 local;
-// 	local.x = cell_size.x * (Math_SQRT3 * p_cell_id.q + SQRT3_2 *
-// p_cell_id.r); 	local.y = p_cell_id.y * cell_size.y + offset.y; 	local.z
-// = cell_size.x * (3.0 / 2 * p_cell_id.r); 	return local;
-// }
-Vector<HexMapCellId>
-HexMap::local_region_to_map(Vector3 p_a, Vector3 p_b, Planes planes) const {
+Vector<HexMapCellId> HexMap::local_region_to_cell_ids(Vector3 p_a,
+        Vector3 p_b,
+        Planes planes) const {
     Vector<HexMapCellId> cells;
 
     // XXX OddR Iterator, and Planes support
@@ -603,10 +564,10 @@ HexMap::local_region_to_map(Vector3 p_a, Vector3 p_b, Planes planes) const {
     return cells;
 }
 
-TypedArray<Vector3i> HexMap::_local_region_to_map(Vector3 p_a,
+TypedArray<Vector3i> HexMap::_local_region_to_cell_ids(Vector3 p_a,
         Vector3 p_b) const {
     TypedArray<Vector3i> out;
-    for (const HexMapCellId &cell : local_region_to_map(p_a, p_b)) {
+    for (const HexMapCellId &cell : local_region_to_cell_ids(p_a, p_b)) {
         out.append((Vector3i)cell);
     }
     return out;
@@ -818,9 +779,10 @@ void HexMap::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_cell_item_orientation", "position"),
             &HexMap::_get_cell_item_orientation);
 
-    ClassDB::bind_method(
-            D_METHOD("local_region_to_map", "local_point_a", "local_point_b"),
-            &HexMap::_local_region_to_map);
+    ClassDB::bind_method(D_METHOD("local_region_to_cell_ids",
+                                 "local_point_a",
+                                 "local_point_b"),
+            &HexMap::_local_region_to_cell_ids);
 
     ClassDB::bind_method(D_METHOD("local_to_cell_id", "local_position"),
             &HexMap::_local_to_cell_id);

@@ -1,9 +1,10 @@
-#include "hex_map_cell_id.h"
-#include "godot_cpp/core/class_db.hpp"
-#include "godot_cpp/core/math.hpp"
-#include "godot_cpp/variant/string.hpp"
-#include "hex_map_iter_axial.h"
 #include <climits>
+#include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/core/math.hpp>
+#include <godot_cpp/variant/string.hpp>
+
+#include "cell_id.h"
+#include "iter_axial.h"
 
 const HexMapCellId HexMapCellId::Origin(0, 0, 0);
 const HexMapCellId HexMapCellId::Invalid(INT_MAX, INT_MAX, INT_MAX);

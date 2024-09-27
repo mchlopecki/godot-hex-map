@@ -3,7 +3,7 @@
 
 #define Math_PI_3 (Math_PI / 3.0)
 
-TileOrientation::operator Basis() const {
+HexMapTileOrientation::operator Basis() const {
     Basis basis;
     switch (value) {
         case Upright0:
@@ -51,18 +51,18 @@ TileOrientation::operator Basis() const {
     return basis;
 }
 
-TileOrientation TileOrientation::operator+(
-        const TileOrientation &other) const {
-    TileOrientation out(value);
+HexMapTileOrientation HexMapTileOrientation::operator+(
+        const HexMapTileOrientation &other) const {
+    HexMapTileOrientation out(value);
     // if we're flipped, flip, and then rotate however manu steps
-    if (other >= TileOrientation::Flipped0) {
+    if (other >= HexMapTileOrientation::Flipped0) {
         out.flip();
     }
     out.rotate(other.value % 6);
     return out;
 }
 
-void TileOrientation::rotate(int steps) {
+void HexMapTileOrientation::rotate(int steps) {
     int base = value >= Flipped0 ? 6 : 0;
     int offset = value - base + steps;
     if (offset < 0) {
@@ -74,7 +74,7 @@ void TileOrientation::rotate(int steps) {
     value = (Value)(base + offset);
 }
 
-void TileOrientation::flip() {
+void HexMapTileOrientation::flip() {
     switch (value) {
         case Upright0:
         case Upright60:

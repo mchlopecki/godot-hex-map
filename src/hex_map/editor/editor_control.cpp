@@ -2,22 +2,21 @@
 
 #include "editor_control.h"
 
-#include "godot_cpp/classes/box_container.hpp"
-#include "godot_cpp/classes/editor_interface.hpp"
-#include "godot_cpp/classes/editor_settings.hpp"
-#include "godot_cpp/classes/global_constants.hpp"
-#include "godot_cpp/classes/input_event_key.hpp"
-#include "godot_cpp/classes/label.hpp"
-#include "godot_cpp/classes/line_edit.hpp"
-#include "godot_cpp/classes/popup_menu.hpp"
-#include "godot_cpp/classes/shortcut.hpp"
-#include "godot_cpp/classes/theme.hpp"
-#include "godot_cpp/classes/v_separator.hpp"
-#include "godot_cpp/core/error_macros.hpp"
-#include "godot_cpp/core/memory.hpp"
-#include "godot_cpp/core/object.hpp"
-#include "godot_cpp/variant/callable_method_pointer.hpp"
-#include "godot_cpp/variant/utility_functions.hpp"
+#include <godot_cpp/classes/box_container.hpp>
+#include <godot_cpp/classes/editor_interface.hpp>
+#include <godot_cpp/classes/editor_settings.hpp>
+#include <godot_cpp/classes/global_constants.hpp>
+#include <godot_cpp/classes/input_event_key.hpp>
+#include <godot_cpp/classes/label.hpp>
+#include <godot_cpp/classes/line_edit.hpp>
+#include <godot_cpp/classes/popup_menu.hpp>
+#include <godot_cpp/classes/shortcut.hpp>
+#include <godot_cpp/classes/theme.hpp>
+#include <godot_cpp/classes/v_separator.hpp>
+#include <godot_cpp/core/error_macros.hpp>
+#include <godot_cpp/core/memory.hpp>
+#include <godot_cpp/core/object.hpp>
+#include <godot_cpp/variant/callable_method_pointer.hpp>
 
 Ref<Shortcut> EditorControl::editor_shortcut(const String &p_path,
         const String &p_name,
@@ -132,7 +131,7 @@ void EditorControl::handle_action(int p_action) {
             plane_spin_box->set_value(plane[active_axis]);
             break;
         case ACTION_TILE_RESET:
-            cursor_orientation = TileOrientation::Upright0;
+            cursor_orientation = HexMap::TileOrientation::Upright0;
             emit_signal("cursor_orientation_changed", cursor_orientation);
             break;
         case ACTION_TILE_FLIP:

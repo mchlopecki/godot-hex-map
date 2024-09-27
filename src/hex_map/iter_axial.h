@@ -1,10 +1,11 @@
 #pragma once
 
-#include "godot_cpp/classes/ref_counted.hpp"
-#include "godot_cpp/classes/wrapped.hpp"
-#include "godot_cpp/variant/string.hpp"
+#include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/classes/wrapped.hpp>
+#include <godot_cpp/variant/string.hpp>
+
+#include "cell_id.h"
 #include "hex_map.h"
-#include "hex_map_cell_id.h"
 
 // HexMap cell iterator using axial coordinates to define a volume to iterate
 struct HexMapIterAxial {
@@ -51,8 +52,8 @@ class HexMapIterAxialRef : public godot::RefCounted {
     GDCLASS(HexMapIterAxialRef, RefCounted);
 
 public:
-    HexMapIterAxialRef() : iter(HexMapIterAxial(HexMapCellId::Origin, 0)) {};
-    HexMapIterAxialRef(const HexMapIterAxial &iter) : iter(iter) {};
+    HexMapIterAxialRef() : iter(HexMapIterAxial(HexMapCellId::Origin, 0)){};
+    HexMapIterAxialRef(const HexMapIterAxial &iter) : iter(iter){};
 
     // GDScript functions
     String _to_string() const;
