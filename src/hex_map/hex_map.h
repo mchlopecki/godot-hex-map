@@ -267,7 +267,10 @@ private:
 
     HashMap<CellKey, Cell> cell_map;
     HashMap<OctantKey, Octant *> octants;
-    Vector<BakedMesh> baked_meshes;
+    // The LightmapGI node assumes we're tracking the lightmap meshes by index.
+    // We use this Vector to map from the index they have to an OctantKey for
+    // lookup in get_bake_mesh_instance().
+    Vector<OctantKey> baked_mesh_octants;
 
     // updated cells to be emitted with the next "cells_changed" signal
     HashSet<CellKey> updated_cells;

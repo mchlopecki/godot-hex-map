@@ -8,6 +8,7 @@ extends Node3D
 # godot::RefCounted does not pass operator= down to underlying type
 
 func _ready():
+	# print("HexMap baked meshes ", hex_map.get_bake_meshes())
 	pass
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.

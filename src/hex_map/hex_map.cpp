@@ -29,16 +29,12 @@
 /**************************************************************************/
 
 #include "hex_map.h"
-#include "godot_cpp/classes/engine.hpp"
-#include "godot_cpp/classes/project_settings.hpp"
-#include "godot_cpp/variant/callable_method_pointer.hpp"
-#include "godot_cpp/variant/utility_functions.hpp"
 #include "hex_map/octant.h"
 #include "hex_map_cell_id.h"
 #include "profiling.h"
 
-#include "godot_cpp/variant/basis.hpp"
 #include <godot_cpp/classes/array_mesh.hpp>
+#include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/main_loop.hpp>
 #include <godot_cpp/classes/material.hpp>
 #include <godot_cpp/classes/mesh.hpp>
@@ -48,6 +44,7 @@
 #include <godot_cpp/classes/object.hpp>
 #include <godot_cpp/classes/physics_material.hpp>
 #include <godot_cpp/classes/physics_server3d.hpp>
+#include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/scene_tree.hpp>
 #include <godot_cpp/classes/shape3d.hpp>
@@ -56,10 +53,13 @@
 #include <godot_cpp/classes/world3d.hpp>
 #include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/templates/pair.hpp>
+#include <godot_cpp/variant/basis.hpp>
+#include <godot_cpp/variant/callable_method_pointer.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/packed_byte_array.hpp>
 #include <godot_cpp/variant/packed_vector3_array.hpp>
 #include <godot_cpp/variant/transform3d.hpp>
+#include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/variant/variant.hpp>
 #include <godot_cpp/variant/vector3.hpp>
 
@@ -97,24 +97,12 @@ bool HexMap::_set(const StringName &p_name, const Variant &p_value) {
         clear_baked_meshes();
 
         Array meshes = p_value;
-
-        // this will change to array[3], Ref<Mesh>
-        for (int i = 0; i < meshes.size(); i++) {
-            BakedMesh bm;
-            bm.mesh = meshes[i];
-            ERR_CONTINUE(!bm.mesh.is_valid());
-            bm.instance = RS::get_singleton()->instance_create();
-            RS::get_singleton()->instance_set_base(
-                    bm.instance, bm.mesh->get_rid());
-            RS::get_singleton()->instance_attach_object_instance_id(
-                    bm.instance, get_instance_id());
-            if (is_inside_tree()) {
-                RS::get_singleton()->instance_set_scenario(
-                        bm.instance, get_world_3d()->get_scenario());
-                RS::get_singleton()->instance_set_transform(
-                        bm.instance, get_global_transform());
-            }
-            baked_meshes.push_back(bm);
+        for (int i = 0; i < meshes.size(); i += 2) {
+            OctantKey key(meshes[i]);
+            ERR_CONTINUE_MSG(!octants.has(key),
+                    "octant not found for baked mesh index");
+            octants.get(key)->set_baked_mesh(meshes[i + 1]);
+            baked_mesh_octants.push_back(key);
         }
 
         update_octant_meshes();
@@ -151,9 +139,13 @@ bool HexMap::_get(const StringName &p_name, Variant &r_ret) const {
         r_ret = d;
     } else if (name == "baked_meshes") {
         Array ret;
-        ret.resize(baked_meshes.size());
-        for (int i = 0; i < baked_meshes.size(); i++) {
-            ret[i] = baked_meshes[i].mesh;
+        ret.resize(baked_mesh_octants.size() * 2);
+        for (int i = 0; i < baked_mesh_octants.size(); i++) {
+            OctantKey key = baked_mesh_octants[i];
+            ERR_CONTINUE_MSG(!octants.has(key),
+                    "octant not found for baked mesh index");
+            ret[2 * i] = key.key;
+            ret[2 * i + 1] = octants[key]->get_baked_mesh();
         }
         r_ret = ret;
 
@@ -165,16 +157,13 @@ bool HexMap::_get(const StringName &p_name, Variant &r_ret) const {
 }
 
 void HexMap::_get_property_list(List<PropertyInfo> *p_list) const {
-    if (baked_meshes.size()) {
-        p_list->push_back(PropertyInfo(Variant::ARRAY,
-                "baked_meshes",
-                PROPERTY_HINT_NONE,
-                "",
-                PROPERTY_USAGE_STORAGE));
-    }
-
     p_list->push_back(PropertyInfo(Variant::DICTIONARY,
             "data",
+            PROPERTY_HINT_NONE,
+            "",
+            PROPERTY_USAGE_STORAGE));
+    p_list->push_back(PropertyInfo(Variant::ARRAY,
+            "baked_meshes",
             PROPERTY_HINT_NONE,
             "",
             PROPERTY_USAGE_STORAGE));
@@ -375,6 +364,11 @@ void HexMap::set_cell_item(const HexMapCellId &cell_id,
             p_rot == current_cell->rot) {
         return;
     }
+
+    // if the octant meshes have been baked, we need to clear them now.  Even
+    // if we only clear the modified octant, the HexMap will look odd with the
+    // lightmap only applied to one section.
+    clear_baked_meshes();
 
     // look up the cell octant
     OctantKey octant_key(cell_id, octant_size);
@@ -680,7 +674,7 @@ void HexMap::update_dirty_octants_callback() {
             continue;
         }
 
-        octant->update();
+        octant->apply_changes();
         if (octant->is_empty()) {
             empty_octants.push_back(pair.key);
         }
@@ -715,7 +709,7 @@ void HexMap::update_dirty_octants() {
 
 void HexMap::update_octant_meshes() {
     for (auto &it : octants) {
-        it.value->update();
+        it.value->apply_changes();
     }
 }
 
@@ -948,35 +942,32 @@ TypedArray<Vector3i> HexMap::get_used_cells_by_item(int p_item) const {
 }
 
 void HexMap::clear_baked_meshes() {
-    ERR_FAIL_NULL(RenderingServer::get_singleton());
-    for (int i = 0; i < baked_meshes.size(); i++) {
-        RS::get_singleton()->free_rid(baked_meshes[i].instance);
+    for (auto &it : octants) {
+        it.value->clear_baked_mesh();
     }
-    baked_meshes.clear();
-
-    update_octant_meshes();
+    baked_mesh_octants.clear();
 }
 
 void HexMap::make_baked_meshes(bool p_gen_lightmap_uv,
         float p_lightmap_uv_texel_size) {}
 
 Array HexMap::get_bake_meshes() {
-    if (!baked_meshes.size()) {
-        make_baked_meshes(true);
-    }
-
+    baked_mesh_octants.clear();
     Array arr;
-    for (int i = 0; i < baked_meshes.size(); i++) {
-        arr.push_back(baked_meshes[i].mesh);
+    for (auto &it : octants) {
+        baked_mesh_octants.push_back(it.key);
+        arr.push_back(it.value->get_baked_mesh());
         arr.push_back(Transform3D());
     }
-
     return arr;
 }
 
 RID HexMap::get_bake_mesh_instance(int p_idx) {
-    ERR_FAIL_INDEX_V(p_idx, baked_meshes.size(), RID());
-    return baked_meshes[p_idx].instance;
+    ERR_FAIL_INDEX_V(p_idx, baked_mesh_octants.size(), RID());
+    OctantKey key = baked_mesh_octants[p_idx];
+    ERR_FAIL_COND_V_MSG(
+            !octants.has(key), RID(), "octant not found for baked mesh index");
+    return octants.get(key)->get_baked_mesh_instance();
 }
 
 bool HexMap::generate_navigation_source_geometry(Ref<NavigationMesh>,
@@ -989,8 +980,9 @@ bool HexMap::generate_navigation_source_geometry(Ref<NavigationMesh>,
 
         if (navigation_bake_only_navmesh_tiles) {
             // If there's a tile in the cell above this one, do not include
-            // this tile, otherwise when a navigable mesh has a non-navigable
-            // on top, the nav mesh incorrectly cuts through that upper tile.
+            // this tile, otherwise when a navigable mesh has a
+            // non-navigable on top, the nav mesh incorrectly cuts through
+            // that upper tile.
             if (it.key.y < SHRT_MAX && cell_map.has(it.key.get_cell_above())) {
                 continue;
             }
@@ -1015,9 +1007,9 @@ bool HexMap::generate_navigation_source_geometry(Ref<NavigationMesh>,
         source_geometry_data->add_mesh(mesh, cell_transform);
     }
 
-    // Unused return value.  To turn this function into a Callable, the return
-    // type needs to be able to be converted into a Variant.  `void` is not a
-    // supported option.
+    // Unused return value.  To turn this function into a Callable, the
+    // return type needs to be able to be converted into a Variant.  `void`
+    // is not a supported option.
     return true;
 }
 

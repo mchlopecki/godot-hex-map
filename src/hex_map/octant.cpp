@@ -1,5 +1,6 @@
 #include "octant.h"
 #include "godot_cpp/classes/array_mesh.hpp"
+#include "godot_cpp/classes/material.hpp"
 #include "godot_cpp/classes/mesh.hpp"
 #include "godot_cpp/classes/mesh_data_tool.hpp"
 #include "godot_cpp/classes/mesh_library.hpp"
@@ -7,6 +8,7 @@
 #include "godot_cpp/classes/rendering_server.hpp"
 #include "godot_cpp/classes/scene_tree.hpp"
 #include "godot_cpp/classes/shape3d.hpp"
+#include "godot_cpp/classes/surface_tool.hpp"
 #include "godot_cpp/classes/world3d.hpp"
 #include "godot_cpp/core/error_macros.hpp"
 #include "godot_cpp/templates/pair.hpp"
@@ -17,8 +19,26 @@
 #include "profiling.h"
 #include <cassert>
 
-void HexMapOctant::rebuild() {
-    auto profiler = profiling_begin("Octant::rebuild()");
+void HexMapOctant::free_multimeshes() {
+    RenderingServer *rs = RenderingServer::get_singleton();
+
+    for (const auto &multimesh : multimeshes) {
+        rs->free_rid(multimesh.multimesh_instance);
+        rs->free_rid(multimesh.multimesh);
+    }
+    multimeshes.clear();
+}
+
+void HexMapOctant::free_baked_mesh() {
+    baked_mesh = Ref<Mesh>();
+    if (baked_mesh_instance.is_valid()) {
+        RenderingServer::get_singleton()->free_rid(baked_mesh_instance);
+        baked_mesh_instance = RID();
+    }
+}
+
+void HexMapOctant::build_physics_body() {
+    auto profiler = profiling_begin("Octant::build_physics_body()");
 
     assert(hex_map.is_inside_tree() &&
             "should be only be called when HexMap is in SceneTree");
@@ -32,20 +52,10 @@ void HexMapOctant::rebuild() {
         rs->mesh_clear(collision_debug_mesh);
     }
 
-    for (const auto &multimesh : multimeshes) {
-        rs->free_rid(multimesh.multimesh_instance);
-        rs->free_rid(multimesh.multimesh);
-    }
-    multimeshes.clear();
-
     // can't do anything without the MeshLibrary
     if (!mesh_library.is_valid()) {
         return;
     }
-
-    // to create the multimesh for cells, we need the mesh RID and the
-    // transform for each instance of that cell in the octant
-    HashMap<RID, Vector<Transform3D>> mesh_cells;
 
     // to update the collision debugging mesh, we need the vertices for all of
     // the collision shapes
@@ -64,20 +74,9 @@ void HexMapOctant::rebuild() {
         }
         RID mesh_rid = mesh->get_rid();
 
-        Vector<Transform3D> *mesh_transforms = mesh_cells.getptr(mesh_rid);
-        if (!mesh_cells.has(mesh_rid)) {
-            auto iter = mesh_cells.insert(mesh_rid, Vector<Transform3D>());
-            mesh_transforms = &iter->value;
-        }
-
         Transform3D cell_transform;
         cell_transform.basis = cell->get_basis();
         cell_transform.set_origin(hex_map.cell_id_to_local(cell_key));
-
-        // save off the mesh transform for this cell; we'll use it when
-        // creating the multimesh for this cell type later.
-        mesh_transforms->push_back(cell_transform *
-                mesh_library->get_item_mesh_transform(cell->item));
 
         // Update the static body for the octant if the mesh library has any
         // collision shapes for this cell type.  Note that the collision shape
@@ -109,6 +108,68 @@ void HexMapOctant::rebuild() {
         }
     }
 
+    // update the collision debugging mesh if one exists
+    if (collision_debug_mesh.is_valid() && !debug_mesh_vertices.is_empty()) {
+        Array surface_arrays;
+        surface_arrays.resize(RS::ARRAY_MAX);
+        surface_arrays[RS::ARRAY_VERTEX] = debug_mesh_vertices;
+        rs->mesh_add_surface_from_arrays(
+                collision_debug_mesh, RS::PRIMITIVE_LINES, surface_arrays);
+        rs->mesh_surface_set_material(collision_debug_mesh,
+                0,
+                hex_map.collision_debug_mat->get_rid());
+    }
+}
+
+void HexMapOctant::build_multimesh() {
+    auto profiler = profiling_begin("Octant::build_multimesh()");
+
+    assert(hex_map.is_inside_tree() &&
+            "should be only be called when HexMap is in SceneTree");
+    RenderingServer *rs = RenderingServer::get_singleton();
+    PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
+    Ref<MeshLibrary> &mesh_library = hex_map.mesh_library;
+
+    free_multimeshes();
+
+    // can't do anything without the MeshLibrary
+    if (!mesh_library.is_valid()) {
+        return;
+    }
+
+    // to create the multimesh for cells, we need the mesh RID and the
+    // transform for each instance of that cell in the octant
+    HashMap<RID, Vector<Transform3D>> mesh_cells;
+
+    // iterate through the cells, save off RID & Transform pairs for multimesh
+    // creation later, update the physics body, and if collision debugging is
+    // enabled, update that mesh.
+    for (const CellKey &cell_key : cells) {
+        const HexMap::Cell *cell = hex_map.cell_map.getptr(cell_key);
+        ERR_CONTINUE_MSG(cell == nullptr, "nonexistent HexMap cell in Octant");
+
+        Ref<Mesh> mesh = mesh_library->get_item_mesh(cell->item);
+        if (!mesh.is_valid()) {
+            continue;
+        }
+        RID mesh_rid = mesh->get_rid();
+
+        Vector<Transform3D> *mesh_transforms = mesh_cells.getptr(mesh_rid);
+        if (!mesh_cells.has(mesh_rid)) {
+            auto iter = mesh_cells.insert(mesh_rid, Vector<Transform3D>());
+            mesh_transforms = &iter->value;
+        }
+
+        Transform3D cell_transform;
+        cell_transform.basis = cell->get_basis();
+        cell_transform.set_origin(hex_map.cell_id_to_local(cell_key));
+
+        // save off the mesh transform for this cell; we'll use it when
+        // creating the multimesh for this cell type later.
+        mesh_transforms->push_back(cell_transform *
+                mesh_library->get_item_mesh_transform(cell->item));
+    }
+
     // create a multimesh for each tile type present in the octant
     for (const auto &pair : mesh_cells) {
         // create the multimesh
@@ -126,26 +187,73 @@ void HexMapOctant::rebuild() {
         // create an instance of the multimesh
         RID instance = rs->instance_create2(
                 multimesh, hex_map.get_world_3d()->get_scenario());
+        rs->instance_attach_object_instance_id(
+                instance, hex_map.get_instance_id());
 
         multimeshes.push_back(MultiMesh{ multimesh, instance });
     }
+}
 
-    // update the collision debugging mesh if one exists
-    if (collision_debug_mesh.is_valid() && !debug_mesh_vertices.is_empty()) {
-        profiling_emit("updating collision debug mesh");
-        Array surface_arrays;
-        surface_arrays.resize(RS::ARRAY_MAX);
-        surface_arrays[RS::ARRAY_VERTEX] = debug_mesh_vertices;
-        rs->mesh_add_surface_from_arrays(
-                collision_debug_mesh, RS::PRIMITIVE_LINES, surface_arrays);
-        rs->mesh_surface_set_material(collision_debug_mesh,
-                0,
-                hex_map.collision_debug_mat->get_rid());
+void HexMapOctant::bake_mesh() {
+    auto profiler = profiling_begin("Octant::bake_mesh()");
+
+    Ref<MeshLibrary> &mesh_library = hex_map.mesh_library;
+    HashMap<Ref<Material>, Ref<SurfaceTool>> mat_map;
+
+    free_multimeshes();
+
+    // iterate through the cells, add cell mesh surfaces to the surface tool
+    // for each material.
+    for (const CellKey &cell_key : cells) {
+        const HexMap::Cell *cell = hex_map.cell_map.getptr(cell_key);
+        ERR_CONTINUE_MSG(cell == nullptr, "nonexistent HexMap cell in Octant");
+
+        Ref<ArrayMesh> mesh = mesh_library->get_item_mesh(cell->item);
+        if (!mesh.is_valid()) {
+            continue;
+        }
+        RID mesh_rid = mesh->get_rid();
+
+        Transform3D transform;
+        transform.basis = cell->get_basis();
+        transform.set_origin(hex_map.cell_id_to_local(cell_key));
+        transform *= mesh_library->get_item_mesh_transform(cell->item);
+
+        for (int i = 0; i < mesh->get_surface_count(); i++) {
+            if (mesh->surface_get_primitive_type(i) !=
+                    Mesh::PRIMITIVE_TRIANGLES) {
+                continue;
+            }
+            Ref<Material> material = mesh->surface_get_material(i);
+            Ref<SurfaceTool> *surface_tool = mat_map.getptr(material);
+            if (surface_tool == nullptr) {
+                auto iter = mat_map.insert(material, Ref<SurfaceTool>());
+                surface_tool = &iter->value;
+                surface_tool->instantiate();
+                surface_tool->ptr()->begin(Mesh::PRIMITIVE_TRIANGLES);
+                surface_tool->ptr()->set_material(material);
+            }
+            surface_tool->ptr()->append_from(mesh, i, transform);
+        }
     }
 
-    // everything has been built using the local position within the HexMap,
-    // now adjust everything for the global position of the HexMap.
-    apply_global_transform();
+    baked_mesh.instantiate();
+    for (const auto &it : mat_map) {
+        it.value->commit(baked_mesh);
+    }
+
+    RenderingServer *rs = RenderingServer::get_singleton();
+    RID scenario = hex_map.get_world_3d()->get_scenario();
+    baked_mesh_instance =
+            rs->instance_create2(baked_mesh->get_rid(), scenario);
+    rs->instance_attach_object_instance_id(
+            baked_mesh_instance, hex_map.get_instance_id());
+
+    // XXX texel size not easily modified for gridmap; do we need to expose
+    // this value or fetch it from someplace?  Also not sure about global
+    // transform here, but it matches GridMap
+
+    baked_mesh->lightmap_unwrap(hex_map.get_global_transform(), 0.1);
 }
 
 void HexMapOctant::apply_global_transform() {
@@ -162,6 +270,11 @@ void HexMapOctant::apply_global_transform() {
     if (collision_debug_mesh_instance.is_valid()) {
         rs->instance_set_transform(
                 collision_debug_mesh_instance, global_transform);
+    }
+
+    // move the baked mesh if present
+    if (baked_mesh_instance.is_valid()) {
+        rs->instance_set_transform(baked_mesh_instance, global_transform);
     }
 
     // move each of the multimeshes
@@ -208,6 +321,9 @@ void HexMapOctant::update_visibility() {
     if (collision_debug_mesh_instance.is_valid()) {
         rs->instance_set_visible(collision_debug_mesh_instance, visible);
     }
+    if (baked_mesh_instance.is_valid()) {
+        rs->instance_set_visible(baked_mesh_instance, visible);
+    }
 }
 
 void HexMapOctant::enter_world() {
@@ -230,7 +346,16 @@ void HexMapOctant::enter_world() {
                 collision_debug_mesh, hex_map.get_world_3d()->get_scenario());
     }
 
-    rebuild();
+    build_physics_body();
+    if (!baked_mesh.is_valid()) {
+        build_multimesh();
+    } else {
+        baked_mesh_instance = rs->instance_create2(
+                baked_mesh->get_rid(), hex_map.get_world_3d()->get_scenario());
+        rs->instance_attach_object_instance_id(
+                baked_mesh_instance, hex_map.get_instance_id());
+    }
+    apply_global_transform();
 }
 
 void HexMapOctant::exit_world() {
@@ -239,33 +364,71 @@ void HexMapOctant::exit_world() {
 
     ps->body_set_space(physics_body, RID());
 
-    for (const MultiMesh &multimesh : multimeshes) {
-        rs->free_rid(multimesh.multimesh_instance);
-        rs->free_rid(multimesh.multimesh);
+    free_multimeshes();
+
+    if (baked_mesh_instance.is_valid()) {
+        rs->free_rid(baked_mesh_instance);
+        baked_mesh_instance = RID();
     }
-    multimeshes.clear();
 
-    rs->free_rid(collision_debug_mesh_instance);
-    collision_debug_mesh_instance = RID();
+    if (collision_debug_mesh_instance.is_valid()) {
+        rs->free_rid(collision_debug_mesh_instance);
+        collision_debug_mesh_instance = RID();
+    }
 
-    rs->free_rid(collision_debug_mesh);
-    collision_debug_mesh = RID();
+    if (collision_debug_mesh.is_valid()) {
+        rs->free_rid(collision_debug_mesh);
+        collision_debug_mesh = RID();
+    }
 }
 
-void HexMapOctant::update() {
+void HexMapOctant::apply_changes() {
     if (hex_map.is_inside_tree()) {
-        rebuild();
+        build_physics_body();
+        if (!baked_mesh.is_valid()) {
+            build_multimesh();
+        }
     }
 }
 
 void HexMapOctant::add_cell(const CellKey cell_key) {
+    free_baked_mesh();
     cells.insert(cell_key);
     dirty = true;
 }
 
 void HexMapOctant::remove_cell(const CellKey cell_key) {
+    free_baked_mesh();
     cells.erase(cell_key);
     dirty = true;
+}
+
+void HexMapOctant::set_baked_mesh(Ref<Mesh> mesh) { baked_mesh = mesh; }
+
+Ref<Mesh> HexMapOctant::get_baked_mesh() {
+    if (!baked_mesh.is_valid()) {
+        bake_mesh();
+    }
+    return baked_mesh;
+}
+
+RID HexMapOctant::get_baked_mesh_instance() const {
+    ERR_FAIL_COND_V_MSG(!baked_mesh_instance.is_valid(),
+            RID(),
+            "HexMapOctant: no baked mesh instance");
+    return baked_mesh_instance;
+}
+
+void HexMapOctant::clear_baked_mesh() {
+    if (!baked_mesh.is_valid()) {
+        return;
+    }
+    baked_mesh = Ref<Mesh>();
+    RenderingServer::get_singleton()->free_rid(baked_mesh_instance);
+
+    if (hex_map.is_inside_tree()) {
+        build_physics_body();
+    }
 }
 
 HexMapOctant::HexMapOctant(HexMap &hex_map) : hex_map(hex_map) {

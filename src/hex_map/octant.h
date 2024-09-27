@@ -1,6 +1,8 @@
 #pragma once
 
+#include "godot_cpp/classes/array_mesh.hpp"
 #include "godot_cpp/classes/mesh.hpp"
+#include "godot_cpp/core/defs.hpp"
 #include "godot_cpp/templates/hash_set.hpp"
 #include "godot_cpp/templates/vector.hpp"
 #include "godot_cpp/variant/rid.hpp"
@@ -22,23 +24,31 @@ private:
 
     HexMap &hex_map;
     HashSet<CellKey> cells;
+
+    // The baked mesh and the multimeshes are mutually exclusive
+    Ref<ArrayMesh> baked_mesh;
+    RID baked_mesh_instance;
     Vector<struct MultiMesh> multimeshes;
 
     RID physics_body;
     RID collision_debug_mesh;
     RID collision_debug_mesh_instance;
 
-    // XXX to be implemented
-    Ref<Mesh> baked_mesh;
-    RID baked_mesh_instance;
-
     bool dirty = false;
 
     // clear and rebuild the multimeshes
-    void rebuild();
+    void build_physics_body();
+    void build_multimesh();
+    void build_baked_mesh();
 
     // apply the HexMap global transform
     void apply_global_transform();
+
+    void free_multimeshes();
+    void free_baked_mesh();
+
+    // bake the mesh
+    void bake_mesh();
 
 public:
     // octant key used in HexMap
@@ -48,7 +58,7 @@ public:
         };
         uint64_t key = 0;
 
-        Key() {};
+        Key(){};
 
         _FORCE_INLINE_ Key(const HexMapCellId &cell_id, int octant_size) {
             Vector3i oddr = cell_id.to_oddr() / octant_size;
@@ -56,6 +66,7 @@ public:
             y = oddr.y;
             z = oddr.z;
         }
+        _FORCE_INLINE_ Key(uint64_t key) : key(key) {};
 
         _FORCE_INLINE_ bool operator<(const Key &other) const {
             return key < other.key;
@@ -77,7 +88,7 @@ public:
     void update_transform();
     void update_visibility();
 
-    void update();
+    void apply_changes();
 
     void add_cell(const CellKey);
     void remove_cell(const CellKey);
@@ -85,9 +96,9 @@ public:
     inline bool is_empty() const { return cells.is_empty(); };
     inline bool is_dirty() const { return dirty; };
 
-    // bake the mesh
-    void bake_mesh();
-    // don't allow if dirty
-    Ref<Mesh> get_baked_mesh() const;
+    // bake if needed and return the baked mesh
     void set_baked_mesh(Ref<Mesh> mesh);
+    Ref<Mesh> get_baked_mesh();
+    void clear_baked_mesh();
+    RID get_baked_mesh_instance() const;
 };
