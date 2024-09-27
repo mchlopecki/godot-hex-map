@@ -83,14 +83,19 @@ std::ostream &operator<<(std::ostream &os, const HexMapCellId &value) {
 void HexMapCellIdWrapper::_bind_methods() {
     // static constructors
     ClassDB::bind_static_method("HexMapCellId",
-            D_METHOD("from_values", "q", "r", "y"),
-            &HexMapCellIdWrapper::_from_values);
+            D_METHOD("from_coordinates", "q", "r", "y"),
+            &HexMapCellIdWrapper::_from_coordinates);
     ClassDB::bind_static_method("HexMapCellId",
-            D_METHOD("from_vec", "vector"),
+            D_METHOD("from_vector", "vector"),
             &HexMapCellIdWrapper::_from_vector);
     ClassDB::bind_static_method("HexMapCellId",
-            D_METHOD("from_hash", "hash"),
-            &HexMapCellIdWrapper::_from_hash);
+            D_METHOD("from_int", "int"),
+            &HexMapCellIdWrapper::_from_int);
+
+    // type conversions
+    ClassDB::bind_method(D_METHOD("as_int"), &HexMapCellIdWrapper::_as_int);
+    ClassDB::bind_method(
+            D_METHOD("as_vector"), &HexMapCellIdWrapper::_as_vector);
 
     // field accessors
     ClassDB::bind_method(D_METHOD("get_q"), &HexMapCellIdWrapper::_get_q);
@@ -112,10 +117,6 @@ void HexMapCellIdWrapper::_bind_methods() {
     ClassDB::bind_method(D_METHOD("up"), &HexMapCellIdWrapper::_up);
     ClassDB::bind_method(D_METHOD("down"), &HexMapCellIdWrapper::_down);
 
-    ClassDB::bind_method(D_METHOD("hash"), &HexMapCellIdWrapper::_hash);
-    ClassDB::bind_method(
-            D_METHOD("as_vector"), &HexMapCellIdWrapper::_as_vector);
-
     ClassDB::bind_method(
             D_METHOD("equals", "other"), &HexMapCellIdWrapper::_equals);
     ClassDB::bind_method(D_METHOD("get_neighbors", "radius"),
@@ -132,7 +133,7 @@ int HexMapCellIdWrapper::_get_s() { return cell_id.s(); }
 int HexMapCellIdWrapper::_get_y() { return cell_id.y; }
 
 Ref<HexMapCellIdWrapper>
-HexMapCellIdWrapper::_from_values(int p_q, int p_r, int p_y) {
+HexMapCellIdWrapper::_from_coordinates(int p_q, int p_r, int p_y) {
     return CellId(p_q, p_r, p_y);
 }
 
@@ -144,18 +145,14 @@ Ref<HexMapCellIdWrapper> HexMapCellIdWrapper::_from_vector(Vector3i p_vector) {
     return CellId(p_vector.x, p_vector.y, p_vector.z);
 }
 
-uint64_t HexMapCellIdWrapper::_hash() {
-    uint64_t hash = 0;
-    hash |= (static_cast<uint64_t>(cell_id.q) & 0xffff) << 32;
-    hash |= (static_cast<uint64_t>(cell_id.r) & 0xffff) << 16;
-    hash |= (static_cast<uint64_t>(cell_id.y) & 0xffff);
-    return hash;
+uint64_t HexMapCellIdWrapper::_as_int() {
+    CellId::Key key(cell_id);
+    return key.key;
 }
 
-Ref<HexMapCellIdWrapper> HexMapCellIdWrapper::_from_hash(uint64_t p_hash) {
-    return CellId((int16_t)((p_hash >> 32) & 0xffff),
-            (int16_t)((p_hash >> 16) & 0xffff),
-            (int16_t)(p_hash & 0xffff));
+Ref<HexMapCellIdWrapper> HexMapCellIdWrapper::_from_int(uint64_t p_int) {
+    CellId::Key key(p_int);
+    return CellId(key);
 }
 
 Ref<HexMapCellIdWrapper> HexMapCellIdWrapper::_east() const {

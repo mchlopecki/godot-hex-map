@@ -35,6 +35,7 @@ public:
             this->r = r;
             this->y = y;
         }
+        _FORCE_INLINE_ Key(uint64_t key) : key(key) {}
         Key(){};
 
         _FORCE_INLINE_ bool operator<(const Key &other) const {
@@ -133,8 +134,6 @@ class HexMapCellIdWrapper : public RefCounted {
     using HexMapCellId = HexMapCellIdWrapper;
     GDCLASS(HexMapCellId, RefCounted)
 
-    uint64_t INVALID_CELL_ID_HASH = 0xffff000000000000;
-
     CellId cell_id;
 
 public:
@@ -154,14 +153,15 @@ public:
     int _get_y();
 
     // GDScript static constructors
-    static Ref<HexMapCellIdWrapper> _from_values(int p_q, int p_r, int p_y);
+    static Ref<HexMapCellIdWrapper>
+    _from_coordinates(int p_q, int p_r, int p_y);
     static Ref<HexMapCellIdWrapper> _from_vector(Vector3i p_vector);
-    static Ref<HexMapCellIdWrapper> _from_hash(uint64_t p_hash);
+    static Ref<HexMapCellIdWrapper> _from_int(uint64_t p_hash);
 
     // gdscript does not support equality for RefCounted objects.  We need some
     // way to use cell ids in arrays, hashes, etc.  We provide the hash method
     // for generating a type that gdscript can handle for equality.
-    uint64_t _hash();
+    uint64_t _as_int();
     Vector3i _as_vector();
 
     // directional helpers

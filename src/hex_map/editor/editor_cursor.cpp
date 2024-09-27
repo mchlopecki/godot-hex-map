@@ -379,6 +379,7 @@ EditorCursor::EditorCursor(HexMap *map) {
 
     set_axis(edit_axis);
     set_depth(0);
+    transform_meshes(); // to account for HexMap global transform
 }
 
 EditorCursor::~EditorCursor() {
