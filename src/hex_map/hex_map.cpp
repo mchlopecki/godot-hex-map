@@ -29,6 +29,8 @@
 #include <godot_cpp/variant/vector3.hpp>
 
 #include "cell_id.h"
+#include "godot_cpp/classes/geometry2d.hpp"
+#include "godot_cpp/variant/aabb.hpp"
 #include "godot_cpp/variant/plane.hpp"
 #include "hex_map.h"
 #include "hex_map/iter_cube.h"
@@ -489,6 +491,15 @@ Vector<HexMapCellId> HexMap::local_quad_to_cell_ids(Vector3 a,
     ERR_FAIL_COND_V_MSG(!plane.has_point(d, 0.0001f),
             Vector<HexMapCellId>(),
             "quad points must all be on the same plane");
+    //
+    // Vector3 center = (a + b + c + d) / 4;
+    // Vector3 cell_center = HexMapCellId::from_unit_point(a).unit_center();
+    // Vector3 direction = a - center;
+    // a = cell_center + direction * 0.01;
+    //
+    // cell_center = HexMapCellId::from_unit_point(c).unit_center();
+    // direction = c - center;
+    // c = cell_center + direction * 0.01;
 
     Vector3 top_right = a.max(b).max(c).max(d);
     Vector3 bottom_left = a.min(b).min(c).min(d);
@@ -499,25 +510,94 @@ Vector<HexMapCellId> HexMap::local_quad_to_cell_ids(Vector3 a,
 
     // we're going to reduce the 3d problem to 2d by using the planes that are
     // most perpendicular to the plane normal.
-    int axis_indexes[2];
-    switch (plane.normal.max_axis_index()) {
+    int axis[2];
+    switch (plane.normal.abs().max_axis_index()) {
         case godot::Vector3::AXIS_X:
-            axis_indexes[0] = Vector3::AXIS_Y;
-            axis_indexes[1] = Vector3::AXIS_Z;
+            axis[0] = Vector3::AXIS_Y;
+            axis[1] = Vector3::AXIS_Z;
             break;
         case godot::Vector3::AXIS_Y:
-            axis_indexes[0] = Vector3::AXIS_X;
-            axis_indexes[1] = Vector3::AXIS_Z;
+            axis[0] = Vector3::AXIS_X;
+            axis[1] = Vector3::AXIS_Z;
             break;
         case godot::Vector3::AXIS_Z:
-            axis_indexes[0] = Vector3::AXIS_X;
-            axis_indexes[1] = Vector3::AXIS_Y;
+            axis[0] = Vector3::AXIS_X;
+            axis[1] = Vector3::AXIS_Y;
             break;
     }
 
+    // break the 3D quad down into two 2D triangles
+    Vector2 aa(a[axis[0]], a[axis[1]]);
+    Vector2 ab(b[axis[0]], b[axis[1]]);
+    Vector2 ac(c[axis[0]], c[axis[1]]);
+
+    Vector2 ba(a[axis[0]], a[axis[1]]);
+    Vector2 bb(d[axis[0]], d[axis[1]]);
+    Vector2 bc(c[axis[0]], c[axis[1]]);
+
+    UtilityFunctions::print("t1 (",
+            aa,
+            ", ",
+            ab,
+            ", ",
+            ac,
+            "), t2 (",
+            ba,
+            ", ",
+            bb,
+            ", ",
+            bc,
+            ")");
+
+    Geometry2D *geo = Geometry2D::get_singleton();
+
+    // // for the vertexes of our triangles, if they do not include the center
+    // of
+    // // the cell, we want to expand that vertex to include the point.
+    // Vector3 x = HexMapCellId(a).unit_center();
+    // Vector2 p(x[axis[0]], x[axis[1]]);
+    // if (!geo->point_is_inside_triangle(p, aa, ab, ac) &&
+    //         !geo->point_is_inside_triangle(p, ba, bb, bc)) {
+    //     aa = p;
+    //     ba = p;
+    // }
+    PackedVector3Array vertices = PackedVector3Array({
+            Vector3(0.0, 0.5, -1.0), // 0
+            Vector3(-SQRT3_2, 0.5, -0.5), // 1
+            Vector3(-SQRT3_2, 0.5, 0.5), // 2
+            Vector3(0.0, 0.5, 1.0), // 3
+            Vector3(SQRT3_2, 0.5, 0.5), // 4
+            Vector3(SQRT3_2, 0.5, -0.5), // 5
+            Vector3(0.0, -0.5, -1.0), // 6
+            Vector3(-SQRT3_2, -0.5, -0.5), // 7
+            Vector3(-SQRT3_2, -0.5, 0.5), // 8
+            Vector3(0.0, -0.5, 1.0), // 9
+            Vector3(SQRT3_2, -0.5, 0.5), // 10 (0xa)
+            Vector3(SQRT3_2, -0.5, -0.5), // 11 (0xb)
+    });
+
     Vector<HexMapCellId> out;
+    auto prof = profiling_begin("selecting cells");
     for (const CellId &cell_id : iter) {
-        out.push_back(cell_id);
+        Vector3 center = cell_id.unit_center();
+        Vector2 point(center[axis[0]], center[axis[1]]);
+
+        // UtilityFunctions::print("point ", point);
+        if (geo->point_is_inside_triangle(point, aa, ab, ac) ||
+                geo->point_is_inside_triangle(point, ba, bb, bc)) {
+            out.push_back(cell_id);
+            continue;
+        }
+
+        for (Vector3 vert : vertices) {
+            vert += center;
+            point = Vector2(vert[axis[0]], vert[axis[1]]);
+            if (geo->point_is_inside_triangle(point, aa, ab, ac) ||
+                    geo->point_is_inside_triangle(point, ba, bb, bc)) {
+                out.push_back(cell_id);
+                break;
+            }
+        }
     }
 
     return out;

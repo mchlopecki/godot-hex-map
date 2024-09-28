@@ -4,6 +4,7 @@
 #include <godot_cpp/variant/string.hpp>
 
 #include "cell_id.h"
+#include "godot_cpp/variant/packed_vector3_array.hpp"
 #include "iter_axial.h"
 
 const HexMapCellId HexMapCellId::Origin(0, 0, 0);

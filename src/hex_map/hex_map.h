@@ -23,7 +23,6 @@
 
 // SQRT(3)/2; used both in the editor and the GridMap.  Due to the division, it
 // didn't fit the pattern of other Math_SQRTN defines, so I'm putting it here.
-#define SQRT3_2 0.8660254037844386
 #define Math_SQRT3 1.7320508075688772935274463415059
 #define RS RenderingServer
 
@@ -181,6 +180,13 @@ public:
     Vector3 cell_id_to_local(const HexMapCellId &cell_id) const;
     Vector3 _cell_id_to_local(
             const Ref<HexMapCellIdWrapper> p_local_position) const;
+
+    // given a point in local space, snap it to the center of the cell it is in
+    Vector3 local_to_cell_center(const Vector3 &point) const {
+        return HexMapCellId::from_unit_point(point / get_cell_scale())
+                       .unit_center() *
+                get_cell_scale();
+    }
 
     // given a quad defined by four points on one of the coordinate axis,
     // return the cellids that fall within that quad.

@@ -4,11 +4,14 @@
 #include "godot_cpp/classes/wrapped.hpp"
 #include "godot_cpp/core/defs.hpp"
 #include "godot_cpp/templates/hashfuncs.hpp"
+#include "godot_cpp/variant/packed_vector3_array.hpp"
 #include "godot_cpp/variant/variant.hpp"
 #include "godot_cpp/variant/vector3.hpp"
 #include "planes.h"
 #include <climits>
 #include <cstdint>
+
+#define SQRT3_2 0.8660254037844386
 
 using namespace godot;
 
