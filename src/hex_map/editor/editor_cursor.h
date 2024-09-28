@@ -63,9 +63,13 @@ public:
     bool update(const Camera3D *camera, const Point2 &pointer, Vector3 *point);
     void update(bool force = false);
 
-    // using the data from the last update() determine where the pointer
-    // coordinates would intercept the edit plane.
-    bool get_point_intercept(const Point2 &, Vector3 *point) const;
+    // Given a camera and a pointer position, determine if the pointer is over
+    // the edit plane, and if so save the intercept point.
+    //
+    // This function does not update the state of the editor cursor.
+    bool get_point_intercept(const Camera3D *camera,
+            const Point2 &,
+            Vector3 *point) const;
 
     // XXX add support to hide tiles independently of grid
     void show();

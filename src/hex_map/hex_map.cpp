@@ -29,7 +29,9 @@
 #include <godot_cpp/variant/vector3.hpp>
 
 #include "cell_id.h"
+#include "godot_cpp/variant/plane.hpp"
 #include "hex_map.h"
+#include "hex_map/iter_cube.h"
 #include "hex_map/octant.h"
 #include "profiling.h"
 
@@ -469,6 +471,56 @@ Vector3 HexMap::cell_id_to_local(const HexMapCellId &cell_id) const {
 Vector3 HexMap::_cell_id_to_local(
         const Ref<HexMapCellIdWrapper> cell_id) const {
     return cell_id_to_local(**cell_id);
+}
+
+Vector<HexMapCellId> HexMap::local_quad_to_cell_ids(Vector3 a,
+        Vector3 b,
+        Vector3 c,
+        Vector3 d) const {
+    // UtilityFunctions::print("a ", a, ", b ", b, ", c ", ", d ", d);
+    // immediatly switch into unit scale
+    a /= get_cell_scale();
+    b /= get_cell_scale();
+    c /= get_cell_scale();
+    d /= get_cell_scale();
+    //UtilityFunctions::print("a ", a, ", b ", b, ", c ", ", d ", d);
+
+    Plane plane(a, b, c);
+    ERR_FAIL_COND_V_MSG(!plane.has_point(d, 0.0001f),
+            Vector<HexMapCellId>(),
+            "quad points must all be on the same plane");
+
+    Vector3 top_right = a.max(b).max(c).max(d);
+    Vector3 bottom_left = a.min(b).min(c).min(d);
+    //UtilityFunctions::print(
+    //        "top-right ", top_right, ", bottom-left ", bottom_left);
+
+    HexMapIterCube iter(top_right, bottom_left);
+
+    // we're going to reduce the 3d problem to 2d by using the planes that are
+    // most perpendicular to the plane normal.
+    int axis_indexes[2];
+    switch (plane.normal.max_axis_index()) {
+        case godot::Vector3::AXIS_X:
+            axis_indexes[0] = Vector3::AXIS_Y;
+            axis_indexes[1] = Vector3::AXIS_Z;
+            break;
+        case godot::Vector3::AXIS_Y:
+            axis_indexes[0] = Vector3::AXIS_X;
+            axis_indexes[1] = Vector3::AXIS_Z;
+            break;
+        case godot::Vector3::AXIS_Z:
+            axis_indexes[0] = Vector3::AXIS_X;
+            axis_indexes[1] = Vector3::AXIS_Y;
+            break;
+    }
+
+    Vector<HexMapCellId> out;
+    for (const CellId &cell_id : iter) {
+        out.push_back(cell_id);
+    }
+
+    return out;
 }
 
 Vector<HexMapCellId> HexMap::local_region_to_cell_ids(Vector3 p_a,

@@ -82,15 +82,15 @@ HexMapIterAxial HexMapIterAxial::end() {
 
 HexMapIterAxial::operator String() const {
     // clang-format off
-	return (String)"{ " +
-		".center = " + center.operator String() + ", " +
-		".radius = " + itos(radius) + ", " +
-		".cell = " + cell.operator String() + ", " +
-		".q = [" + itos(q_min) + ".." + itos(q_max) + "], " +
-		".r = [" + itos(r_min) + ".." + itos(r_max) + "], " +
-		".s = [" + itos(s_min) + ".." + itos(s_max) + "], " +
-		".y = [" + itos(y_min) + ".." + itos(y_max) + "], " +
-	"}";
+    return (String)"{ " +
+        ".center = " + center.operator String() + ", " +
+        ".radius = " + itos(radius) + ", " +
+        ".cell = " + cell.operator String() + ", " +
+        ".q = [" + itos(q_min) + ".." + itos(q_max) + "], " +
+        ".r = [" + itos(r_min) + ".." + itos(r_max) + "], " +
+        ".s = [" + itos(s_min) + ".." + itos(s_max) + "], " +
+        ".y = [" + itos(y_min) + ".." + itos(y_max) + "], " +
+    "}";
     // clang-format on
 }
 

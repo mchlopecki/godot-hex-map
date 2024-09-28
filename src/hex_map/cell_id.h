@@ -64,6 +64,11 @@ public:
     HexMapCellId(int q, int r, int y) : q(q), r(r), y(y){};
     _FORCE_INLINE_ HexMapCellId(const Vector3i v) : q(v.x), r(v.z), y(v.y) {};
 
+    static HexMapCellId from_oddr(Vector3i oddr) {
+        int q = oddr.x - (oddr.z - (oddr.z & 1)) / 2;
+        return HexMapCellId(q, oddr.z, oddr.y);
+    }
+
     // vector3i is the fastest way to get to a Variant type that isn't malloc
     // heavy (like Ref<HexMapCellIdRef>)
     inline operator Vector3i() const { return Vector3i(q, y, r); }
@@ -76,6 +81,9 @@ public:
     }
     HexMapCellId operator-(const HexMapCellId &other) const {
         return HexMapCellId(q - other.q, r - other.r, y - other.y);
+    }
+    bool operator<(const HexMapCellId &other) const {
+        return Key(*this) < Key(other);
     }
 
     friend bool operator==(const HexMapCellId &a, const HexMapCellId &b) {
@@ -112,7 +120,7 @@ public:
 
     // convert to odd-r coordinates
     // https://www.redblobgames.com/grids/hexagons/#conversions-offset
-    _FORCE_INLINE_ Vector3 to_oddr() const {
+    _FORCE_INLINE_ Vector3i to_oddr() const {
         int x = q + (r - (r & 1)) / 2;
         return Vector3i(x, y, r);
     }

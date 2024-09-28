@@ -269,6 +269,30 @@ void EditorCursor::update(bool force) {
     transform_meshes();
 }
 
+bool EditorCursor::get_point_intercept(const Camera3D *camera,
+        const Point2 &pointer,
+        Vector3 *point) const {
+    ERR_FAIL_COND_V_MSG(
+            camera == nullptr, false, "null camera in EditorCursor.update()");
+    Transform3D local_transform =
+            hex_map->get_global_transform().affine_inverse();
+    Vector3 origin = camera->project_ray_origin(pointer);
+    Vector3 normal = camera->project_ray_normal(pointer);
+    origin = local_transform.xform(origin);
+    normal = local_transform.basis.xform(normal).normalized();
+
+    Vector3 pos;
+    if (!edit_plane.intersects_ray(origin, normal, &pos)) {
+        return false;
+    }
+
+    if (point != nullptr) {
+        *point = pos;
+    }
+
+    return true;
+}
+
 void EditorCursor::hide() {
     RenderingServer *rs = RS::get_singleton();
     for (CursorCell &cell : tiles) {

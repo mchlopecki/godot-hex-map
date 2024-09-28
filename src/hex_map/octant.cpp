@@ -316,6 +316,8 @@ void HexMapOctant::update_visibility() {
 
     bool visible = hex_map.is_visible_in_tree();
     for (const auto &mm : multimeshes) {
+        ERR_CONTINUE_MSG(!mm.multimesh_instance.is_valid(),
+                "invalid multimesh instance in quad");
         rs->instance_set_visible(mm.multimesh_instance, visible);
     }
     if (collision_debug_mesh_instance.is_valid()) {
@@ -425,6 +427,7 @@ void HexMapOctant::clear_baked_mesh() {
     }
     baked_mesh = Ref<Mesh>();
     RenderingServer::get_singleton()->free_rid(baked_mesh_instance);
+    baked_mesh_instance = RID();
 
     if (hex_map.is_inside_tree()) {
         build_physics_body();

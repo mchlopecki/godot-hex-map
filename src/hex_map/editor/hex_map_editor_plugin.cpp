@@ -416,7 +416,7 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                 editor_cursor->hide();
                 input_state = INPUT_STATE_SELECTING;
                 last_selection = selection_manager->get_cells();
-                selection_anchor = editor_cursor->get_pos();
+                selection_anchor = mouse_event->get_position();
                 selection_manager->clear();
                 selection_manager->set_cell(editor_cursor->get_cell());
                 return AFTER_GUI_INPUT_STOP;
@@ -495,11 +495,23 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
         // actions:
         // - update selection (mouse event)
         case INPUT_STATE_SELECTING:
-            if (mouse_event.is_valid()) {
-                // XXX selection along Q/S axis currently selects cube instead
-                // of plane.
-                auto cells = hex_map->local_region_to_cell_ids(
-                        selection_anchor, editor_cursor->get_pos());
+            if (mouse_event.is_valid() && p_camera != nullptr) {
+                Point2 a = selection_anchor;
+                Point2 b = mouse_event->get_position();
+                Vector3 i, j, k, l;
+                editor_cursor->get_point_intercept(p_camera, a, &i);
+                editor_cursor->get_point_intercept(
+                        p_camera, Point2(a.x, b.y), &j);
+                editor_cursor->get_point_intercept(p_camera, b, &k);
+                editor_cursor->get_point_intercept(
+                        p_camera, Point2(b.x, a.y), &l);
+
+                auto cells = hex_map->local_quad_to_cell_ids(i, j, k, l);
+
+                // XXX selection along Q/S axis currently selects
+                // cube instead of plane.
+                // auto cells = hex_map->local_region_to_cell_ids(
+                //         selection_anchor, editor_cursor->get_pos());
                 selection_manager->clear();
                 selection_manager->set_cells(cells);
             }

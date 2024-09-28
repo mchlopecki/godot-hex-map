@@ -182,6 +182,14 @@ public:
     Vector3 _cell_id_to_local(
             const Ref<HexMapCellIdWrapper> p_local_position) const;
 
+    // given a quad defined by four points on one of the coordinate axis,
+    // return the cellids that fall within that quad.
+    //
+    // Note: points must all fall on the same plane, and that plane must fall
+    // along one of the Q, R, S, or Y axis.
+    Vector<HexMapCellId>
+            local_quad_to_cell_ids(Vector3, Vector3, Vector3, Vector3) const;
+
     Vector<HexMapCellId> local_region_to_cell_ids(Vector3,
             Vector3,
             Planes = Planes::All) const;
