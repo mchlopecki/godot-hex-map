@@ -17,9 +17,9 @@
 #include <godot_cpp/variant/vector2.hpp>
 #include <godot_cpp/variant/vector3.hpp>
 
-#include "../cell_id.h"
-#include "../iter_axial.h"
 #include "editor_cursor.h"
+#include "hex_map/cell_id.h"
+#include "hex_map/iter_radial.h"
 
 #define GRID_RADIUS 40u
 

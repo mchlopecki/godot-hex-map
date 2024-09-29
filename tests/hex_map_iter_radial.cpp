@@ -1,6 +1,6 @@
 #include "doctest.h"
 #include "hex_map/hex_map.h"
-#include "hex_map/iter_axial.h"
+#include "hex_map/iter_radial.h"
 
 enum Dir {
     UP = 1 << 1,
@@ -18,7 +18,7 @@ void check_neighbors(HexMapCellId center,
         HexMap::Planes planes,
         int directions) {
     CAPTURE(center);
-    HexMapIterAxial iter(center, 1, planes);
+    HexMapIterRadial iter(center, 1, planes);
 
     if (directions & DOWN) {
         CHECK_MESSAGE(*iter == center + HexMapCellId(0, 0, -1), "down", iter);
@@ -59,7 +59,7 @@ void check_neighbors(HexMapCellId center,
     CHECK_MESSAGE(*++iter == *iter.end(), "should be at the end", iter);
 }
 
-TEST_CASE("HexMapIterAxial::operator++()") {
+TEST_CASE("HexMapIterRadial::operator++()") {
     SUBCASE("center at y-min, won't include down cell") {
         check_neighbors(
                 HexMapCellId(0, 0, SHRT_MIN), HexMap::Planes::All, ~DOWN);
@@ -117,7 +117,7 @@ TEST_CASE("HexMapIterAxial::operator++()") {
 }
 
 TEST_CASE("HexMapIterAxial::begin() is within radius") {
-    HexMapIterAxial iter(HexMapCellId(), 1);
+    HexMapIterRadial iter(HexMapCellId(), 1);
     CHECK_MESSAGE((*iter.begin()).distance(HexMapCellId()) <= 1,
             "begin cell should be within the radius");
 }

@@ -16,8 +16,8 @@
 using namespace godot;
 
 class HexMapCellIdWrapper;
-class HexMapIterAxial;
-class HexMapIterAxialRef;
+class HexMapIterRadial;
+class HexMapIterRadialWrapper;
 
 class HexMapCellId {
 public:
@@ -110,7 +110,7 @@ public:
     unsigned distance(const HexMapCellId &) const;
 
     // get all cells within radius of this cell, along the provided planes
-    HexMapIterAxial get_neighbors(unsigned int radius = 1,
+    HexMapIterRadial get_neighbors(unsigned int radius = 1,
             const HexMapPlanes &planes = HexMapPlanes::All) const;
 
     // get the pixel center of this cell assuming the cell is a unit cell with
@@ -187,7 +187,7 @@ public:
 
     String _to_string() const;
     bool _equals(const Ref<HexMapCellIdWrapper> other) const;
-    Ref<HexMapIterAxialRef> _get_neighbors(unsigned int radius = 1) const;
+    Ref<HexMapIterRadialWrapper> _get_neighbors(unsigned int radius = 1) const;
 
 protected:
     static void _bind_methods();

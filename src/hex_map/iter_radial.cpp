@@ -1,6 +1,6 @@
-#include "iter_axial.h"
+#include "iter_radial.h"
 
-HexMapIterAxial::HexMapIterAxial(const HexMapCellId center,
+HexMapIterRadial::HexMapIterRadial(const HexMapCellId center,
         unsigned int radius,
         const HexMap::Planes &planes) :
         center(center), radius(radius) {
@@ -40,7 +40,7 @@ HexMapIterAxial::HexMapIterAxial(const HexMapCellId center,
 }
 
 // prefix increment
-HexMapIterAxial &HexMapIterAxial::operator++() {
+HexMapIterRadial &HexMapIterRadial::operator++() {
     do {
         if (cell.r < r_max) {
             cell.r++;
@@ -61,26 +61,26 @@ HexMapIterAxial &HexMapIterAxial::operator++() {
 }
 
 // postfix increment
-HexMapIterAxial HexMapIterAxial::operator++(int) {
+HexMapIterRadial HexMapIterRadial::operator++(int) {
     auto tmp = *this;
     ++(*this);
     return tmp;
 }
 
-HexMapIterAxial HexMapIterAxial::begin() {
-    HexMapIterAxial iter = *this;
+HexMapIterRadial HexMapIterRadial::begin() {
+    HexMapIterRadial iter = *this;
     iter.cell = HexMapCellId(q_min, r_min, y_min);
     ++iter;
     return iter;
 }
 
-HexMapIterAxial HexMapIterAxial::end() {
-    HexMapIterAxial iter = *this;
+HexMapIterRadial HexMapIterRadial::end() {
+    HexMapIterRadial iter = *this;
     iter.cell = HexMapCellId::Invalid;
     return iter;
 }
 
-HexMapIterAxial::operator String() const {
+HexMapIterRadial::operator String() const {
     // clang-format off
     return (String)"{ " +
         ".center = " + center.operator String() + ", " +
@@ -94,56 +94,28 @@ HexMapIterAxial::operator String() const {
     // clang-format on
 }
 
-std::ostream &operator<<(std::ostream &os, const HexMapIterAxial &value) {
-    os << "{ .center = ";
-    os << value.center;
-    os << ", .radius = ";
-    os << value.radius;
-    os << ", . cell = ";
-    os << value.cell;
-    os << ", .q = [";
-    os << value.q_min;
-    os << ", ";
-    os << value.q_max;
-    os << "], .r = [";
-    os << value.r_min;
-    os << ", ";
-    os << value.r_max;
-    os << "], .s = [";
-    os << value.s_min;
-    os << ", ";
-    os << value.s_max;
-    os << "], .y = [";
-    os << value.y_min;
-    os << ", ";
-    os << value.y_max;
-    os << "] }";
-
-    return os;
-}
-
-void HexMapIterAxialRef::_bind_methods() {
-    ClassDB::bind_method(
-            D_METHOD("_iter_init", "_arg"), &HexMapIterAxialRef::_iter_init);
-    ClassDB::bind_method(
-            D_METHOD("_iter_next", "_arg"), &HexMapIterAxialRef::_iter_next);
-    ClassDB::bind_method(
-            D_METHOD("_iter_get", "_arg"), &HexMapIterAxialRef::_iter_get);
+void HexMapIterRadialWrapper::_bind_methods() {
+    ClassDB::bind_method(D_METHOD("_iter_init", "_arg"),
+            &HexMapIterRadialWrapper::_iter_init);
+    ClassDB::bind_method(D_METHOD("_iter_next", "_arg"),
+            &HexMapIterRadialWrapper::_iter_next);
+    ClassDB::bind_method(D_METHOD("_iter_get", "_arg"),
+            &HexMapIterRadialWrapper::_iter_get);
 }
 
 // Godot custom iterator functions
-bool HexMapIterAxialRef::_iter_init(Variant _arg) {
+bool HexMapIterRadialWrapper::_iter_init(Variant _arg) {
     iter = iter.begin();
     return *iter != HexMapCellId::Invalid;
 }
 
-bool HexMapIterAxialRef::_iter_next(Variant _arg) {
+bool HexMapIterRadialWrapper::_iter_next(Variant _arg) {
     ++iter;
     return *iter != HexMapCellId::Invalid;
 }
 
-Ref<HexMapCellIdWrapper> HexMapIterAxialRef::_iter_get(Variant _arg) {
+Ref<HexMapCellIdWrapper> HexMapIterRadialWrapper::_iter_get(Variant _arg) {
     return *iter;
 }
 
-String HexMapIterAxialRef::_to_string() const { return iter; };
+String HexMapIterRadialWrapper::_to_string() const { return iter; };

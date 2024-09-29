@@ -5,7 +5,7 @@
 
 #include "cell_id.h"
 #include "godot_cpp/variant/packed_vector3_array.hpp"
-#include "iter_axial.h"
+#include "iter_radial.h"
 
 const HexMapCellId HexMapCellId::Origin(0, 0, 0);
 const HexMapCellId HexMapCellId::Invalid(INT_MAX, INT_MAX, INT_MAX);
@@ -61,29 +61,18 @@ unsigned HexMapCellId::distance(const HexMapCellId &other) const {
     return hex_dist + y_dist;
 }
 
-HexMapIterAxial HexMapCellId::get_neighbors(unsigned int radius,
+HexMapIterRadial HexMapCellId::get_neighbors(unsigned int radius,
         const HexMap::Planes &planes) const {
-    return HexMapIterAxial(*this, radius, planes);
+    return HexMapIterRadial(*this, radius, planes);
 }
 
 HexMapCellId::operator String() const {
     // clang-format off
-	return (String)"{ .q = " + itos(q) +
-		", .r = " + itos(r) +
-		", .s = " + itos(s()) +
-		", .y = " + itos(y) + "}";
+    return (String)"{ .q = " + itos(q) +
+                   ", .r = " + itos(r) +
+                   ", .s = " + itos(s()) +
+                   ", .y = " + itos(y) + "}";
     // clang-format on
-}
-
-std::ostream &operator<<(std::ostream &os, const HexMapCellId &value) {
-    os << "{ .q = ";
-    os << value.q;
-    os << ", .r = ";
-    os << value.r;
-    os << ", .y = ";
-    os << value.y;
-    os << " }";
-    return os;
 }
 
 void HexMapCellIdWrapper::_bind_methods() {
@@ -199,7 +188,7 @@ bool HexMapCellIdWrapper::_equals(const Ref<HexMapCellIdWrapper> other) const {
     return cell_id == other->cell_id;
 }
 
-Ref<HexMapIterAxialRef> HexMapCellIdWrapper::_get_neighbors(
+Ref<HexMapIterRadialWrapper> HexMapCellIdWrapper::_get_neighbors(
         unsigned int radius) const {
     return cell_id.get_neighbors(radius);
 }

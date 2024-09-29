@@ -8,35 +8,35 @@
 #include "hex_map.h"
 
 // HexMap cell iterator using axial coordinates to define a volume to iterate
-struct HexMapIterAxial {
+struct HexMapIterRadial {
 public:
-    HexMapIterAxial(const HexMapCellId center,
+    HexMapIterRadial(const HexMapCellId center,
             unsigned int radius,
             const HexMap::Planes &planes = HexMap::Planes::All);
 
-    inline operator Ref<HexMapIterAxialRef>() const;
+    inline operator Ref<HexMapIterRadialWrapper>() const;
     operator String() const;
 
     HexMapCellId operator*() const { return cell; }
     const HexMapCellId &operator->() { return cell; }
-    HexMapIterAxial &operator++();
-    HexMapIterAxial operator++(int);
+    HexMapIterRadial &operator++();
+    HexMapIterRadial operator++(int);
 
-    friend bool operator==(const HexMapIterAxial &a,
-            const HexMapIterAxial &b) {
+    friend bool operator==(const HexMapIterRadial &a,
+            const HexMapIterRadial &b) {
         return a.cell == b.cell;
     };
-    friend bool operator!=(const HexMapIterAxial &a,
-            const HexMapIterAxial &b) {
+    friend bool operator!=(const HexMapIterRadial &a,
+            const HexMapIterRadial &b) {
         return a.cell != b.cell;
     };
 
-    HexMapIterAxial begin();
-    HexMapIterAxial end();
+    HexMapIterRadial begin();
+    HexMapIterRadial end();
 
     // added for testing
     friend std::ostream &operator<<(std::ostream &os,
-            const HexMapIterAxial &value);
+            const HexMapIterRadial &value);
 
 private:
     unsigned int radius;
@@ -48,12 +48,13 @@ private:
 };
 
 // GDScript wrapper for HexMapIterAxial
-class HexMapIterAxialRef : public godot::RefCounted {
-    GDCLASS(HexMapIterAxialRef, RefCounted);
+class HexMapIterRadialWrapper : public godot::RefCounted {
+    GDCLASS(HexMapIterRadialWrapper, RefCounted);
 
 public:
-    HexMapIterAxialRef() : iter(HexMapIterAxial(HexMapCellId::Origin, 0)){};
-    HexMapIterAxialRef(const HexMapIterAxial &iter) : iter(iter){};
+    HexMapIterRadialWrapper() :
+            iter(HexMapIterRadial(HexMapCellId::Origin, 0)){};
+    HexMapIterRadialWrapper(const HexMapIterRadial &iter) : iter(iter){};
 
     // GDScript functions
     String _to_string() const;
@@ -67,9 +68,10 @@ protected:
     static void _bind_methods();
 
 private:
-    HexMapIterAxial iter;
+    HexMapIterRadial iter;
 };
 
-inline HexMapIterAxial::operator Ref<HexMapIterAxialRef>() const {
-    return Ref<HexMapIterAxialRef>(memnew(HexMapIterAxialRef(*this)));
+inline HexMapIterRadial::operator Ref<HexMapIterRadialWrapper>() const {
+    return Ref<HexMapIterRadialWrapper>(
+            memnew(HexMapIterRadialWrapper(*this)));
 }

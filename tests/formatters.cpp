@@ -1,4 +1,5 @@
 #include "formatters.h"
+#include "hex_map/iter_radial.h"
 #include <ostream>
 
 namespace godot {
@@ -21,6 +22,19 @@ std::ostream &operator<<(std::ostream &os, const Vector3i &value) {
 }
 } //namespace godot
 
+std::ostream &operator<<(std::ostream &os, const HexMapCellId &value) {
+    // clang-format off
+    os << "{ .q = "
+       << value.q
+       << ", .r = "
+       << value.r
+       << ", .y = "
+       << value.y
+       << " }";
+    // clang-format on
+    return os;
+}
+
 std::ostream &operator<<(std::ostream &os, const int value[2]) {
     os << "{ " << value[0] << ", " << value[1] << " }";
     return os;
@@ -37,6 +51,21 @@ std::ostream &operator<<(std::ostream &os, const HexMapIterCube &value) {
        << ", .max_x_shift = " << value.max_x_shift
        << "}";
     // clang-format on
+    return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const HexMapIterRadial &value) {
+    // clang-format off
+    os << "{ .center = " << value.center
+       << ", .radius = " << value.radius
+       << ", .cell = " << value.cell
+       << ", .q = [" << value.q_min << ", " << value.q_max
+       << "], .r = [" << value.r_min << ", " << value.r_max
+       << "], .s = [" << value.s_min << ", " << value.s_max
+       << "], .y = [" << value.y_min << ", " << value.y_max
+       << "] }";
+    // clang-format on
+
     return os;
 }
 
