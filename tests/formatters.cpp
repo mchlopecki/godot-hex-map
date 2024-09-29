@@ -1,4 +1,5 @@
 #include "formatters.h"
+#include "hex_map/iter_axial.h"
 #include "hex_map/iter_radial.h"
 #include <ostream>
 
@@ -58,6 +59,20 @@ std::ostream &operator<<(std::ostream &os, const HexMapIterRadial &value) {
     // clang-format off
     os << "{ .center = " << value.center
        << ", .radius = " << value.radius
+       << ", .cell = " << value.cell
+       << ", .q = [" << value.q_min << ", " << value.q_max
+       << "], .r = [" << value.r_min << ", " << value.r_max
+       << "], .s = [" << value.s_min << ", " << value.s_max
+       << "], .y = [" << value.y_min << ", " << value.y_max
+       << "] }";
+    // clang-format on
+
+    return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const HexMapIterAxial &value) {
+    // clang-format off
+    os << "{ .center = " << value.center
        << ", .cell = " << value.cell
        << ", .q = [" << value.q_min << ", " << value.q_max
        << "], .r = [" << value.r_min << ", " << value.r_max

@@ -1,18 +1,18 @@
 #pragma once
 
-#include <climits>
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/classes/wrapped.hpp>
 #include <godot_cpp/variant/string.hpp>
 
 #include "cell_id.h"
-#include "hex_map.h"
 
 class HexMapIterCubeRef;
 
 // HexMap cell iterator using oddr coordinates
 struct HexMapIterCube {
 public:
+    // This requires unit position values to determine fall-off of left or
+    // right
     HexMapIterCube(Vector3 a, Vector3 b);
 
     inline operator Ref<HexMapIterCubeRef>() const;

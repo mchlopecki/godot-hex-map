@@ -101,9 +101,9 @@ public:
 
     // Check to see if the coordinates are within the 16-bit range
     inline bool in_bounds() const {
-        return ((q >> 15) == 0 || (q >> 15) == -1) &&
-                ((r >> 15) == 0 || (r >> 15) == -1) &&
-                ((y >> 15) == 0 || (y >> 15) == -1);
+        return (q >= SHRT_MIN && q <= SHRT_MAX) &&
+                (r >= SHRT_MIN && r <= SHRT_MAX) &&
+                (y >= SHRT_MIN && y <= SHRT_MAX);
     };
 
     // calculate the distance between two cells in cell units

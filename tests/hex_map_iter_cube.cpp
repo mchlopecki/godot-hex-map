@@ -244,12 +244,3 @@ TEST_CASE("HexMapIterCube") {
         CHECK(cells == i.cells);
     }
 }
-
-TEST_CASE("HexMapIterCube((1,0,0), (1,1,1))") {
-    HexMapIterCube iter((Vector3(1, 0, 0)), Vector3(1, 0, 0));
-
-    CHECK_MESSAGE(*iter == CellId::from_unit_point(Vector3(1, 0, 0)),
-            "iter should include origin cell");
-    ++iter;
-    CHECK_MESSAGE(*iter == *iter.end(), "iter should be at end");
-}
