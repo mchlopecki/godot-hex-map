@@ -42,6 +42,10 @@ HexMapCellId HexMapCellId::from_unit_point(const Vector3 &point) {
 Vector3 HexMapCellId::unit_center() const {
     // convert axial hex coordinates to a point
     // https://www.redblobgames.com/grids/hexagons/#hex-to-pixel
+    //
+    // XXX the x/z coordinates are in the center of the cell, but the y
+    // coordinate is at the bottom.  This should brobably be changed, but I'm
+    // not sure what all this will break.  Another time.
     return Vector3((Math_SQRT3 * q + SQRT3_2 * r), y, (3.0 / 2 * r));
 }
 

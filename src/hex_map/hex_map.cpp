@@ -535,65 +535,50 @@ Vector<HexMapCellId> HexMap::local_quad_to_cell_ids(Vector3 a,
     Vector2 bb(d[axis[0]], d[axis[1]]);
     Vector2 bc(c[axis[0]], c[axis[1]]);
 
-    UtilityFunctions::print("t1 (",
-            aa,
-            ", ",
-            ab,
-            ", ",
-            ac,
-            "), t2 (",
-            ba,
-            ", ",
-            bb,
-            ", ",
-            bc,
-            ")");
-
-    Geometry2D *geo = Geometry2D::get_singleton();
-
-    // // for the vertexes of our triangles, if they do not include the center
-    // of
-    // // the cell, we want to expand that vertex to include the point.
-    // Vector3 x = HexMapCellId(a).unit_center();
-    // Vector2 p(x[axis[0]], x[axis[1]]);
-    // if (!geo->point_is_inside_triangle(p, aa, ab, ac) &&
-    //         !geo->point_is_inside_triangle(p, ba, bb, bc)) {
-    //     aa = p;
-    //     ba = p;
-    // }
-    PackedVector3Array vertices = PackedVector3Array({
-            Vector3(0.0, 0.5, -1.0), // 0
-            Vector3(-SQRT3_2, 0.5, -0.5), // 1
-            Vector3(-SQRT3_2, 0.5, 0.5), // 2
-            Vector3(0.0, 0.5, 1.0), // 3
-            Vector3(SQRT3_2, 0.5, 0.5), // 4
-            Vector3(SQRT3_2, 0.5, -0.5), // 5
-            Vector3(0.0, -0.5, -1.0), // 6
-            Vector3(-SQRT3_2, -0.5, -0.5), // 7
-            Vector3(-SQRT3_2, -0.5, 0.5), // 8
-            Vector3(0.0, -0.5, 1.0), // 9
-            Vector3(SQRT3_2, -0.5, 0.5), // 10 (0xa)
-            Vector3(SQRT3_2, -0.5, -0.5), // 11 (0xb)
+    // XXX pull these points in to make it easier to select SW/SE line
+    const PackedVector3Array vertices = PackedVector3Array({
+            Vector3(0.0, 0.5, -1.0) * 0.5, // 0
+            Vector3(-SQRT3_2, 0.5, -0.5) * 0.5, // 1
+            Vector3(-SQRT3_2, 0.5, 0.5) * 0.5, // 2
+            Vector3(0.0, 0.5, 1.0) * 0.5, // 3
+            Vector3(SQRT3_2, 0.5, 0.5) * 0.5, // 4
+            Vector3(SQRT3_2, 0.5, -0.5) * 0.5, // 5
+            Vector3(0.0, -0.5, -1.0) * 0.5, // 6
+            Vector3(-SQRT3_2, -0.5, -0.5) * 0.5, // 7
+            Vector3(-SQRT3_2, -0.5, 0.5) * 0.5, // 8
+            Vector3(0.0, -0.5, 1.0) * 0.5, // 9
+            Vector3(SQRT3_2, -0.5, 0.5) * 0.5, // 10 (0xa)
+            Vector3(SQRT3_2, -0.5, -0.5) * 0.5, // 11 (0xb)
     });
 
+    Geometry2D *geo = Geometry2D::get_singleton();
     Vector<HexMapCellId> out;
     auto prof = profiling_begin("selecting cells");
     for (const CellId &cell_id : iter) {
         Vector3 center = cell_id.unit_center();
         Vector2 point(center[axis[0]], center[axis[1]]);
-
-        // UtilityFunctions::print("point ", point);
-        if (geo->point_is_inside_triangle(point, aa, ab, ac) ||
-                geo->point_is_inside_triangle(point, ba, bb, bc)) {
-            out.push_back(cell_id);
-            continue;
-        }
+        bool intercept_quad =
+                geo->point_is_inside_triangle(point, aa, ab, ac) ||
+                geo->point_is_inside_triangle(point, ba, bb, bc);
+        bool intercept_plane = false;
+        bool above = plane.is_point_over(center);
 
         for (Vector3 vert : vertices) {
             vert += center;
-            point = Vector2(vert[axis[0]], vert[axis[1]]);
-            if (geo->point_is_inside_triangle(point, aa, ab, ac) ||
-                    geo->point_is_inside_triangle(point, ba, bb, bc)) {
+
+            if (!intercept_plane && plane.is_point_over(vert) != above) {
+                intercept_plane = true;
+            }
+
+            Vector2 point(vert[axis[0]], vert[axis[1]]);
+            if (!intercept_quad &&
+                    (geo->point_is_inside_triangle(point, aa, ab, ac) ||
+                            geo->point_is_inside_triangle(
+                                    point, ba, bb, bc))) {
+                intercept_quad = true;
+            }
+
+            if (intercept_plane && intercept_quad) {
                 out.push_back(cell_id);
                 break;
             }

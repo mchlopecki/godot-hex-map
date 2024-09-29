@@ -496,6 +496,9 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
         // - update selection (mouse event)
         case INPUT_STATE_SELECTING:
             if (mouse_event.is_valid() && p_camera != nullptr) {
+                // UtilityFunctions::print(
+                //         "camera rotation ",
+                //         p_camera->get_global_rotation());
                 Point2 a = selection_anchor;
                 Point2 b = mouse_event->get_position();
                 Vector3 i, j, k, l;

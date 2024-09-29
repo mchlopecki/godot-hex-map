@@ -17,12 +17,12 @@ func _ready() -> void:
 	points = {};
 
 	for cell in hex_map.get_used_cells():
-		map.add_point(cell.hash(), hex_map.cell_id_to_local(cell))
+		map.add_point(cell.as_int(), hex_map.cell_id_to_local(cell))
 
 	for cell in hex_map.get_used_cells():
 		for neighbor in cell.get_neighbors():
 			if hex_map.get_cell_item(neighbor) != -1:
-				map.connect_points(cell.hash(), neighbor.hash())
+				map.connect_points(cell.as_int(), neighbor.as_int())
 
 
 	# label all of the cells
