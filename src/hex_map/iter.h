@@ -35,6 +35,11 @@ class HexMapIterWrapper : public godot::RefCounted {
 public:
     HexMapIterWrapper(){};
     HexMapIterWrapper(const Inner &iter) : iter(iter.clone()){};
+    ~HexMapIterWrapper() {
+        if (iter != nullptr) {
+            delete iter;
+        }
+    };
 
     // GDScript functions
     String _to_string() const;
