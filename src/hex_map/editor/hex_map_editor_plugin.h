@@ -43,7 +43,7 @@ class HexMapEditorPlugin : public EditorPlugin {
     EditorCursor *editor_cursor = nullptr;
 
     SelectionManager *selection_manager = nullptr;
-    Point2 selection_anchor;
+    Vector3 selection_anchor;
     Vector<HexMapCellId> last_selection;
 
     // Tried using UndoRedo with MERGE_ALL to maintain the list of cells

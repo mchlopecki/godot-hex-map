@@ -239,13 +239,13 @@ bool EditorCursor::update(const Camera3D *camera,
     if (point != nullptr) {
         *point = pos;
     }
+    pointer_pos = pos;
 
     HexMapCellId cell = hex_map->local_to_cell_id(pos);
     if (cell == pointer_cell) {
         return true;
     }
     pointer_cell = cell;
-    pointer_pos = pos;
 
     transform_meshes();
 
@@ -258,13 +258,13 @@ void EditorCursor::update(bool force) {
                 last_update_origin, last_update_normal, &pos)) {
         return;
     }
+    pointer_pos = pos;
 
     HexMapCellId cell = hex_map->local_to_cell_id(pos);
     if (!force && cell == pointer_cell) {
         return;
     }
     pointer_cell = cell;
-    pointer_pos = pos;
 
     transform_meshes();
 }

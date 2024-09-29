@@ -15,6 +15,7 @@ At this time the core functionality works, but a lot of polish is still needed.
 * `HexMap` cell id helper class for navigating hexagonal space
     * See `HexMapCellId`
 * "cells_changed" signal (https://github.com/godotengine/godot/issues/11855)
+* Variable axis selection (y-axis editing, camera rotation determines selection snapping)
 
 ## Important Changes
 * Hot keys have changed; check the menu in the editor

@@ -32,6 +32,7 @@
 #include <godot_cpp/classes/world3d.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/error_macros.hpp>
+#include <godot_cpp/core/math.hpp>
 #include <godot_cpp/variant/callable_method_pointer.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
 #include <godot_cpp/variant/packed_vector3_array.hpp>
@@ -416,7 +417,7 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                 editor_cursor->hide();
                 input_state = INPUT_STATE_SELECTING;
                 last_selection = selection_manager->get_cells();
-                selection_anchor = mouse_event->get_position();
+                selection_anchor = editor_cursor->get_pos();
                 selection_manager->clear();
                 selection_manager->set_cell(editor_cursor->get_cell());
                 return AFTER_GUI_INPUT_STOP;
@@ -496,25 +497,35 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
         // - update selection (mouse event)
         case INPUT_STATE_SELECTING:
             if (mouse_event.is_valid() && p_camera != nullptr) {
-                // UtilityFunctions::print(
-                //         "camera rotation ",
-                //         p_camera->get_global_rotation());
-                Point2 a = selection_anchor;
-                Point2 b = mouse_event->get_position();
-                Vector3 i, j, k, l;
-                editor_cursor->get_point_intercept(p_camera, a, &i);
-                editor_cursor->get_point_intercept(
-                        p_camera, Point2(a.x, b.y), &j);
-                editor_cursor->get_point_intercept(p_camera, b, &k);
-                editor_cursor->get_point_intercept(
-                        p_camera, Point2(b.x, a.y), &l);
+                // XXX look at moving this into SelectionManager
+                Vector3 p1 = selection_anchor, p3 = editor_cursor->get_pos();
+                Vector3 p2, p4;
+                switch (editor_control->get_active_axis()) {
+                    // when working on the Y axis, we want to snap the
+                    // selection rectangle to 30 degree angles to better line
+                    // up with the hex grid.
+                    case EditorControl::AXIS_Y: {
+                        real_t snap = Math_PI / 6;
+                        real_t rot = p_camera->get_global_rotation().y;
+                        real_t delta = snap * round(rot / snap);
+                        Vector3 r1 = p1.rotated(Vector3(0, 1, 0), -delta);
+                        Vector3 r3 = p3.rotated(Vector3(0, 1, 0), -delta);
+                        p2 = Vector3(r1.x, r1.y, r3.z)
+                                     .rotated(Vector3(0, 1, 0), delta);
+                        p4 = Vector3(r3.x, r1.y, r1.z)
+                                     .rotated(Vector3(0, 1, 0), delta);
 
-                auto cells = hex_map->local_quad_to_cell_ids(i, j, k, l);
+                    } break;
+                    case EditorControl::AXIS_Q:
+                    case EditorControl::AXIS_R:
+                    case EditorControl::AXIS_S:
+                        p2 = Vector3(p1.x, p3.y, p1.z);
+                        p4 = Vector3(p3.x, p1.y, p3.z);
+                        break;
+                }
 
-                // XXX selection along Q/S axis currently selects
-                // cube instead of plane.
-                // auto cells = hex_map->local_region_to_cell_ids(
-                //         selection_anchor, editor_cursor->get_pos());
+                auto cells = hex_map->local_quad_to_cell_ids(p1, p2, p3, p4);
+
                 selection_manager->clear();
                 selection_manager->set_cells(cells);
             }
