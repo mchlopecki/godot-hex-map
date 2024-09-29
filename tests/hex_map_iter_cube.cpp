@@ -5,6 +5,7 @@
 #include "hex_map/iter_cube.h"
 #include <sys/signal.h>
 #include <climits>
+#include <csignal>
 
 using CellId = HexMap::CellId;
 

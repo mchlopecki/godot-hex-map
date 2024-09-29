@@ -64,6 +64,14 @@ HexMapIterCube::HexMapIterCube(Vector3 a, Vector3 b) {
     }
 }
 
+HexMapCellId HexMapIterCube::operator*() const {
+    if (pos == Vector3i(INT_MAX, INT_MAX, INT_MAX)) {
+        return HexMapCellId::Invalid;
+    } else {
+        return HexMapCellId::from_oddr(pos);
+    }
+}
+
 HexMapIterCube &HexMapIterCube::operator++() {
     do {
         if (pos.x < max_x) {
@@ -99,3 +107,29 @@ HexMapIterCube HexMapIterCube::end() const {
     iter.pos = Vector3i(INT_MAX, INT_MAX, INT_MAX);
     return iter;
 };
+
+HexMapIterCube::operator String() const {
+    // clang-format off
+    return (String)"{ " +
+        ".min = " + min.operator String() + ", " +
+        ".max = " + min.operator String() + ", " +
+        ".pos = " + min.operator String() + ", " +
+    "}";
+    // clang-format on
+}
+
+bool HexMapIterCube::_iter_init() {
+    *this = begin();
+    return **this != HexMapCellId::Invalid;
+}
+
+bool HexMapIterCube::_iter_next() {
+    HexMapCellId cell = *operator++();
+    return cell != HexMapCellId::Invalid;
+}
+
+HexMapCellId HexMapIterCube::_iter_get() const { return **this; }
+
+HexMapIter *HexMapIterCube::clone() const {
+    return new HexMapIterCube(min, max);
+}

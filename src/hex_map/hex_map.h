@@ -17,6 +17,8 @@
 #include <godot_cpp/variant/vector3i.hpp>
 
 #include "cell_id.h"
+#include "hex_map/iter.h"
+#include "hex_map/iter_cube.h"
 #include "octant.h"
 #include "planes.h"
 #include "tile_orientation.h"
@@ -196,10 +198,10 @@ public:
     Vector<HexMapCellId>
             local_quad_to_cell_ids(Vector3, Vector3, Vector3, Vector3) const;
 
-    Vector<HexMapCellId> local_region_to_cell_ids(Vector3,
+    HexMapIterCube local_region_to_cell_ids(Vector3,
             Vector3,
             Planes = Planes::All) const;
-    TypedArray<Vector3i> _local_region_to_cell_ids(Vector3 p_local_point_a,
+    Ref<HexMapIterWrapper> _local_region_to_cell_ids(Vector3 p_local_point_a,
             Vector3 p_local_point_b) const;
 
     Array get_used_cells() const;

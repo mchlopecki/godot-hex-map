@@ -1,12 +1,30 @@
 #include "iter_axial.h"
 #include "hex_map/cell_id.h"
 
-void HexMapIterAxial::move_to_first_valid_cell() {
-    cell = HexMapCellId(q_min, r_min, y_min);
-    if (cell.s() < s_min || cell.s() > s_max || !cell.in_bounds()) {
-        operator++();
+void HexMapIterAxial::advance() {
+    if (cell.r < r_max) {
+        cell.r++;
+    } else if (cell.q < q_max) {
+        cell.r = r_min;
+        cell.q++;
+    } else if (cell.y < y_max) {
+        cell.r = r_min;
+        cell.q = q_min;
+        cell.y++;
+    } else {
+        cell = HexMapCellId::Invalid;
     }
 }
+
+void HexMapIterAxial::advance_until_valid() {
+    while (cell.s() < s_min || cell.s() > s_max || !cell.in_bounds()) {
+        advance();
+        if (cell == HexMapCellId::Invalid) {
+            break;
+        }
+    }
+}
+
 HexMapIterAxial::HexMapIterAxial(const HexMapCellId center,
         unsigned int radius,
         const HexMap::Planes &planes) :
@@ -39,39 +57,22 @@ HexMapIterAxial::HexMapIterAxial(const HexMapCellId center,
     } else {
         s_min = s_max = center.s();
     }
-    move_to_first_valid_cell();
+
+    cell = HexMapCellId(q_min, r_min, y_min);
+    advance_until_valid();
 }
 
 // prefix increment
 HexMapIterAxial &HexMapIterAxial::operator++() {
-    do {
-        if (cell.r < r_max) {
-            cell.r++;
-        } else if (cell.q < q_max) {
-            cell.r = r_min;
-            cell.q++;
-        } else if (cell.y < y_max) {
-            cell.r = r_min;
-            cell.q = q_min;
-            cell.y++;
-        } else {
-            cell = HexMapCellId::Invalid;
-            break;
-        }
-    } while (cell.s() < s_min || cell.s() > s_max || !cell.in_bounds());
+    advance();
+    advance_until_valid();
     return *this;
-}
-
-// postfix increment
-HexMapIterAxial HexMapIterAxial::operator++(int) {
-    auto tmp = *this;
-    ++(*this);
-    return tmp;
 }
 
 HexMapIterAxial HexMapIterAxial::begin() {
     HexMapIterAxial iter = *this;
-    iter.move_to_first_valid_cell();
+    iter.cell = HexMapCellId(q_min, r_min, y_min);
+    iter.advance_until_valid();
     return iter;
 }
 
@@ -94,28 +95,18 @@ HexMapIterAxial::operator String() const {
     // clang-format on
 }
 
-void HexMapIterAxialWrapper::_bind_methods() {
-    ClassDB::bind_method(D_METHOD("_iter_init", "_arg"),
-            &HexMapIterAxialWrapper::_iter_init);
-    ClassDB::bind_method(D_METHOD("_iter_next", "_arg"),
-            &HexMapIterAxialWrapper::_iter_next);
-    ClassDB::bind_method(
-            D_METHOD("_iter_get", "_arg"), &HexMapIterAxialWrapper::_iter_get);
+bool HexMapIterAxial::_iter_init() {
+    *this = begin();
+    return cell != HexMapCellId::Invalid;
 }
 
-// Godot custom iterator functions
-bool HexMapIterAxialWrapper::_iter_init(Variant _arg) {
-    iter = iter.begin();
-    return *iter != HexMapCellId::Invalid;
+bool HexMapIterAxial::_iter_next() {
+    HexMapCellId cell = *operator++();
+    return cell != HexMapCellId::Invalid;
 }
 
-bool HexMapIterAxialWrapper::_iter_next(Variant _arg) {
-    ++iter;
-    return *iter != HexMapCellId::Invalid;
-}
+HexMapCellId HexMapIterAxial::_iter_get() const { return cell; }
 
-Ref<HexMapCellIdWrapper> HexMapIterAxialWrapper::_iter_get(Variant _arg) {
-    return *iter;
+HexMapIter *HexMapIterAxial::clone() const {
+    return new HexMapIterAxial(*this);
 }
-
-String HexMapIterAxialWrapper::_to_string() const { return iter; };

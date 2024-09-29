@@ -1,11 +1,12 @@
 #include "doctest.h"
 #include "formatters.h"
-#include "godot_cpp/variant/vector3.hpp"
 #include "hex_map/cell_id.h"
 #include "hex_map/hex_map.h"
 #include "hex_map/iter_axial.h"
+#include "hex_map/planes.h"
 #include <sys/signal.h>
 #include <climits>
+#include <csignal>
 
 using CellId = HexMap::CellId;
 
@@ -13,6 +14,7 @@ TEST_CASE("HexMapIterAxial") {
     struct TestCase {
         HexMapCellId center;
         unsigned int radius;
+        HexMapPlanes planes = HexMapPlanes::All;
         std::set<CellId> cells;
         bool trap = false; // simplify debugging specific test cases
     };
@@ -90,7 +92,7 @@ TEST_CASE("HexMapIterAxial") {
         if (i.trap) {
             raise(SIGTRAP);
         }
-        HexMapIterAxial iter(i.center, i.radius);
+        HexMapIterAxial iter(i.center, i.radius, i.planes);
         CAPTURE(iter);
         CAPTURE(*iter);
 

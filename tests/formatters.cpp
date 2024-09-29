@@ -57,14 +57,9 @@ std::ostream &operator<<(std::ostream &os, const HexMapIterCube &value) {
 
 std::ostream &operator<<(std::ostream &os, const HexMapIterRadial &value) {
     // clang-format off
-    os << "{ .center = " << value.center
+    os << "{ .axial_iter = " << value.axial_iter
        << ", .radius = " << value.radius
-       << ", .cell = " << value.cell
-       << ", .q = [" << value.q_min << ", " << value.q_max
-       << "], .r = [" << value.r_min << ", " << value.r_max
-       << "], .s = [" << value.s_min << ", " << value.s_max
-       << "], .y = [" << value.y_min << ", " << value.y_max
-       << "] }";
+       << " }";
     // clang-format on
 
     return os;

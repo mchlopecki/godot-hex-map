@@ -7,14 +7,14 @@
 #include "hex_map/cell_id.h"
 #include "hex_map/editor/hex_map_editor_plugin.h"
 #include "hex_map/hex_map.h"
-#include "hex_map/iter_radial.h"
+#include "hex_map/iter.h"
 
 using namespace godot;
 
 void initialize_hexmap_module(ModuleInitializationLevel p_level) {
     if (p_level == godot::MODULE_INITIALIZATION_LEVEL_SCENE) {
         ClassDB::register_class<HexMapCellIdWrapper>();
-        ClassDB::register_class<HexMapIterRadialWrapper>();
+        ClassDB::register_class<HexMapIterWrapper>();
         ClassDB::register_class<HexMap>();
     }
 

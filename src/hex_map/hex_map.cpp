@@ -588,106 +588,15 @@ Vector<HexMapCellId> HexMap::local_quad_to_cell_ids(Vector3 a,
     return out;
 }
 
-Vector<HexMapCellId> HexMap::local_region_to_cell_ids(Vector3 p_a,
+HexMapIterCube HexMap::local_region_to_cell_ids(Vector3 p_a,
         Vector3 p_b,
         Planes planes) const {
-    Vector<HexMapCellId> cells;
-
-    // XXX OddR Iterator, and Planes support
-
-    // shuffle the fields of a & b around so that a is bottom-left, b is
-    // top-right
-    if (p_a.x > p_b.x) {
-        SWAP(p_a.x, p_b.x);
-    }
-    if (p_a.y > p_b.y) {
-        SWAP(p_a.y, p_b.y);
-    }
-    if (p_a.z > p_b.z) {
-        SWAP(p_a.z, p_b.z);
-    }
-    Vector3i bottom_left = local_to_cell_id(p_a);
-    Vector3i top_right = local_to_cell_id(p_b);
-
-    // we need the x coordinate of the center of the corner cells
-    // later. grab them now before we switch coordinate systems.
-    real_t left_x_center = cell_id_to_local(bottom_left).x;
-    real_t right_x_center = cell_id_to_local(top_right).x;
-
-    // we're going to use a different coordinate system for this
-    // operation.  It's much easier to walk the region when we use
-    // offset coordinates.  So let's map our corners from axial to
-    // offset, then walk the region the same as the square region.
-    // We'll convert the coordinates back to axial before putting them
-    // in the array.
-    bottom_left = axial_to_oddr(bottom_left);
-    top_right = axial_to_oddr(top_right);
-
-    // Also, unlike square cells, the location of the corner of the
-    // region within a cell matters for hex cells, specifically the x
-    // coordinate.  If you pick a point anywhere within a hex cell,
-    // and draw a line down along the z-axis, that line will intercept
-    // either the cell to the southwest or southeast of the clicked
-    // cell.
-    //
-    // For both the left and right sides of the region, we need to
-    // determine which of the southwest/southeast cells fall within
-    // the region.  We do this by adjusting the x-min and x-max for the
-    // even and odd rows independently.  We use the following table to
-    // determine the modifier for the rows for both the minimum x
-    // value (in bottom_left.x), and the maximum x value (in
-    // top_right.x).
-    //
-    // Given an x coordinate in local space:
-    // | cell z coord | x > cell_center.x | odd mod | even mod |
-    // | even         | false             |  -1     | 0        |
-    // | even         | true              |   0     | 0        |
-    // | odd          | false             |   0     | 0        |
-    // | odd          | true              |   0     | 1        |
-
-    // adjustment applied to the min x value for odd and even cells
-    int x_min_delta[2] = { 0, 0 };
-
-    // if we start on an odd row, and the region starts to the right
-    // of center, we want to skip the even cells at x == a.x.
-    if ((bottom_left.z & 1) == 1 && p_a.x > left_x_center) {
-        x_min_delta[0] = 1;
-    }
-    // if we start on an even row, and the region starts to the left
-    // of center, we want to include the odd cells at x = a.x - 1.
-    else if ((bottom_left.z & 1) == 0 && p_a.x <= left_x_center) {
-        x_min_delta[1] = -1;
-    }
-
-    // same as above, but for the max x values
-    int x_max_delta[2] = { 0, 0 };
-    if ((top_right.z & 1) == 1 && p_b.x > right_x_center) {
-        x_max_delta[0] = 1;
-    } else if ((top_right.z & 1) == 0 && p_b.x <= right_x_center) {
-        x_max_delta[1] = -1;
-    }
-    for (int z = bottom_left.z; z <= top_right.z; z++) {
-        for (int y = bottom_left.y; y <= top_right.y; y++) {
-            int min_x = bottom_left.x + x_min_delta[z & 1];
-            int max_x = top_right.x + x_max_delta[z & 1];
-            for (int x = min_x; x <= max_x; x++) {
-                Vector3i oddr = Vector3i(x, y, z);
-                Vector3i axial = oddr_to_axial(oddr);
-                cells.push_back(axial);
-            }
-        }
-    }
-
-    return cells;
+    return HexMapIterCube(p_a, p_b);
 }
 
-TypedArray<Vector3i> HexMap::_local_region_to_cell_ids(Vector3 p_a,
+Ref<HexMapIterWrapper> HexMap::_local_region_to_cell_ids(Vector3 p_a,
         Vector3 p_b) const {
-    TypedArray<Vector3i> out;
-    for (const HexMapCellId &cell : local_region_to_cell_ids(p_a, p_b)) {
-        out.append((Vector3i)cell);
-    }
-    return out;
+    return local_region_to_cell_ids(p_a, p_b);
 }
 
 void HexMap::_notification(int p_what) {

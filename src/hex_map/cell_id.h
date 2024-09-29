@@ -17,7 +17,7 @@ using namespace godot;
 
 class HexMapCellIdWrapper;
 class HexMapIterRadial;
-class HexMapIterRadialWrapper;
+class HexMapIterWrapper;
 
 class HexMapCellId {
 public:
@@ -187,7 +187,7 @@ public:
 
     String _to_string() const;
     bool _equals(const Ref<HexMapCellIdWrapper> other) const;
-    Ref<HexMapIterRadialWrapper> _get_neighbors(unsigned int radius = 1) const;
+    Ref<HexMapIterWrapper> _get_neighbors(unsigned int radius = 1) const;
 
 protected:
     static void _bind_methods();

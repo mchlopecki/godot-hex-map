@@ -1,123 +1,86 @@
 #include "doctest.h"
+#include "formatters.h"
+#include "hex_map/cell_id.h"
 #include "hex_map/hex_map.h"
 #include "hex_map/iter_radial.h"
+#include <sys/signal.h>
+#include <csignal>
 
-enum Dir {
-    UP = 1 << 1,
-    DOWN = 1 << 2,
-    EAST = 1 << 3,
-    NE = 1 << 4,
-    NW = 1 << 5,
-    WEST = 1 << 6,
-    SW = 1 << 7,
-    SE = 1 << 8,
-    ALL = UP | DOWN | EAST | NE | NW | WEST | SW | SE,
-};
+using CellId = HexMap::CellId;
 
-void check_neighbors(HexMapCellId center,
-        HexMap::Planes planes,
-        int directions) {
-    CAPTURE(center);
-    HexMapIterRadial iter(center, 1, planes);
+TEST_CASE("HexMapIterRadial") {
+    struct TestCase {
+        HexMapCellId center;
+        unsigned int radius;
+        bool exclude_center = false;
+        std::set<CellId> cells;
+        bool trap = false; // simplify debugging specific test cases
+    };
+    std::vector<TestCase> cases = {
+        {
+                .center = HexMapCellId(),
+                .radius = 0,
+                .cells = { CellId(0, 0, 0) },
+        },
+        {
+                .center = HexMapCellId(),
+                .radius = 0,
+                .exclude_center = true,
+                .cells = { },
+        },
+        {
+                .center = HexMapCellId(),
+                .radius = 1,
+                .cells = {
+                    CellId(0, 0, -1),
 
-    if (directions & DOWN) {
-        CHECK_MESSAGE(*iter == center + HexMapCellId(0, 0, -1), "down", iter);
-        iter++;
-    }
-    if (directions & WEST) {
-        CHECK_MESSAGE(*iter == center + HexMapCellId(-1, 0, 0), "west", iter);
-        iter++;
-    }
-    if (directions & SW) {
-        CHECK_MESSAGE(
-                *iter == center + HexMapCellId(-1, 1, 0), "southwest", iter);
-        iter++;
-    }
-    if (directions & NW) {
-        CHECK_MESSAGE(
-                *iter == center + HexMapCellId(0, -1, 0), "northwest", iter);
-        iter++;
-    }
-    if (directions & SE) {
-        CHECK_MESSAGE(
-                *iter == center + HexMapCellId(0, 1, 0), "southeast", iter);
-        iter++;
-    }
-    if (directions & NE) {
-        CHECK_MESSAGE(
-                *iter == center + HexMapCellId(1, -1, 0), "northeast", iter);
-        iter++;
-    }
-    if (directions & EAST) {
-        CHECK_MESSAGE(*iter == center + HexMapCellId(1, 0, 0), "east", iter);
-        iter++;
-    }
-    if (directions & UP) {
-        CHECK_MESSAGE(*iter == center + HexMapCellId(0, 0, 1), "up", iter);
-        iter++;
-    }
-    CHECK_MESSAGE(*++iter == *iter.end(), "should be at the end", iter);
-}
+                    CellId(0, 0, 0),
+                    CellId(1,0,0),
+                    CellId(-1,0,0),
+                    CellId(0,1,0),
+                    CellId(-1,1,0),
+                    CellId(0,-1,0),
+                    CellId(1,-1,0),
 
-TEST_CASE("HexMapIterRadial::operator++()") {
-    SUBCASE("center at y-min, won't include down cell") {
-        check_neighbors(
-                HexMapCellId(0, 0, SHRT_MIN), HexMap::Planes::All, ~DOWN);
-    }
-    SUBCASE("center at y-max, wont include up cell") {
-        check_neighbors(
-                HexMapCellId(0, 0, SHRT_MAX), HexMap::Planes::All, ~UP);
-    }
-    SUBCASE("center at q-min, won't include west/southwest") {
-        check_neighbors(HexMapCellId(SHRT_MIN, 0, 0),
-                HexMap::Planes::All,
-                ~WEST & ~SW);
-    }
-    SUBCASE("center at q-max, wont include east/northeast") {
-        check_neighbors(HexMapCellId(SHRT_MAX, 0, 0),
-                HexMap::Planes::All,
-                ~EAST & ~NE);
-    }
-    SUBCASE("center at r-min, won't include northwest/northeast") {
-        check_neighbors(
-                HexMapCellId(0, SHRT_MIN, 0), HexMap::Planes::All, ~NW & ~NE);
-    }
-    SUBCASE("center at r-max, wont include southwest/southeast") {
-        check_neighbors(
-                HexMapCellId(0, SHRT_MAX, 0), HexMap::Planes::All, ~SW & ~SE);
-    }
-    SUBCASE("center at q/r/y-min, returns up, east, southeast") {
-        check_neighbors(HexMapCellId(SHRT_MIN, SHRT_MIN, SHRT_MIN),
-                HexMap::Planes::All,
-                UP | EAST | SE);
-    }
-    SUBCASE("center at q/r/y-max, returns down, west, northwest") {
-        check_neighbors(HexMapCellId(SHRT_MAX, SHRT_MAX, SHRT_MAX),
-                HexMap::Planes::All,
-                DOWN | WEST | NW);
-    }
-    SUBCASE("center at [0, 0, 32767]") {
-        check_neighbors(HexMapCellId(0, 0, 32767), HexMap::Planes::All, ~UP);
-    }
-    SUBCASE("center at origin, plane QRS, excludes up and down") {
-        check_neighbors(HexMapCellId(), HexMap::Planes::QRS, ~UP & ~DOWN);
-    }
-    SUBCASE("center at origin, plane YRS") {
-        check_neighbors(
-                HexMapCellId(), HexMap::Planes::YRS, UP | DOWN | NW | SE);
-    }
-    SUBCASE("center at origin, plane YQS") {
-        check_neighbors(
-                HexMapCellId(), HexMap::Planes::YQS, UP | DOWN | WEST | EAST);
-    }
-    SUBCASE("center at origin, plane YQR") {
-        check_neighbors(
-                HexMapCellId(), HexMap::Planes::YQR, UP | DOWN | SW | NE);
-    }
-}
+                    CellId(0, 0, 1),
+                },
+        },
+    };
 
-TEST_CASE("HexMapIterAxial::begin() is within radius") {
-    HexMapIterRadial iter(HexMapCellId(), 1);
-    CHECK_MESSAGE((*iter.begin()).distance(HexMapCellId()) <= 1,
-            "begin cell should be within the radius");
+    for (auto &i : cases) {
+        CAPTURE(i.center);
+        CAPTURE(i.radius);
+        CAPTURE(i.exclude_center);
+        if (i.trap) {
+            raise(SIGTRAP);
+        }
+        HexMapIterRadial iter(i.center, i.radius, i.exclude_center);
+        CAPTURE(iter);
+        CAPTURE(*iter);
+
+        std::set<CellId> cells;
+        for (const auto &cell : iter) {
+            cells.insert(cell);
+        }
+        INFO("expected := ", i.cells);
+        INFO("   found := ", cells);
+
+        std::vector<CellId> missing;
+        std::set_difference(i.cells.begin(),
+                i.cells.end(),
+                cells.begin(),
+                cells.end(),
+                std::inserter(missing, missing.begin()));
+        INFO(" missing := ", missing);
+
+        std::vector<CellId> extra;
+        std::set_difference(cells.begin(),
+                cells.end(),
+                i.cells.begin(),
+                i.cells.end(),
+                std::inserter(extra, extra.begin()));
+        INFO("   extra := ", extra);
+
+        CHECK(cells == i.cells);
+    }
 }

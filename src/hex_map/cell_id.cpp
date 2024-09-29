@@ -63,7 +63,7 @@ unsigned HexMapCellId::distance(const HexMapCellId &other) const {
 
 HexMapIterRadial HexMapCellId::get_neighbors(unsigned int radius,
         const HexMap::Planes &planes) const {
-    return HexMapIterRadial(*this, radius, planes);
+    return HexMapIterRadial(*this, radius, true, planes);
 }
 
 HexMapCellId::operator String() const {
@@ -188,7 +188,7 @@ bool HexMapCellIdWrapper::_equals(const Ref<HexMapCellIdWrapper> other) const {
     return cell_id == other->cell_id;
 }
 
-Ref<HexMapIterRadialWrapper> HexMapCellIdWrapper::_get_neighbors(
+Ref<HexMapIterWrapper> HexMapCellIdWrapper::_get_neighbors(
         unsigned int radius) const {
     return cell_id.get_neighbors(radius);
 }

@@ -6,72 +6,51 @@
 
 #include "cell_id.h"
 #include "hex_map.h"
+#include "hex_map/iter.h"
+#include "iter_axial.h"
 
 // HexMap cell iterator using axial coordinates to define a volume to iterate
-struct HexMapIterRadial {
+struct HexMapIterRadial : public HexMapIter {
 public:
     HexMapIterRadial(const HexMapCellId center,
             unsigned int radius,
+            bool exclude_center = false,
             const HexMap::Planes &planes = HexMap::Planes::All);
-
-    inline operator Ref<HexMapIterRadialWrapper>() const;
-    operator String() const;
-
-    HexMapCellId operator*() const { return cell; }
-    const HexMapCellId &operator->() { return cell; }
-    HexMapIterRadial &operator++();
-    HexMapIterRadial operator++(int);
+    HexMapIterRadial(HexMapIterAxial iter,
+            unsigned int radius,
+            bool exclude_center) :
+            axial_iter(iter), radius(radius), exclude_center(exclude_center){};
 
     friend bool operator==(const HexMapIterRadial &a,
             const HexMapIterRadial &b) {
-        return a.cell == b.cell;
+        return a.axial_iter.cell == b.axial_iter.cell;
     };
     friend bool operator!=(const HexMapIterRadial &a,
             const HexMapIterRadial &b) {
-        return a.cell != b.cell;
+        return a.axial_iter.cell != b.axial_iter.cell;
     };
 
+    HexMapCellId operator*() const { return axial_iter.cell; }
+    const HexMapCellId &operator->() { return axial_iter.cell; }
+    HexMapIterRadial &operator++();
     HexMapIterRadial begin();
     HexMapIterRadial end();
 
-    // added for testing
+    // gdscript integration methods
+    operator godot::String() const;
+    bool _iter_init();
+    bool _iter_next();
+    HexMapCellId _iter_get() const;
+    HexMapIter *clone() const;
+
+    // added for doctests
     friend std::ostream &operator<<(std::ostream &os,
             const HexMapIterRadial &value);
 
 private:
+    void advance_until_valid();
+
+    HexMapIterAxial axial_iter;
     unsigned int radius;
-    int y_min, y_max;
-    int q_min, q_max;
-    int r_min, r_max;
-    int s_min, s_max;
-    HexMapCellId center, cell;
+    bool exclude_center;
 };
-
-// GDScript wrapper for HexMapIterAxial
-class HexMapIterRadialWrapper : public godot::RefCounted {
-    GDCLASS(HexMapIterRadialWrapper, RefCounted);
-
-public:
-    HexMapIterRadialWrapper() :
-            iter(HexMapIterRadial(HexMapCellId::Origin, 0)){};
-    HexMapIterRadialWrapper(const HexMapIterRadial &iter) : iter(iter){};
-
-    // GDScript functions
-    String _to_string() const;
-
-    // GDScript custom iterator functions
-    bool _iter_init(Variant _arg);
-    bool _iter_next(Variant _arg);
-    Ref<HexMapCellIdWrapper> _iter_get(Variant _arg);
-
-protected:
-    static void _bind_methods();
-
-private:
-    HexMapIterRadial iter;
-};
-
-inline HexMapIterRadial::operator Ref<HexMapIterRadialWrapper>() const {
-    return Ref<HexMapIterRadialWrapper>(
-            memnew(HexMapIterRadialWrapper(*this)));
-}
