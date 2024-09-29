@@ -1,3 +1,4 @@
+#include "godot_cpp/core/defs.hpp"
 #ifdef TOOLS_ENABLED
 
 #pragma once
@@ -31,11 +32,13 @@ public:
 
     bool is_empty() const { return cells.is_empty(); };
     const Vector<HexMap::CellId> get_cells() const { return cells; }
+    Array get_cells_v() const;
 
     // does not currently handle de-duplication
     void clear();
-    void set_cell(HexMap::CellId);
+    void add_cell(HexMap::CellId);
     void set_cells(Vector<HexMap::CellId>);
+    void set_cells(Array);
     void redraw_selection(); // for cell size change
 
     // get cell id at the center of the selection

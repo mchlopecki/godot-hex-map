@@ -189,13 +189,24 @@ void SelectionManager::clear() {
             selection_multimesh_instance, false);
 }
 
-void SelectionManager::set_cell(CellId cell) {
+void SelectionManager::add_cell(CellId cell) {
     cells.append(cell);
     redraw_selection();
 }
 
 void SelectionManager::set_cells(Vector<CellId> other) {
+    cells.clear();
     cells.append_array(other);
+    redraw_selection();
+}
+
+void SelectionManager::set_cells(Array other) {
+    cells.clear();
+    auto size = other.size();
+    for (int i = 0; i < size; i++) {
+        Vector3i cell = other[i];
+        cells.push_back(cell);
+    }
     redraw_selection();
 }
 
@@ -226,6 +237,14 @@ CellId SelectionManager::get_center() {
     }
 
     return CellId::from_unit_point((max + min) / 2);
+}
+
+Array SelectionManager::get_cells_v() const {
+    Array out;
+    for (const CellId &cell : cells) {
+        out.push_back((Vector3i)cell);
+    }
+    return out;
 }
 
 SelectionManager::SelectionManager(HexMap *hex_map) : hex_map(hex_map) {

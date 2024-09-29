@@ -91,6 +91,7 @@ class HexMapEditorPlugin : public EditorPlugin {
     void deselect_cells();
     void _deselect_cells();
     void _select_cell(Vector3i);
+    void _set_selection_v(Array);
 
     // perform actions on selected cells
     void selection_fill();

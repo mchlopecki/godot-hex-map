@@ -80,10 +80,8 @@ void HexMapEditorPlugin::deselect_cells() {
     undo_redo->add_do_method(this, "deselect_cells");
 
     // clear and select cells
-    undo_redo->add_undo_method(this, "deselect_cells");
-    for (const HexMapCellId &cell : selection_manager->get_cells()) {
-        undo_redo->add_undo_method(this, "select_cell", (Vector3i)cell);
-    }
+    undo_redo->add_undo_method(
+            this, "set_selection_v", selection_manager->get_cells_v());
 
     undo_redo->commit_action();
 }
@@ -98,9 +96,18 @@ void HexMapEditorPlugin::_deselect_cells() {
 void HexMapEditorPlugin::_select_cell(Vector3i cell) {
     ERR_FAIL_COND_MSG(selection_manager == nullptr,
             "HexMap: SelectionManager not present");
-    selection_manager->set_cell(cell);
-    // XXX repetive, really only need to do this once during undo/redo
+    selection_manager->add_cell(cell);
     editor_control->update_selection_menu(true);
+}
+
+void HexMapEditorPlugin::_set_selection_v(Array cells) {
+    ERR_FAIL_COND_MSG(selection_manager == nullptr,
+            "HexMap: SelectionManager not present");
+
+    selection_manager->set_cells(cells);
+    if (!selection_manager->is_empty()) {
+        editor_control->update_selection_menu(true);
+    }
 }
 
 void HexMapEditorPlugin::selection_clear() {
@@ -206,10 +213,10 @@ void HexMapEditorPlugin::selection_clone_apply() {
     undo_redo->create_action("HexMap: clone selected tiles",
             godot::UndoRedo::MERGE_DISABLE,
             hex_map);
-    undo_redo->add_do_method(this, "deselect_cells");
 
+    Array select_cells;
     for (const auto &cell : editor_cursor->get_tiles()) {
-        undo_redo->add_do_method(this, "select_cell", cell.cell_id_live);
+        select_cells.push_back((Vector3i)cell.cell_id_live);
         undo_redo->add_do_method(hex_map,
                 "set_cell_item_v",
                 cell.cell_id_live,
@@ -221,11 +228,13 @@ void HexMapEditorPlugin::selection_clone_apply() {
                 hex_map->get_cell_item(cell.cell_id_live),
                 hex_map->get_cell_item_orientation(cell.cell_id_live));
     }
+    undo_redo->add_do_method(this, "set_selection_v", select_cells);
 
-    undo_redo->add_undo_method(this, "deselect_cells");
+    select_cells.clear();
     for (const HexMapCellId &cell_id : last_selection) {
-        undo_redo->add_undo_method(this, "select_cell", (Vector3i)cell_id);
+        select_cells.push_back((Vector3i)cell_id);
     }
+    undo_redo->add_undo_method(this, "set_selection_v", select_cells);
     last_selection.clear();
 
     undo_redo->commit_action();
@@ -299,8 +308,9 @@ void HexMapEditorPlugin::selection_move_apply() {
     }
 
     // set the new cells, and start the undo restoring the new cells
+    Array select_cells;
     for (const auto &cell : editor_cursor->get_tiles()) {
-        undo_redo->add_do_method(this, "select_cell", cell.cell_id_live);
+        select_cells.push_back(cell.cell_id_live);
         undo_redo->add_do_method(hex_map,
                 "set_cell_item_v",
                 cell.cell_id_live,
@@ -312,6 +322,7 @@ void HexMapEditorPlugin::selection_move_apply() {
                 hex_map->get_cell_item(cell.cell_id_live),
                 hex_map->get_cell_item_orientation(cell.cell_id_live));
     }
+    undo_redo->add_do_method(this, "select_cells", select_cells);
 
     // undo the clearing of the original cells
     for (const CellChange &change : cells_changed) {
@@ -324,10 +335,11 @@ void HexMapEditorPlugin::selection_move_apply() {
     cells_changed.clear();
 
     // update selection undo/redo
-    undo_redo->add_undo_method(this, "deselect_cells");
+    select_cells.clear();
     for (const HexMapCellId &cell_id : last_selection) {
-        undo_redo->add_undo_method(this, "select_cell", (Vector3i)cell_id);
+        select_cells.push_back((Vector3i)cell_id);
     }
+    undo_redo->add_undo_method(this, "set_selection_v", select_cells);
     last_selection.clear();
 
     undo_redo->commit_action();
@@ -419,7 +431,7 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                 last_selection = selection_manager->get_cells();
                 selection_anchor = editor_cursor->get_pos();
                 selection_manager->clear();
-                selection_manager->set_cell(editor_cursor->get_cell());
+                selection_manager->add_cell(editor_cursor->get_cell());
                 return AFTER_GUI_INPUT_STOP;
             } else if (mouse_left_pressed && !editor_cursor->is_empty()) {
                 input_state = INPUT_STATE_PAINTING;
@@ -530,21 +542,24 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                 selection_manager->set_cells(cells);
             }
             if (mouse_left_released) {
+                auto profile = profiling_begin("complete selection");
                 EditorUndoRedoManager *undo_redo = get_undo_redo();
                 undo_redo->create_action("HexMap: select cells");
-                // do will set the selection
-                undo_redo->add_do_method(this, "deselect_cells");
-                for (const HexMapCellId &cell :
-                        selection_manager->get_cells()) {
-                    undo_redo->add_do_method(
-                            this, "select_cell", (Vector3i)cell);
-                }
+                // do method will apply the existing selection
+                undo_redo->add_do_method(this,
+                        "set_selection_v",
+                        selection_manager->get_cells_v());
+
                 // undo will restore last selection
-                undo_redo->add_undo_method(this, "deselect_cells");
+                Array select_cells;
                 for (const HexMapCellId &cell : last_selection) {
-                    undo_redo->add_undo_method(
-                            this, "select_cell", (Vector3i)cell);
+                    select_cells.push_back((Vector3i)cell);
                 }
+                undo_redo->add_undo_method(
+                        this, "set_selection_v", select_cells);
+
+                auto prof_commit =
+                        profiling_begin("commit selection undo_redo");
                 undo_redo->commit_action();
 
                 editor_cursor->show();
@@ -746,6 +761,8 @@ void HexMapEditorPlugin::_bind_methods() {
             D_METHOD("deselect_cells"), &HexMapEditorPlugin::_deselect_cells);
     ClassDB::bind_method(D_METHOD("select_cell", "cell"),
             &HexMapEditorPlugin::_select_cell);
+    ClassDB::bind_method(D_METHOD("set_selection_v", "cells_vector"),
+            &HexMapEditorPlugin::_set_selection_v);
 }
 
 HexMapEditorPlugin::HexMapEditorPlugin() {
