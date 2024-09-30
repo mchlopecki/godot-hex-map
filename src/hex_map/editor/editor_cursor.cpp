@@ -26,6 +26,7 @@
 void EditorCursor::free_tile_meshes() {
     RenderingServer *rs = RS::get_singleton();
     for (const CursorCell &cell : tiles) {
+        hex_map->set_cell_visibility(cell.cell_id_live, true);
         if (cell.mesh_instance.is_valid()) {
             rs->free_rid(cell.mesh_instance);
         }
@@ -192,6 +193,10 @@ void EditorCursor::transform_meshes() {
     Vector3 origin = hex_map->cell_id_to_local(pointer_cell);
 
     for (CursorCell &cell : tiles) {
+        hex_map->set_cell_visibility(cell.cell_id_live, true);
+    }
+
+    for (CursorCell &cell : tiles) {
         Transform3D transform;
         transform.origin = origin;
         transform.basis = (Basis)this->orientation;
@@ -208,6 +213,8 @@ void EditorCursor::transform_meshes() {
 
         rs->instance_set_transform(
                 cell.mesh_instance, global_transform * transform);
+
+        hex_map->set_cell_visibility(cell.cell_id_live, false);
     }
 
     // update the grid transform also

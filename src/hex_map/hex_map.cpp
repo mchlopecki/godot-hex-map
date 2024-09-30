@@ -328,7 +328,8 @@ void HexMap::set_cell_item(const HexMapCellId &cell_id,
         int p_item,
         int p_rot) {
     auto prof = profiling_begin("set cell item");
-    ERR_FAIL_COND_MSG(!cell_id.in_bounds(), "cell id is not in bounds");
+    ERR_FAIL_COND_MSG(
+            !cell_id.in_bounds(), "cell id is not in bounds: " + cell_id);
 
     // Convert the cell id into a key.  If the cell is already set to the
     // specified values, just return.
@@ -342,7 +343,11 @@ void HexMap::set_cell_item(const HexMapCellId &cell_id,
     // if the octant meshes have been baked, we need to clear them now.  Even
     // if we only clear the modified octant, the HexMap will look odd with the
     // lightmap only applied to one section.
-    clear_baked_meshes();
+    if (!baked_mesh_octants.is_empty()) {
+        UtilityFunctions::print(
+                "HexMap: map modified; clearing baked lighting meshes");
+        clear_baked_meshes();
+    }
 
     // look up the cell octant
     OctantKey octant_key(cell_id, octant_size);
@@ -354,6 +359,7 @@ void HexMap::set_cell_item(const HexMapCellId &cell_id,
         Cell cell = {
             .item = static_cast<unsigned int>(p_item),
             .rot = static_cast<unsigned int>(p_rot),
+            .visible = true,
         };
         cell_map.insert(cell_key, cell);
         updated_cells.insert(cell_key);
@@ -397,8 +403,9 @@ void HexMap::_set_cell_item_v(const Vector3i &cell_id, int p_item, int p_rot) {
 }
 
 int HexMap::get_cell_item(const HexMapCellId &cell_id) const {
-    ERR_FAIL_COND_V_MSG(
-            !cell_id.in_bounds(), INVALID_CELL_ITEM, "cell id not in bounds");
+    ERR_FAIL_COND_V_MSG(!cell_id.in_bounds(),
+            INVALID_CELL_ITEM,
+            "cell id not in bounds: " + cell_id);
 
     CellKey key(cell_id);
 
@@ -425,6 +432,40 @@ int HexMap::get_cell_item_orientation(const HexMapCellId &cell_id) const {
 int HexMap::_get_cell_item_orientation(
         const Ref<HexMapCellIdWrapper> p_cell_id) const {
     return get_cell_item_orientation(**p_cell_id);
+}
+
+void HexMap::set_cell_visibility(const HexMapCellId &cell_id,
+        bool visibility) {
+    ERR_FAIL_COND_MSG(
+            !cell_id.in_bounds(), "cell id is not in bounds:" + cell_id);
+
+    // Convert the cell id into a key.  If the cell is already set to the
+    // specified values, just return.
+    CellKey cell_key(cell_id);
+    Cell *cell = cell_map.getptr(cell_key);
+    if (cell == nullptr) {
+        return;
+    }
+    cell->visible = visibility;
+
+    OctantKey octant_key(cell_id, octant_size);
+    Octant **octant = octants.getptr(octant_key);
+    ERR_FAIL_COND_MSG(
+            octant == nullptr, "no octant found for valid cell: " + cell_id);
+    (**octant).set_dirty();
+    update_dirty_octants();
+
+    // Although we aren't truely modifying the map here, covering the edge case
+    // of hide/unhide cells and restoring the baked mesh feels like a lot of
+    // work.  For now we're just gonna clear the baked meshes when they start
+    // hiding cells.
+    if (!baked_mesh_octants.is_empty()) {
+        UtilityFunctions::print(
+                "HexMap: map modified; clearing baked lighting meshes");
+        clear_baked_meshes();
+    }
+
+    return;
 }
 
 // based on blog post https://observablehq.com/@jrus/hexround

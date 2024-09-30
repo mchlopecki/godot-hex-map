@@ -148,6 +148,11 @@ void HexMapOctant::build_multimesh() {
         const HexMap::Cell *cell = hex_map.cell_map.getptr(cell_key);
         ERR_CONTINUE_MSG(cell == nullptr, "nonexistent HexMap cell in Octant");
 
+        // hexmap may be hiding the visual for this cell
+        if (!cell->visible) {
+            continue;
+        }
+
         Ref<Mesh> mesh = mesh_library->get_item_mesh(cell->item);
         if (!mesh.is_valid()) {
             continue;

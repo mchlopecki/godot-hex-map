@@ -96,6 +96,7 @@ public:
 
     inline bool is_empty() const { return cells.is_empty(); };
     inline bool is_dirty() const { return dirty; };
+    inline void set_dirty() { dirty = true; };
 
     // bake if needed and return the baked mesh
     void set_baked_mesh(Ref<Mesh> mesh);

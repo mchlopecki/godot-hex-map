@@ -52,6 +52,7 @@ private:
         struct {
             unsigned int item : 16;
             unsigned int rot : 4;
+            unsigned int visible : 1;
         };
         uint32_t cell = 0;
 
@@ -175,6 +176,10 @@ public:
     int get_cell_item_orientation(const HexMapCellId &cell_id) const;
     int _get_cell_item_orientation(
             const Ref<HexMapCellIdWrapper> cell_id) const;
+
+    // used by the editor to conceal cells for the editor cursor
+    // value is not saved
+    void set_cell_visibility(const HexMapCellId &cell_id, bool visibility);
 
     HexMapCellId local_to_cell_id(const Vector3 &local_position) const;
     Ref<HexMapCellIdWrapper> _local_to_cell_id(
