@@ -20,6 +20,7 @@ public:
             unsigned int radius,
             bool exclude_center) :
             axial_iter(iter), radius(radius), exclude_center(exclude_center){};
+    HexMapIterRadial(const HexMapIterRadial &) = default;
 
     friend bool operator==(const HexMapIterRadial &a,
             const HexMapIterRadial &b) {

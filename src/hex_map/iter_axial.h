@@ -14,6 +14,7 @@ public:
     HexMapIterAxial(const HexMapCellId center,
             unsigned int radius,
             const HexMap::Planes &planes = HexMap::Planes::All);
+    HexMapIterAxial(const HexMapIterAxial &) = default;
 
     friend bool operator==(const HexMapIterAxial &a,
             const HexMapIterAxial &b) {

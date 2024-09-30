@@ -1,4 +1,4 @@
-extends GutTest
+extends HexMapTest
 
 var from_values_params = [
 	[0, 0, 0],
@@ -25,6 +25,11 @@ func cell_id(values: Array) -> HexMapCellId:
 var equals_params = [
 	[[0, 0, 0], [0, 0, 0], true],
 	[[0, 0, 0], [0, 0, 1], false],
+	[[0, 0, 0], [0, 1, 0], false],
+	[[0, 0, 0], [1, 0, 0], false],
+	[[0, 0, 0], [0, 0, -1], false],
+	[[0, 0, 0], [0, -1, 0], false],
+	[[0, 0, 0], [-1, 0, 0], false],
 	[[-1, -1, -1], [-1, -1, -1], true],
 ]
 
@@ -48,27 +53,27 @@ func test_from_int(params=use_parameters(from_values_params)):
 	assert_eq(from_int.get_r(), cell.get_r());
 	assert_eq(from_int.get_y(), cell.get_y());
 
-var get_neighbors_params =  from_values_params + [
-	# [0, 0, 32767]
-]
+var get_neighbors_params = ParameterFactory.named_parameters(
+    ['center', 'neighbors'], [
+		[
+			CellId(0,0,0),
+			[
+				# y-plane neighbors
+				CellId(1,0,0),
+				CellId(1,-1,0),
+				CellId(0,-1,0),
+				CellId(-1,0,0),
+				CellId(-1,1,0),
+				CellId(0,1,0),
+
+				# up and down
+				CellId(0,0,1),
+				CellId(0,0,-1),
+			]
+		],
+	])
 
 func test_get_neighbors(params=use_parameters(get_neighbors_params)):
-	var cell := cell_id(params)
-
-	var neighbors = []
-	for neighbor in cell.get_neighbors():
-		neighbors.append(neighbor.as_vector())
-		assert_lt(neighbors.size(), 20)
-
-	assert_does_not_have(neighbors, cell.as_vector())
-	assert_eq(neighbors.size(), 8)
-	assert_has(neighbors, cell.east().as_vector())
-	assert_has(neighbors, cell.northeast().as_vector())
-	assert_has(neighbors, cell.northwest().as_vector())
-	assert_has(neighbors, cell.west().as_vector())
-	assert_has(neighbors, cell.southwest().as_vector())
-	assert_has(neighbors, cell.southeast().as_vector())
-	assert_has(neighbors, cell.up().as_vector())
-	assert_has(neighbors, cell.down().as_vector())
+	assert_cells_eq(params.center.get_neighbors(), params.neighbors)
 
 

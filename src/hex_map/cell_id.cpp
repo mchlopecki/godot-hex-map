@@ -70,7 +70,6 @@ HexMapCellId::operator String() const {
     // clang-format off
     return (String)"{ .q = " + itos(q) +
                    ", .r = " + itos(r) +
-                   ", .s = " + itos(s()) +
                    ", .y = " + itos(y) + "}";
     // clang-format on
 }
@@ -114,6 +113,8 @@ void HexMapCellIdWrapper::_bind_methods() {
 
     ClassDB::bind_method(
             D_METHOD("equals", "other"), &HexMapCellIdWrapper::_equals);
+    ClassDB::bind_method(
+            D_METHOD("unit_center"), &HexMapCellIdWrapper::_unit_center);
     ClassDB::bind_method(D_METHOD("get_neighbors", "radius"),
             &HexMapCellIdWrapper::_get_neighbors,
             1);
@@ -183,6 +184,10 @@ Ref<HexMapCellIdWrapper> HexMapCellIdWrapper::_up() const {
 }
 
 String HexMapCellIdWrapper::_to_string() const { return (String)cell_id; };
+
+Vector3 HexMapCellIdWrapper::_unit_center() const {
+    return cell_id.unit_center();
+};
 
 bool HexMapCellIdWrapper::_equals(const Ref<HexMapCellIdWrapper> other) const {
     return cell_id == other->cell_id;

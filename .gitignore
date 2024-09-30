@@ -6,7 +6,12 @@ extension_api.json
 *.o
 .DS_Store
 .nobackup*
+
+# build dlls
 demo/addons/hexmap/lib/*
+
+# test binary
+tests/tests
 
 *.import
 

@@ -187,6 +187,7 @@ public:
 
     String _to_string() const;
     bool _equals(const Ref<HexMapCellIdWrapper> other) const;
+    Vector3 _unit_center() const;
     Ref<HexMapIterWrapper> _get_neighbors(unsigned int radius = 1) const;
 
 protected:

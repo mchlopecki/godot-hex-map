@@ -110,11 +110,18 @@ HexMapIterCube HexMapIterCube::end() const {
 
 HexMapIterCube::operator String() const {
     // clang-format off
-    return (String)"{ " +
-        ".min = " + min.operator String() + ", " +
-        ".max = " + min.operator String() + ", " +
-        ".pos = " + min.operator String() + ", " +
-    "}";
+    return (String)"{" +
+        "\n    .min = " + min.operator String() +
+            " (" + HexMapCellId::from_oddr(min)  + "), " +
+        "\n    .max = " + max.operator String() +
+            " (" + HexMapCellId::from_oddr(max)  + "), " +
+        "\n    .pos = " + pos.operator String() +
+            " (" + HexMapCellId::from_oddr(pos)  + "), " +
+        "\n    .min_x_shift = [" + itos(min_x_shift[0]) +
+            ", " + itos(min_x_shift[1]) + "], " +
+        "\n    .max_x_shift = [" + itos(max_x_shift[0]) +
+            ", " + itos(max_x_shift[1]) + "], " +
+    "\n}";
     // clang-format on
 }
 
@@ -130,6 +137,4 @@ bool HexMapIterCube::_iter_next() {
 
 HexMapCellId HexMapIterCube::_iter_get() const { return **this; }
 
-HexMapIter *HexMapIterCube::clone() const {
-    return new HexMapIterCube(min, max);
-}
+HexMapIter *HexMapIterCube::clone() const { return new HexMapIterCube(*this); }

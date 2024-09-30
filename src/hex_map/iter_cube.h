@@ -13,6 +13,7 @@ public:
     // This requires unit position values to determine fall-off of left or
     // right
     HexMapIterCube(Vector3 a, Vector3 b);
+    HexMapIterCube(const HexMapIterCube &) = default;
 
     friend bool operator==(const HexMapIterCube &a, const HexMapIterCube &b) {
         return a.pos == b.pos;

@@ -51,7 +51,7 @@ Default(library)
 
 godot_cpp = File(f"godot-cpp/bin/libgodot-cpp{env["suffix"]}.a")
 tests = env.Program(
-    target='tests/run_tests',
+    target='tests/tests',
     source=Glob("tests/*cpp") + sources,
     LIBS=[godot_cpp]
 )
@@ -59,5 +59,5 @@ tests = env.Program(
 # import pdb
 # pdb.set_trace()
 
-run_tests = Command("run_tests", None, "tests/run_tests" )
+run_tests = Command("run_tests", None, "tests/tests" )
 Depends(run_tests, tests)
