@@ -66,8 +66,6 @@ void EditorCursor::set_tile(CellId cell,
     RID mesh = mesh_library->get_item_mesh(tile)->get_rid();
     cc.mesh_instance = rs->instance_create2(mesh, scenario);
     tiles.push_back(cc);
-
-    // XXX need to figure out a way to draw cursor cells over hexmap cells
 }
 
 List<EditorCursor::CursorCell> EditorCursor::get_tiles() {

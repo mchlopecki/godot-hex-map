@@ -230,7 +230,7 @@ void HexMapEditorPlugin::selection_clone_apply() {
     }
     undo_redo->add_do_method(this, "set_selection_v", select_cells);
 
-    select_cells.clear();
+    select_cells = Array();
     for (const HexMapCellId &cell_id : last_selection) {
         select_cells.push_back((Vector3i)cell_id);
     }
@@ -322,7 +322,7 @@ void HexMapEditorPlugin::selection_move_apply() {
                 hex_map->get_cell_item(cell.cell_id_live),
                 hex_map->get_cell_item_orientation(cell.cell_id_live));
     }
-    undo_redo->add_do_method(this, "select_cells", select_cells);
+    undo_redo->add_do_method(this, "set_selection_v", select_cells);
 
     // undo the clearing of the original cells
     for (const CellChange &change : cells_changed) {
@@ -335,7 +335,7 @@ void HexMapEditorPlugin::selection_move_apply() {
     cells_changed.clear();
 
     // update selection undo/redo
-    select_cells.clear();
+    select_cells = Array();
     for (const HexMapCellId &cell_id : last_selection) {
         select_cells.push_back((Vector3i)cell_id);
     }
