@@ -119,8 +119,8 @@ int MeshLibraryPalette::get_mesh() {
 void MeshLibraryPalette::set_filter(String filter) {
     static String last_value = "";
     if (last_value != filter) {
-        update_item_list();
         last_value = filter;
+        update_item_list();
     }
 }
 
