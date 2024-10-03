@@ -26,7 +26,6 @@
 #include "../hex_map.h"
 #include "editor_control.h"
 #include "editor_cursor.h"
-#include "mesh_library_palette.h"
 #include "selection_manager.h"
 
 using namespace godot;
@@ -37,7 +36,6 @@ class HexMapEditorPlugin : public EditorPlugin {
 
     HexMap *hex_map = nullptr;
     Ref<MeshLibrary> mesh_library = nullptr;
-    MeshLibraryPalette *mesh_palette = nullptr;
     EditorControl *editor_control = nullptr;
     Control *bottom_panel = nullptr;
     EditorCursor *editor_cursor = nullptr;

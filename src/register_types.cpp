@@ -20,7 +20,6 @@ void initialize_hexmap_module(ModuleInitializationLevel p_level) {
 
 #ifdef TOOLS_ENABLED
     if (p_level == godot::MODULE_INITIALIZATION_LEVEL_EDITOR) {
-        ClassDB::register_internal_class<MeshLibraryPalette>();
         ClassDB::register_internal_class<EditorControl>();
         ClassDB::register_internal_class<HexMapEditorPlugin>();
         EditorPlugins::add_by_type<HexMapEditorPlugin>();

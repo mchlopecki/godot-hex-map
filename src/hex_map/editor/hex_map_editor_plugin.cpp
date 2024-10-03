@@ -204,7 +204,7 @@ void HexMapEditorPlugin::selection_clone_cancel() {
     editor_control->reset_orientation();
 
     editor_cursor->clear_tiles();
-    editor_cursor->set_tile(HexMapCellId(), mesh_palette->get_mesh());
+    editor_cursor->set_tile(HexMapCellId(), bottom_panel->get("mesh_id"));
     editor_cursor->update(true);
 }
 
@@ -241,7 +241,7 @@ void HexMapEditorPlugin::selection_clone_apply() {
 
     editor_control->reset_orientation();
     editor_cursor->clear_tiles();
-    editor_cursor->set_tile(HexMapCellId(), mesh_palette->get_mesh());
+    editor_cursor->set_tile(HexMapCellId(), bottom_panel->get("mesh_id"));
     editor_cursor->update(true);
 }
 
@@ -287,7 +287,7 @@ void HexMapEditorPlugin::selection_move_cancel() {
     editor_control->reset_orientation();
 
     editor_cursor->clear_tiles();
-    editor_cursor->set_tile(HexMapCellId(), mesh_palette->get_mesh());
+    editor_cursor->set_tile(HexMapCellId(), bottom_panel->get("mesh_id"));
     editor_cursor->update(true);
 }
 
@@ -346,7 +346,7 @@ void HexMapEditorPlugin::selection_move_apply() {
 
     editor_control->reset_orientation();
     editor_cursor->clear_tiles();
-    editor_cursor->set_tile(HexMapCellId(), mesh_palette->get_mesh());
+    editor_cursor->set_tile(HexMapCellId(), bottom_panel->get("mesh_id"));
     editor_cursor->update(true);
 }
 
@@ -357,11 +357,9 @@ bool HexMapEditorPlugin::_handles(Object *p_object) const {
 void HexMapEditorPlugin::_make_visible(bool p_visible) {
     if (p_visible) {
         editor_control->show();
-        mesh_palette->show();
         set_process(true);
     } else {
         editor_control->hide();
-        mesh_palette->hide();
         set_process(false);
     }
 }
@@ -444,7 +442,7 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                 if (!selection_manager->is_empty()) {
                     deselect_cells();
                 } else {
-                    mesh_palette->clear_selection();
+                    bottom_panel->call("clear_selection");
                 }
                 return AFTER_GUI_INPUT_STOP;
             }
@@ -616,7 +614,7 @@ void HexMapEditorPlugin::update_mesh_library() {
     ERR_FAIL_NULL(hex_map);
 
     mesh_library = hex_map->get_mesh_library();
-    mesh_palette->set_mesh_library(mesh_library);
+    bottom_panel->set("mesh_library", mesh_library);
 
     if (editor_cursor) {
         editor_control->reset_orientation();
@@ -637,8 +635,7 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 
         // clear the mesh library
         mesh_library = Ref<MeshLibrary>();
-        mesh_palette->set_mesh_library(mesh_library);
-        // bottom_panel->set("mesh_library", mesh_library);
+        bottom_panel->set("mesh_library", mesh_library);
 
         // reset the selection menu
         editor_control->update_selection_menu(false);
@@ -654,7 +651,8 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 
         delete selection_manager;
         selection_manager = nullptr;
-        // remove_control_from_bottom_panel(bottom_panel);
+        remove_control_from_bottom_panel(bottom_panel);
+        memfree(bottom_panel);
     }
 
     hex_map = Object::cast_to<HexMap>(p_object);
@@ -664,8 +662,14 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
         return;
     }
 
-    // add_control_to_bottom_panel(bottom_panel, "HexMap");
-    // bottom_panel->set("mesh_library", mesh_library);
+    Ref<PackedScene> panel_scene = ResourceLoader::get_singleton()->load(
+            "res://addons/hexmap/gui/"
+            "hex_map_editor_bottom_panel.tscn");
+    bottom_panel = (Control *)panel_scene->instantiate();
+    bottom_panel->connect("mesh_changed",
+            callable_mp(this, &HexMapEditorPlugin::tile_changed));
+    add_control_to_bottom_panel(bottom_panel, "HexMap");
+    make_bottom_panel_item_visible(bottom_panel);
 
     // not a godot Object subclass, so `new` instead of `memnew()`
     editor_cursor = new EditorCursor(hex_map);
@@ -766,14 +770,6 @@ void HexMapEditorPlugin::_bind_methods() {
 }
 
 HexMapEditorPlugin::HexMapEditorPlugin() {
-    // palette
-    mesh_palette = memnew(MeshLibraryPalette);
-    mesh_palette->hide();
-    mesh_palette->connect("mesh_changed",
-            callable_mp(this, &HexMapEditorPlugin::tile_changed));
-    add_control_to_container(
-            CONTAINER_SPATIAL_EDITOR_SIDE_RIGHT, mesh_palette);
-
     // context menu in spatial editor
     editor_control = memnew(EditorControl);
     editor_control->hide();
@@ -796,8 +792,8 @@ HexMapEditorPlugin::HexMapEditorPlugin() {
     add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, editor_control);
 
     // Ref<PackedScene> panel_scene = ResourceLoader::get_singleton()->load(
-    // 		"res://addons/hexmap/gui/"
-    // 		"hex_map_editor_bottom_panel.tscn");
+    //         "res://addons/hexmap/gui/"
+    //         "hex_map_editor_bottom_panel.tscn");
     // bottom_panel = (Control *)panel_scene->instantiate();
 }
 
@@ -805,8 +801,8 @@ HexMapEditorPlugin::~HexMapEditorPlugin() {
     ERR_FAIL_NULL(RenderingServer::get_singleton());
 
     // if (bottom_panel) {
-    // 	remove_control_from_bottom_panel(bottom_panel);
-    // 	memfree(bottom_panel);
+    //     remove_control_from_bottom_panel(bottom_panel);
+    //     memfree(bottom_panel);
     // }
 
     if (editor_cursor != nullptr) {
