@@ -8,7 +8,7 @@ explicit removal of per-tile navigation meshes.
 
 **The GDScript API for `HexMap` is not yet stable**
 
-<img width="1547" alt="Screenshot 2024-09-20 at 9 47 40 PM" src="https://github.com/user-attachments/assets/5885af74-9fc5-44cc-a088-8e6c252577d2">
+<img width="1209" alt="Screenshot 2024-10-03 at 6 57 52 PM" src="https://github.com/user-attachments/assets/ddaff96a-e153-496e-912e-a19db70eff58">
 
 ## Features
 * Hexagonal shaped cells in `HexMap` (https://github.com/godotengine/godot/pull/85890)
