@@ -75,7 +75,6 @@ func set_mesh_filter(filter: String) -> void:
 	update_mesh_list()
 
 func update_mesh_list() -> void:
-	print("update mesh list ", mesh_library)
 	%MeshItemList.clear()
 	if mesh_library == null:
 		%FilterLineEdit.text = ""

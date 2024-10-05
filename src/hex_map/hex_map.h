@@ -173,6 +173,7 @@ public:
     void _set_cell_item_v(const Vector3i &cell_id, int p_item, int p_rot = 0);
     int get_cell_item(const HexMapCellId &cell_id) const;
     int _get_cell_item(const Ref<HexMapCellIdWrapper> p_cell_id) const;
+    int _get_cell_item_v(const Vector3i &) const;
     int get_cell_item_orientation(const HexMapCellId &cell_id) const;
     int _get_cell_item_orientation(
             const Ref<HexMapCellIdWrapper> cell_id) const;

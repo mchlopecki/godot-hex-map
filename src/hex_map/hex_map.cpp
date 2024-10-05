@@ -416,7 +416,11 @@ int HexMap::get_cell_item(const HexMapCellId &cell_id) const {
 }
 
 int HexMap::_get_cell_item(const Ref<HexMapCellIdWrapper> p_cell_id) const {
+    ERR_FAIL_COND_V_MSG(!p_cell_id.is_valid(), -1, "null cell id");
     return get_cell_item(**p_cell_id);
+}
+int HexMap::_get_cell_item_v(const Vector3i &p_cell_vector) const {
+    return get_cell_item(p_cell_vector);
 }
 
 int HexMap::get_cell_item_orientation(const HexMapCellId &cell_id) const {
@@ -431,6 +435,7 @@ int HexMap::get_cell_item_orientation(const HexMapCellId &cell_id) const {
 
 int HexMap::_get_cell_item_orientation(
         const Ref<HexMapCellIdWrapper> p_cell_id) const {
+    ERR_FAIL_COND_V_MSG(!p_cell_id.is_valid(), 0, "null cell id");
     return get_cell_item_orientation(**p_cell_id);
 }
 
@@ -512,8 +517,9 @@ Vector3 HexMap::cell_id_to_local(const HexMapCellId &cell_id) const {
 }
 
 Vector3 HexMap::_cell_id_to_local(
-        const Ref<HexMapCellIdWrapper> cell_id) const {
-    return cell_id_to_local(**cell_id);
+        const Ref<HexMapCellIdWrapper> p_cell_id) const {
+    ERR_FAIL_COND_V_MSG(!p_cell_id.is_valid(), Vector3(), "null cell id");
+    return cell_id_to_local(**p_cell_id);
 }
 
 Vector<HexMapCellId> HexMap::local_quad_to_cell_ids(Vector3 a,
@@ -842,7 +848,10 @@ void HexMap::_bind_methods() {
             &HexMap::_set_cell_item_v,
             DEFVAL(0));
     ClassDB::bind_method(
-            D_METHOD("get_cell_item", "position"), &HexMap::_get_cell_item);
+            D_METHOD("get_cell_item", "cell_id"), &HexMap::_get_cell_item);
+    ClassDB::bind_method(D_METHOD("get_cell_item_v", "cell_vector"),
+            &HexMap::_get_cell_item_v);
+
     ClassDB::bind_method(D_METHOD("get_cell_item_orientation", "position"),
             &HexMap::_get_cell_item_orientation);
 

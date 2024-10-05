@@ -133,12 +133,10 @@ HexMapCellIdWrapper::_from_coordinates(int p_q, int p_r, int p_y) {
     return CellId(p_q, p_r, p_y);
 }
 
-Vector3i HexMapCellIdWrapper::_as_vector() {
-    return Vector3i(cell_id.q, cell_id.r, cell_id.y);
-}
+Vector3i HexMapCellIdWrapper::_as_vector() { return (Vector3i)cell_id; }
 
 Ref<HexMapCellIdWrapper> HexMapCellIdWrapper::_from_vector(Vector3i p_vector) {
-    return CellId(p_vector.x, p_vector.y, p_vector.z);
+    return CellId(p_vector);
 }
 
 uint64_t HexMapCellIdWrapper::_as_int() {
