@@ -14,10 +14,10 @@ class HexSpace {
     /// cell mesh origin offset
     Vector3 mesh_offset;
 
+public:
     /// global transform of the meshes
     Transform3D transform;
 
-public:
     /// Set the cell scaling for the hex grid.  Scale modifies the unit hex
     /// cell with `height = 1`, `radius = 1`.  This will update any
     /// `mesh_offset` that was previously set.

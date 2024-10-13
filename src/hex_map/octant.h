@@ -8,7 +8,7 @@
 #include <godot_cpp/variant/rid.hpp>
 
 #include "core/cell_id.h"
-#include "core/mesh_manager.h"
+#include "core/library_mesh_tool.h"
 #include "core/tile_orientation.h"
 
 using namespace godot;
@@ -28,7 +28,7 @@ private:
     HexMap &hex_map;
     HashSet<CellKey> cells;
 
-    HexMapMeshManager mesh_manager;
+    HexMapLibraryMeshTool mesh_tool;
 
     // The baked mesh and the multimeshes are mutually exclusive
     Ref<ArrayMesh> baked_mesh;

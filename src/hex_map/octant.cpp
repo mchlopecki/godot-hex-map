@@ -125,7 +125,7 @@ void HexMapOctant::bake_mesh() {
     HashMap<Ref<Material>, Ref<SurfaceTool>> mat_map;
 
     // hide the mesh_manager; we want to preserve its state
-    mesh_manager.set_visibility(false);
+    mesh_tool.set_visibility(false);
 
     // iterate through the cells, add cell mesh surfaces to the surface tool
     // for each material.
@@ -207,7 +207,7 @@ void HexMapOctant::update_visibility() {
     // XXX should hidden also disable the static shape?
 
     bool visible = hex_map.is_visible_in_tree();
-    mesh_manager.set_visibility(visible);
+    mesh_tool.set_visibility(visible);
     if (collision_debug_mesh_instance.is_valid()) {
         rs->instance_set_visible(collision_debug_mesh_instance, visible);
     }
@@ -223,7 +223,7 @@ void HexMapOctant::enter_world() {
     RenderingServer *rs = RenderingServer::get_singleton();
     SceneTree *st = hex_map.get_tree();
 
-    mesh_manager.set_scenario(hex_map.get_world_3d()->get_scenario());
+    mesh_tool.set_scenario(hex_map.get_world_3d()->get_scenario());
 
     ps->body_set_space(physics_body, hex_map.get_world_3d()->get_space());
 
@@ -247,7 +247,7 @@ void HexMapOctant::exit_world() {
 
     ps->body_set_space(physics_body, RID());
 
-    mesh_manager.exit_world();
+    mesh_tool.exit_world();
 
     if (baked_mesh_instance.is_valid()) {
         rs->free_rid(baked_mesh_instance);
@@ -290,8 +290,10 @@ void HexMapOctant::apply_changes() {
     }
     dirty = false;
 
-    mesh_manager.set_space(hex_map.get_space());
-    mesh_manager.refresh();
+    mesh_tool.set_space(hex_map.get_space());
+    Ref<MeshLibrary> mesh_library = hex_map.get_mesh_library();
+    mesh_tool.set_mesh_library(mesh_library);
+    mesh_tool.refresh();
 }
 
 void HexMapOctant::set_cell(const CellKey cell_key,
@@ -299,14 +301,14 @@ void HexMapOctant::set_cell(const CellKey cell_key,
         HexMapTileOrientation orientation) {
     free_baked_mesh();
     cells.insert(cell_key);
-    mesh_manager.set_cell(cell_key, hex_map.mesh_library, index, orientation);
+    mesh_tool.set_cell(cell_key, index, orientation);
     dirty = true;
 }
 
 void HexMapOctant::clear_cell(const CellKey cell_key) {
     free_baked_mesh();
     cells.erase(cell_key);
-    mesh_manager.clear_cell(cell_key);
+    mesh_tool.clear_cell(cell_key);
     dirty = true;
 }
 
@@ -342,7 +344,7 @@ void HexMapOctant::clear_baked_mesh() {
 HexMapOctant::HexMapOctant(HexMap &hex_map) : hex_map(hex_map) {
     PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
 
-    mesh_manager.set_object_id(hex_map.get_instance_id());
+    mesh_tool.set_object_id(hex_map.get_instance_id());
 
     physics_body = ps->body_create();
     ps->body_set_mode(physics_body, PhysicsServer3D::BODY_MODE_STATIC);

@@ -16,7 +16,7 @@ class SelectionManager {
     Ref<StandardMaterial3D> mesh_mat;
     Ref<StandardMaterial3D> line_mat;
     RID cell_mesh;
-    HexMapMeshManager mesh_manager;
+    HexMapMeshTool mesh_manager;
 
     void build_cell_mesh();
 

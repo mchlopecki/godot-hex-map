@@ -10,13 +10,13 @@
 #include <godot_cpp/variant/transform3d.hpp>
 
 #include "cell_id.h"
-#include "hash_map_key_iter.h"
 #include "space.h"
-#include "tile_orientation.h"
 
 using namespace godot;
 
-class HexMapMeshManager {
+class HexMapLibraryMeshTool;
+
+class HexMapMeshTool {
 private:
     /// Type used as a key when looking up cells
     using CellId = HexMapCellId;
@@ -36,12 +36,6 @@ private:
         RID instance;
     };
 
-    /// missing mesh library mesh
-    // would love to be able to share this across all instances of mesh
-    // manager, but Ref<T> crashes in `godot::RefCounted::unreference()` when
-    // this is used as a static.
-    Ref<ArrayMesh> missing_mesh;
-
     /// map of cell keys to the visual for each cell
     HashMap<CellKey, Cell> cell_map;
 
@@ -60,13 +54,12 @@ private:
     void free_multimeshes();
     void build_multimeshes();
 
-    /// used internally to generate the missing mesh mesh
-    Ref<ArrayMesh> get_missing_mesh();
-
 public:
-    HexMapMeshManager(RID scenario = RID(), uint64_t object_id = 0) :
+    friend HexMapLibraryMeshTool;
+
+    HexMapMeshTool(RID scenario = RID(), uint64_t object_id = 0) :
             scenario(scenario), object_id(object_id){};
-    ~HexMapMeshManager();
+    ~HexMapMeshTool();
 
     /// Set the scenario to add meshes to
     inline void set_scenario(RID value) { scenario = value; };
@@ -79,24 +72,13 @@ public:
     void set_space(const HexSpace &);
 
     /// Get the `HexSpace` for this MeshManager
-    inline HexSpace &get_space() { return space; }
+    inline const HexSpace &get_space() const { return space; }
 
     /// Set the mesh and mesh instance transform for a given cell.  The
     /// transform is relative to the center of the cell.
     void set_cell(CellId cell_id,
             RID mesh,
             Transform3D mesh_transform = Transform3D());
-
-    /// Set the mesh & rotation for a given cell from a MeshLibrary.
-    ///
-    /// This helper will get the mesh and mesh transform from the mesh library
-    /// by the provided `index`.  If the `mesh_library` is null, or the `index`
-    /// does not exist in the `mesh_library`, a placeholder mesh will be drawn
-    /// in the cell.
-    void set_cell(CellId,
-            const Ref<MeshLibrary> &,
-            int index,
-            HexMapTileOrientation);
 
     /// clear the specified cell
     void clear_cell(CellId);

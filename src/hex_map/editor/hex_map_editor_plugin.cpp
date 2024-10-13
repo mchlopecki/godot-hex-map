@@ -134,18 +134,21 @@ void HexMapEditorPlugin::selection_clear() {
 void HexMapEditorPlugin::selection_fill() {
     ERR_FAIL_COND_MSG(selection_manager->is_empty(), "no cells selected");
 
-    List<EditorCursor::CursorCell> tiles = editor_cursor->get_tiles();
+    ERR_FAIL_COND_MSG(editor_cursor->size() > 1,
+            "cursor has more than one tile; need one");
     ERR_FAIL_COND_MSG(
-            tiles.size() > 1, "cursor has more than one tile; need one");
-    ERR_FAIL_COND_MSG(tiles.size() == 0, "cursor has no tiles; need one");
-    EditorCursor::CursorCell &tile = tiles[0];
+            editor_cursor->size() == 0, "cursor has no tiles; need one");
+    EditorCursor::CellState tile = editor_cursor->get_only_cell_state();
 
     EditorUndoRedoManager *undo_redo = get_undo_redo();
     undo_redo->create_action("HexMap: fill selected tiles");
 
     for (const HexMapCellId cell : selection_manager->get_cells()) {
-        undo_redo->add_do_method(
-                hex_map, "set_cell_item_v", cell, tile.tile, tile.orientation);
+        undo_redo->add_do_method(hex_map,
+                "set_cell_item_v",
+                cell,
+                tile.index,
+                tile.orientation);
         undo_redo->add_undo_method(hex_map,
                 "set_cell_item_v",
                 cell,
@@ -216,18 +219,18 @@ void HexMapEditorPlugin::selection_clone_apply() {
             hex_map);
 
     Array select_cells;
-    for (const auto &cell : editor_cursor->get_tiles()) {
-        select_cells.push_back((Vector3i)cell.cell_id_live);
+    for (const auto &cell : editor_cursor->get_cells()) {
+        select_cells.push_back((Vector3i)cell.cell_id);
         undo_redo->add_do_method(hex_map,
                 "set_cell_item_v",
-                cell.cell_id_live,
-                cell.tile,
+                cell.cell_id,
+                cell.index,
                 cell.orientation);
         undo_redo->add_undo_method(hex_map,
                 "set_cell_item_v",
-                cell.cell_id_live,
-                hex_map->get_cell_item(cell.cell_id_live),
-                hex_map->get_cell_item_orientation(cell.cell_id_live));
+                cell.cell_id,
+                hex_map->get_cell_item(cell.cell_id),
+                hex_map->get_cell_item_orientation(cell.cell_id));
     }
     undo_redo->add_do_method(this, "set_selection_v", select_cells);
 
@@ -310,18 +313,18 @@ void HexMapEditorPlugin::selection_move_apply() {
 
     // set the new cells, and start the undo restoring the new cells
     Array select_cells;
-    for (const auto &cell : editor_cursor->get_tiles()) {
-        select_cells.push_back(cell.cell_id_live);
+    for (const auto &cell : editor_cursor->get_cells()) {
+        select_cells.push_back(cell.cell_id);
         undo_redo->add_do_method(hex_map,
                 "set_cell_item_v",
-                cell.cell_id_live,
-                cell.tile,
+                cell.cell_id,
+                cell.index,
                 cell.orientation);
         undo_redo->add_undo_method(hex_map,
                 "set_cell_item_v",
-                cell.cell_id_live,
-                hex_map->get_cell_item(cell.cell_id_live),
-                hex_map->get_cell_item_orientation(cell.cell_id_live));
+                cell.cell_id,
+                hex_map->get_cell_item(cell.cell_id),
+                hex_map->get_cell_item_orientation(cell.cell_id));
     }
     undo_redo->add_do_method(this, "set_selection_v", select_cells);
 
@@ -425,7 +428,7 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
         // - clear cursor (escape)
         case INPUT_STATE_DEFAULT:
             if (mouse_left_pressed && shift_pressed) {
-                editor_cursor->hide();
+                editor_cursor->set_visibility(false);
                 input_state = INPUT_STATE_SELECTING;
                 last_selection = selection_manager->get_cells();
                 selection_anchor = editor_cursor->get_pos();
@@ -436,7 +439,7 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                 input_state = INPUT_STATE_PAINTING;
                 return AFTER_GUI_INPUT_STOP;
             } else if (mouse_right_pressed) {
-                editor_cursor->hide();
+                editor_cursor->set_visibility(false);
                 input_state = INPUT_STATE_ERASING;
                 return AFTER_GUI_INPUT_STOP;
             } else if (escape_pressed) {
@@ -459,16 +462,17 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
             int tile = hex_map->get_cell_item(cell_id);
             int orientation = hex_map->get_cell_item_orientation(cell_id);
 
-            EditorCursor::CursorCell cell = editor_cursor->get_first_tile();
-            if (cell.tile != tile || cell.orientation != orientation) {
+            EditorCursor::CellState cell =
+                    editor_cursor->get_only_cell_state();
+            if (cell.index != tile || cell.orientation != orientation) {
                 cells_changed.push_back(CellChange{
                         .cell_id = cell_id,
                         .orig_tile = tile,
                         .orig_orientation = orientation,
-                        .new_tile = cell.tile,
+                        .new_tile = cell.index,
                         .new_orientation = cell.orientation,
                 });
-                hex_map->set_cell_item(cell_id, cell.tile, cell.orientation);
+                hex_map->set_cell_item(cell_id, cell.index, cell.orientation);
             }
             if (mouse_left_released) {
                 commit_cell_changes("HexMap: paint cells");
@@ -497,7 +501,7 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
             if (mouse_right_released) {
                 commit_cell_changes("HexMap: erase cells");
                 input_state = INPUT_STATE_DEFAULT;
-                editor_cursor->show();
+                editor_cursor->set_visibility(true);
             }
             break;
         }
@@ -561,13 +565,13 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                         profiling_begin("commit selection undo_redo");
                 undo_redo->commit_action();
 
-                editor_cursor->show();
+                editor_cursor->set_visibility(true);
                 input_state = INPUT_STATE_DEFAULT;
                 return AFTER_GUI_INPUT_STOP;
             } else if (escape_pressed) {
                 selection_manager->clear();
                 selection_manager->set_cells(last_selection);
-                editor_cursor->show();
+                editor_cursor->set_visibility(true);
                 input_state = INPUT_STATE_DEFAULT;
                 return AFTER_GUI_INPUT_STOP;
             }
@@ -618,8 +622,9 @@ void HexMapEditorPlugin::update_mesh_library() {
     bottom_panel->set("mesh_library", mesh_library);
 
     if (editor_cursor) {
-        editor_control->reset_orientation();
         editor_cursor->clear_tiles();
+        editor_cursor->set_mesh_library(mesh_library);
+        editor_control->reset_orientation();
         bottom_panel->call("clear_selection");
     }
 }
@@ -676,7 +681,9 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
     make_bottom_panel_item_visible(bottom_panel);
 
     // not a godot Object subclass, so `new` instead of `memnew()`
-    editor_cursor = new EditorCursor(*hex_map);
+    editor_cursor = new EditorCursor(hex_map->get_world_3d()->get_scenario());
+    editor_cursor->set_space(hex_map->get_space());
+
     selection_manager = new SelectionManager(*hex_map);
     Array floors = hex_map->get_meta("_editor_floors_", Array());
     if (floors.size() == 4) {
@@ -737,7 +744,7 @@ void HexMapEditorPlugin::_notification(int p_what) {
 
 void HexMapEditorPlugin::hex_space_changed() {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
-    editor_cursor->cell_size_changed();
+    editor_cursor->set_space(hex_map->get_space());
     selection_manager->redraw_selection();
 }
 
