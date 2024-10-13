@@ -1,33 +1,24 @@
-#include "octant.h"
-#include "godot_cpp/classes/array_mesh.hpp"
-#include "godot_cpp/classes/material.hpp"
-#include "godot_cpp/classes/mesh.hpp"
-#include "godot_cpp/classes/mesh_data_tool.hpp"
-#include "godot_cpp/classes/mesh_library.hpp"
-#include "godot_cpp/classes/physics_server3d.hpp"
-#include "godot_cpp/classes/rendering_server.hpp"
-#include "godot_cpp/classes/scene_tree.hpp"
-#include "godot_cpp/classes/shape3d.hpp"
-#include "godot_cpp/classes/surface_tool.hpp"
-#include "godot_cpp/classes/world3d.hpp"
-#include "godot_cpp/core/error_macros.hpp"
-#include "godot_cpp/templates/pair.hpp"
-#include "godot_cpp/templates/vector.hpp"
-#include "godot_cpp/variant/packed_vector3_array.hpp"
-#include "godot_cpp/variant/transform3d.hpp"
-#include "hex_map.h"
-#include "profiling.h"
 #include <cassert>
+#include <godot_cpp/classes/array_mesh.hpp>
+#include <godot_cpp/classes/material.hpp>
+#include <godot_cpp/classes/mesh.hpp>
+#include <godot_cpp/classes/mesh_data_tool.hpp>
+#include <godot_cpp/classes/mesh_library.hpp>
+#include <godot_cpp/classes/physics_server3d.hpp>
+#include <godot_cpp/classes/rendering_server.hpp>
+#include <godot_cpp/classes/scene_tree.hpp>
+#include <godot_cpp/classes/shape3d.hpp>
+#include <godot_cpp/classes/surface_tool.hpp>
+#include <godot_cpp/classes/world3d.hpp>
+#include <godot_cpp/core/error_macros.hpp>
+#include <godot_cpp/templates/pair.hpp>
+#include <godot_cpp/templates/vector.hpp>
+#include <godot_cpp/variant/packed_vector3_array.hpp>
+#include <godot_cpp/variant/transform3d.hpp>
 
-void HexMapOctant::free_multimeshes() {
-    RenderingServer *rs = RenderingServer::get_singleton();
-
-    for (const auto &multimesh : multimeshes) {
-        rs->free_rid(multimesh.multimesh_instance);
-        rs->free_rid(multimesh.multimesh);
-    }
-    multimeshes.clear();
-}
+#include "hex_map.h"
+#include "octant.h"
+#include "profiling.h"
 
 void HexMapOctant::free_baked_mesh() {
     baked_mesh = Ref<Mesh>();
@@ -74,9 +65,8 @@ void HexMapOctant::build_physics_body() {
         }
         RID mesh_rid = mesh->get_rid();
 
-        Transform3D cell_transform;
-        cell_transform.basis = cell->get_basis();
-        cell_transform.set_origin(hex_map.cell_id_to_local(cell_key));
+        Transform3D cell_transform(
+                cell->get_basis(), hex_map.get_cell_center(cell_key));
 
         // Update the static body for the octant if the mesh library has any
         // collision shapes for this cell type.  Note that the collision shape
@@ -108,6 +98,11 @@ void HexMapOctant::build_physics_body() {
         }
     }
 
+    Transform3D global_transform = hex_map.get_global_transform();
+    ps->body_set_state(physics_body,
+            PhysicsServer3D::BODY_STATE_TRANSFORM,
+            global_transform);
+
     // update the collision debugging mesh if one exists
     if (collision_debug_mesh.is_valid() && !debug_mesh_vertices.is_empty()) {
         Array surface_arrays;
@@ -118,84 +113,8 @@ void HexMapOctant::build_physics_body() {
         rs->mesh_surface_set_material(collision_debug_mesh,
                 0,
                 hex_map.collision_debug_mat->get_rid());
-    }
-}
-
-void HexMapOctant::build_multimesh() {
-    auto profiler = profiling_begin("Octant::build_multimesh()");
-
-    assert(hex_map.is_inside_tree() &&
-            "should be only be called when HexMap is in SceneTree");
-    RenderingServer *rs = RenderingServer::get_singleton();
-    PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
-    Ref<MeshLibrary> &mesh_library = hex_map.mesh_library;
-
-    free_multimeshes();
-
-    // can't do anything without the MeshLibrary
-    if (!mesh_library.is_valid()) {
-        return;
-    }
-
-    // to create the multimesh for cells, we need the mesh RID and the
-    // transform for each instance of that cell in the octant
-    HashMap<RID, Vector<Transform3D>> mesh_cells;
-
-    // iterate through the cells, save off RID & Transform pairs for multimesh
-    // creation later, update the physics body, and if collision debugging is
-    // enabled, update that mesh.
-    for (const CellKey &cell_key : cells) {
-        const HexMap::Cell *cell = hex_map.cell_map.getptr(cell_key);
-        ERR_CONTINUE_MSG(cell == nullptr, "nonexistent HexMap cell in Octant");
-
-        // hexmap may be hiding the visual for this cell
-        if (!cell->visible) {
-            continue;
-        }
-
-        Ref<Mesh> mesh = mesh_library->get_item_mesh(cell->item);
-        if (!mesh.is_valid()) {
-            continue;
-        }
-        RID mesh_rid = mesh->get_rid();
-
-        Vector<Transform3D> *mesh_transforms = mesh_cells.getptr(mesh_rid);
-        if (!mesh_cells.has(mesh_rid)) {
-            auto iter = mesh_cells.insert(mesh_rid, Vector<Transform3D>());
-            mesh_transforms = &iter->value;
-        }
-
-        Transform3D cell_transform;
-        cell_transform.basis = cell->get_basis();
-        cell_transform.set_origin(hex_map.cell_id_to_local(cell_key));
-
-        // save off the mesh transform for this cell; we'll use it when
-        // creating the multimesh for this cell type later.
-        mesh_transforms->push_back(cell_transform *
-                mesh_library->get_item_mesh_transform(cell->item));
-    }
-
-    // create a multimesh for each tile type present in the octant
-    for (const auto &pair : mesh_cells) {
-        // create the multimesh
-        RID multimesh = rs->multimesh_create();
-        rs->multimesh_set_mesh(multimesh, pair.key);
-        rs->multimesh_allocate_data(
-                multimesh, pair.value.size(), RS::MULTIMESH_TRANSFORM_3D);
-
-        // copy all the transforms into it
-        const Vector<Transform3D> &transforms = pair.value;
-        for (int i = 0; i < transforms.size(); i++) {
-            rs->multimesh_instance_set_transform(multimesh, i, transforms[i]);
-        }
-
-        // create an instance of the multimesh
-        RID instance = rs->instance_create2(
-                multimesh, hex_map.get_world_3d()->get_scenario());
-        rs->instance_attach_object_instance_id(
-                instance, hex_map.get_instance_id());
-
-        multimeshes.push_back(MultiMesh{ multimesh, instance });
+        rs->instance_set_transform(
+                collision_debug_mesh_instance, global_transform);
     }
 }
 
@@ -205,7 +124,8 @@ void HexMapOctant::bake_mesh() {
     Ref<MeshLibrary> &mesh_library = hex_map.mesh_library;
     HashMap<Ref<Material>, Ref<SurfaceTool>> mat_map;
 
-    free_multimeshes();
+    // hide the mesh_manager; we want to preserve its state
+    mesh_manager.set_visibility(false);
 
     // iterate through the cells, add cell mesh surfaces to the surface tool
     // for each material.
@@ -221,7 +141,7 @@ void HexMapOctant::bake_mesh() {
 
         Transform3D transform;
         transform.basis = cell->get_basis();
-        transform.set_origin(hex_map.cell_id_to_local(cell_key));
+        transform.set_origin(hex_map.get_cell_center(cell_key));
         transform *= mesh_library->get_item_mesh_transform(cell->item);
 
         for (int i = 0; i < mesh->get_surface_count(); i++) {
@@ -253,40 +173,14 @@ void HexMapOctant::bake_mesh() {
             rs->instance_create2(baked_mesh->get_rid(), scenario);
     rs->instance_attach_object_instance_id(
             baked_mesh_instance, hex_map.get_instance_id());
+    rs->instance_set_transform(
+            baked_mesh_instance, hex_map.get_global_transform());
 
     // XXX texel size not easily modified for gridmap; do we need to expose
     // this value or fetch it from someplace?  Also not sure about global
     // transform here, but it matches GridMap
 
     baked_mesh->lightmap_unwrap(hex_map.get_global_transform(), 0.1);
-}
-
-void HexMapOctant::apply_global_transform() {
-    PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
-    RenderingServer *rs = RenderingServer::get_singleton();
-    Transform3D global_transform = hex_map.get_global_transform();
-
-    // move the physics body
-    ps->body_set_state(physics_body,
-            PhysicsServer3D::BODY_STATE_TRANSFORM,
-            global_transform);
-
-    // move the collision debugging mesh instance if present
-    if (collision_debug_mesh_instance.is_valid()) {
-        rs->instance_set_transform(
-                collision_debug_mesh_instance, global_transform);
-    }
-
-    // move the baked mesh if present
-    if (baked_mesh_instance.is_valid()) {
-        rs->instance_set_transform(baked_mesh_instance, global_transform);
-    }
-
-    // move each of the multimeshes
-    for (const auto &multimesh : multimeshes) {
-        rs->instance_set_transform(
-                multimesh.multimesh_instance, global_transform);
-    }
 }
 
 void HexMapOctant::update_collision_properties() {
@@ -306,13 +200,6 @@ void HexMapOctant::update_physics_params() {
             hex_map.physics_body_bounce);
 }
 
-void HexMapOctant::update_transform() {
-    // only valid if the HexMap is inside a scene tree
-    if (hex_map.is_inside_tree()) {
-        apply_global_transform();
-    }
-}
-
 void HexMapOctant::update_visibility() {
     ERR_FAIL_COND(!hex_map.is_inside_tree());
     RenderingServer *rs = RenderingServer::get_singleton();
@@ -320,11 +207,7 @@ void HexMapOctant::update_visibility() {
     // XXX should hidden also disable the static shape?
 
     bool visible = hex_map.is_visible_in_tree();
-    for (const auto &mm : multimeshes) {
-        ERR_CONTINUE_MSG(!mm.multimesh_instance.is_valid(),
-                "invalid multimesh instance in quad");
-        rs->instance_set_visible(mm.multimesh_instance, visible);
-    }
+    mesh_manager.set_visibility(visible);
     if (collision_debug_mesh_instance.is_valid()) {
         rs->instance_set_visible(collision_debug_mesh_instance, visible);
     }
@@ -340,6 +223,8 @@ void HexMapOctant::enter_world() {
     RenderingServer *rs = RenderingServer::get_singleton();
     SceneTree *st = hex_map.get_tree();
 
+    mesh_manager.set_scenario(hex_map.get_world_3d()->get_scenario());
+
     ps->body_set_space(physics_body, hex_map.get_world_3d()->get_space());
 
     // if debugging collisions, create collision debug mesh and show it
@@ -353,16 +238,7 @@ void HexMapOctant::enter_world() {
                 collision_debug_mesh, hex_map.get_world_3d()->get_scenario());
     }
 
-    build_physics_body();
-    if (!baked_mesh.is_valid()) {
-        build_multimesh();
-    } else {
-        baked_mesh_instance = rs->instance_create2(
-                baked_mesh->get_rid(), hex_map.get_world_3d()->get_scenario());
-        rs->instance_attach_object_instance_id(
-                baked_mesh_instance, hex_map.get_instance_id());
-    }
-    apply_global_transform();
+    apply_changes();
 }
 
 void HexMapOctant::exit_world() {
@@ -371,7 +247,7 @@ void HexMapOctant::exit_world() {
 
     ps->body_set_space(physics_body, RID());
 
-    free_multimeshes();
+    mesh_manager.exit_world();
 
     if (baked_mesh_instance.is_valid()) {
         rs->free_rid(baked_mesh_instance);
@@ -390,23 +266,47 @@ void HexMapOctant::exit_world() {
 }
 
 void HexMapOctant::apply_changes() {
-    if (hex_map.is_inside_tree()) {
-        build_physics_body();
-        if (!baked_mesh.is_valid()) {
-            build_multimesh();
-        }
+    if (!hex_map.is_inside_tree()) {
+        return;
     }
+
+    build_physics_body();
+
+    if (baked_mesh_instance.is_valid()) {
+        RenderingServer *rs = RenderingServer::get_singleton();
+        rs->instance_set_transform(
+                baked_mesh_instance, hex_map.get_global_transform());
+        return;
+    }
+    if (baked_mesh.is_valid()) {
+        RenderingServer *rs = RenderingServer::get_singleton();
+        baked_mesh_instance = rs->instance_create2(
+                baked_mesh->get_rid(), hex_map.get_world_3d()->get_scenario());
+        rs->instance_attach_object_instance_id(
+                baked_mesh_instance, hex_map.get_instance_id());
+        rs->instance_set_transform(
+                baked_mesh_instance, hex_map.get_global_transform());
+        return;
+    }
+    dirty = false;
+
+    mesh_manager.set_space(hex_map.get_space());
+    mesh_manager.refresh();
 }
 
-void HexMapOctant::add_cell(const CellKey cell_key) {
+void HexMapOctant::set_cell(const CellKey cell_key,
+        int index,
+        HexMapTileOrientation orientation) {
     free_baked_mesh();
     cells.insert(cell_key);
+    mesh_manager.set_cell(cell_key, hex_map.mesh_library, index, orientation);
     dirty = true;
 }
 
-void HexMapOctant::remove_cell(const CellKey cell_key) {
+void HexMapOctant::clear_cell(const CellKey cell_key) {
     free_baked_mesh();
     cells.erase(cell_key);
+    mesh_manager.clear_cell(cell_key);
     dirty = true;
 }
 
@@ -441,6 +341,8 @@ void HexMapOctant::clear_baked_mesh() {
 
 HexMapOctant::HexMapOctant(HexMap &hex_map) : hex_map(hex_map) {
     PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
+
+    mesh_manager.set_object_id(hex_map.get_instance_id());
 
     physics_body = ps->body_create();
     ps->body_set_mode(physics_body, PhysicsServer3D::BODY_MODE_STATIC);

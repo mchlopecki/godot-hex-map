@@ -1,14 +1,15 @@
 #ifdef TOOLS_ENABLED
 #pragma once
 
+#include <godot_cpp/classes/camera3d.hpp>
+#include <godot_cpp/classes/standard_material3d.hpp>
+#include <godot_cpp/templates/list.hpp>
+#include <godot_cpp/variant/plane.hpp>
+#include <godot_cpp/variant/rid.hpp>
+#include <godot_cpp/variant/vector2.hpp>
+
 #include "../hex_map.h"
 #include "editor_control.h"
-#include "godot_cpp/classes/camera3d.hpp"
-#include "godot_cpp/classes/standard_material3d.hpp"
-#include "godot_cpp/templates/list.hpp"
-#include "godot_cpp/variant/plane.hpp"
-#include "godot_cpp/variant/rid.hpp"
-#include "godot_cpp/variant/vector2.hpp"
 
 using namespace godot;
 
@@ -27,7 +28,7 @@ public:
     };
 
 private:
-    HexMap *hex_map;
+    HexMapBase &hex_map;
 
     Vector3 pointer_pos;
     CellId pointer_cell;
@@ -45,6 +46,8 @@ private:
     RID grid_mesh_instance;
     Transform3D grid_mesh_transform;
 
+    HexMapMeshManager mesh_manager;
+
     inline void transform_cell_mesh(RenderingServer *rs,
             MeshLibrary *mesh_library,
             CursorCell &cell);
@@ -57,19 +60,11 @@ private:
 
 protected:
 public:
-    EditorCursor(HexMap *hex_map);
+    EditorCursor(HexMapBase &hex_map);
     ~EditorCursor();
 
     bool update(const Camera3D *camera, const Point2 &pointer, Vector3 *point);
     void update(bool force = false);
-
-    // Given a camera and a pointer position, determine if the pointer is over
-    // the edit plane, and if so save the intercept point.
-    //
-    // This function does not update the state of the editor cursor.
-    bool get_point_intercept(const Camera3D *camera,
-            const Point2 &,
-            Vector3 *point) const;
 
     // XXX add support to hide tiles independently of grid
     void show();

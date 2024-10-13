@@ -1,5 +1,5 @@
 #include "iter_cube.h"
-#include "hex_map/cell_id.h"
+#include "cell_id.h"
 
 HexMapIterCube::HexMapIterCube(Vector3 a, Vector3 b) {
     if (a > b) {

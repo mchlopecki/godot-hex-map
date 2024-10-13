@@ -1,5 +1,5 @@
 #include "iter_radial.h"
-#include "hex_map/cell_id.h"
+#include "cell_id.h"
 
 inline void HexMapIterRadial::advance_until_valid() {
     while ((exclude_center && axial_iter.cell == axial_iter.center) ||
@@ -14,7 +14,7 @@ inline void HexMapIterRadial::advance_until_valid() {
 HexMapIterRadial::HexMapIterRadial(const HexMapCellId center,
         unsigned int radius,
         bool exclude_center,
-        const HexMap::Planes &planes) :
+        const HexMapPlanes &planes) :
         axial_iter(center, radius, planes),
         radius(radius),
         exclude_center(exclude_center) {

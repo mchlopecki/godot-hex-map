@@ -1,5 +1,5 @@
 #include "iter_axial.h"
-#include "hex_map/cell_id.h"
+#include "cell_id.h"
 
 void HexMapIterAxial::advance() {
     if (cell.r < r_max) {
@@ -27,7 +27,7 @@ void HexMapIterAxial::advance_until_valid() {
 
 HexMapIterAxial::HexMapIterAxial(const HexMapCellId center,
         unsigned int radius,
-        const HexMap::Planes &planes) :
+        const HexMapPlanes &planes) :
         center(center) {
     if (planes.y) {
         y_min = center.y - radius;

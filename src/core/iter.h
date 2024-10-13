@@ -1,7 +1,8 @@
 #pragma once
 
-#include "godot_cpp/classes/ref.hpp"
-#include "hex_map/cell_id.h"
+#include <godot_cpp/classes/ref.hpp>
+
+#include "cell_id.h"
 
 using namespace godot;
 

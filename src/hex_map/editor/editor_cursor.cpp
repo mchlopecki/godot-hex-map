@@ -14,27 +14,19 @@
 #include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/variant/color.hpp>
 #include <godot_cpp/variant/transform3d.hpp>
+#include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/variant/vector2.hpp>
 #include <godot_cpp/variant/vector3.hpp>
 
+#include "core/cell_id.h"
+#include "core/iter_radial.h"
+#include "core/math.h"
 #include "editor_cursor.h"
-#include "hex_map/cell_id.h"
-#include "hex_map/iter_radial.h"
 
 #define GRID_RADIUS 40u
 
-void EditorCursor::free_tile_meshes() {
-    RenderingServer *rs = RS::get_singleton();
-    for (const CursorCell &cell : tiles) {
-        hex_map->set_cell_visibility(cell.cell_id_live, true);
-        if (cell.mesh_instance.is_valid()) {
-            rs->free_rid(cell.mesh_instance);
-        }
-    }
-}
-
 void EditorCursor::clear_tiles() {
-    free_tile_meshes();
+    mesh_manager.clear();
     tiles.clear();
     orientation = TileOrientation::Upright0;
 }
@@ -58,13 +50,16 @@ void EditorCursor::set_tile(CellId cell,
         return;
     }
 
+    Ref<MeshLibrary> mesh_library = hex_map.get_mesh_library();
+    if (!mesh_library.is_valid()) {
+        return;
+    }
+    mesh_manager.set_cell(cell, mesh_library, tile, orientation);
+
     CursorCell cc = {
         .cell_id = cell, .tile = tile, .orientation = orientation
     };
-    Ref<MeshLibrary> mesh_library = hex_map->get_mesh_library();
-    RID scenario = hex_map->get_window()->get_world_3d()->get_scenario();
-    RID mesh = mesh_library->get_item_mesh(tile)->get_rid();
-    cc.mesh_instance = rs->instance_create2(mesh, scenario);
+
     tiles.push_back(cc);
 }
 
@@ -106,11 +101,11 @@ void EditorCursor::build_y_grid() {
     // create the points that make up the top of a hex cell
     Vector<Vector3> shape_points;
     shape_points.append(Vector3(0.0, 0, -1.0));
-    shape_points.append(Vector3(-SQRT3_2, 0, -0.5));
-    shape_points.append(Vector3(-SQRT3_2, 0, 0.5));
+    shape_points.append(Vector3(-Math_SQRT3_2, 0, -0.5));
+    shape_points.append(Vector3(-Math_SQRT3_2, 0, 0.5));
     shape_points.append(Vector3(0.0, 0, 1.0));
-    shape_points.append(Vector3(SQRT3_2, 0, 0.5));
-    shape_points.append(Vector3(SQRT3_2, 0, -0.5));
+    shape_points.append(Vector3(Math_SQRT3_2, 0, 0.5));
+    shape_points.append(Vector3(Math_SQRT3_2, 0, -0.5));
     shape_points.append(Vector3(0.0, 0, -1.0));
 
     // pick a point on the middle of an edge to find the closest edge of the
@@ -149,11 +144,11 @@ void EditorCursor::build_r_grid() {
     // create the points that traverse from the center of one edge to the
     // opposite edge
     Array shape_points;
-    shape_points.append(Vector3(-SQRT3_2, 1.0, 0));
-    shape_points.append(Vector3(-SQRT3_2, 0, 0));
-    shape_points.append(Vector3(SQRT3_2, 0, 0));
-    shape_points.append(Vector3(SQRT3_2, 1.0, 0));
-    shape_points.append(Vector3(-SQRT3_2, 1.0, 0));
+    shape_points.append(Vector3(-Math_SQRT3_2, 0.5, 0));
+    shape_points.append(Vector3(-Math_SQRT3_2, -0.5, 0));
+    shape_points.append(Vector3(Math_SQRT3_2, -0.5, 0));
+    shape_points.append(Vector3(Math_SQRT3_2, 0.5, 0));
+    shape_points.append(Vector3(-Math_SQRT3_2, 0.5, 0));
 
     float max = HexMapCellId(0, 0, GRID_RADIUS).unit_center().length_squared();
     PackedVector3Array grid_points;
@@ -185,41 +180,34 @@ void EditorCursor::build_r_grid() {
 
 void EditorCursor::transform_meshes() {
     RenderingServer *rs = RS::get_singleton();
-    Ref<MeshLibrary> mesh_library = hex_map->get_mesh_library();
-    Transform3D global_transform = hex_map->get_global_transform();
+    Ref<MeshLibrary> mesh_library = hex_map.get_mesh_library();
+    Transform3D global_transform = hex_map.get_global_transform();
+    Transform3D local_transform(
+            orientation, hex_map.get_cell_center(pointer_cell));
 
-    Vector3 origin = hex_map->cell_id_to_local(pointer_cell);
+    HexSpace space = hex_map.get_space();
+    space.set_transform(global_transform * local_transform);
+    mesh_manager.set_space(space);
+    mesh_manager.refresh();
 
     for (CursorCell &cell : tiles) {
-        hex_map->set_cell_visibility(cell.cell_id_live, true);
+        hex_map.set_cell_visibility(cell.cell_id_live, true);
     }
 
     for (CursorCell &cell : tiles) {
-        Transform3D transform;
-        transform.origin = origin;
-        transform.basis = (Basis)this->orientation;
-        transform.translate_local(hex_map->cell_id_to_local(cell.cell_id));
+        Vector3 cell_center = hex_map.get_cell_center(cell.cell_id);
 
-        // apply the tile rotation
-        transform.basis = (Basis)cell.orientation * transform.basis;
-
-        cell.cell_id_live = hex_map->local_to_cell_id(transform.origin);
-
-        assert(cell.cell_id.y < 0 || origin.y < 0 || transform.origin.y >= 0);
-
-        transform *= mesh_library->get_item_mesh_transform(cell.tile);
-
-        rs->instance_set_transform(
-                cell.mesh_instance, global_transform * transform);
-
-        hex_map->set_cell_visibility(cell.cell_id_live, false);
+        cell.cell_id_live =
+                hex_map.get_cell_id(local_transform.xform(cell_center));
+        hex_map.set_cell_visibility(cell.cell_id_live, false);
     }
 
     // update the grid transform also
-    grid_mesh_transform.set_origin(hex_map->cell_id_to_local(pointer_cell));
+    grid_mesh_transform.set_origin(
+            pointer_cell.unit_center() * hex_map.get_cell_scale());
     RenderingServer::get_singleton()->instance_set_transform(
             grid_mesh_instance,
-            hex_map->get_global_transform() * grid_mesh_transform);
+            hex_map.get_global_transform() * grid_mesh_transform);
 }
 
 bool EditorCursor::update(const Camera3D *camera,
@@ -228,7 +216,7 @@ bool EditorCursor::update(const Camera3D *camera,
     ERR_FAIL_COND_V_MSG(
             camera == nullptr, false, "null camera in EditorCursor.update()");
     Transform3D local_transform =
-            hex_map->get_global_transform().affine_inverse();
+            hex_map.get_global_transform().affine_inverse();
     Vector3 origin = camera->project_ray_origin(pointer);
     Vector3 normal = camera->project_ray_normal(pointer);
     origin = local_transform.xform(origin);
@@ -246,10 +234,12 @@ bool EditorCursor::update(const Camera3D *camera,
     }
     pointer_pos = pos;
 
-    HexMapCellId cell = hex_map->local_to_cell_id(pos);
+    HexMapCellId cell = hex_map.get_cell_id(pos);
     if (cell == pointer_cell) {
         return true;
     }
+    UtilityFunctions::print("editor cursor " + pointer_pos + " in cell " +
+            cell + " with center " + hex_map.get_cell_center(cell));
     pointer_cell = cell;
 
     transform_meshes();
@@ -265,7 +255,7 @@ void EditorCursor::update(bool force) {
     }
     pointer_pos = pos;
 
-    HexMapCellId cell = hex_map->local_to_cell_id(pos);
+    HexMapCellId cell = hex_map.get_cell_id(pos);
     if (!force && cell == pointer_cell) {
         return;
     }
@@ -274,42 +264,8 @@ void EditorCursor::update(bool force) {
     transform_meshes();
 }
 
-bool EditorCursor::get_point_intercept(const Camera3D *camera,
-        const Point2 &pointer,
-        Vector3 *point) const {
-    ERR_FAIL_COND_V_MSG(
-            camera == nullptr, false, "null camera in EditorCursor.update()");
-    Transform3D local_transform =
-            hex_map->get_global_transform().affine_inverse();
-    Vector3 origin = camera->project_ray_origin(pointer);
-    Vector3 normal = camera->project_ray_normal(pointer);
-    origin = local_transform.xform(origin);
-    normal = local_transform.basis.xform(normal).normalized();
-
-    Vector3 pos;
-    if (!edit_plane.intersects_ray(origin, normal, &pos)) {
-        return false;
-    }
-
-    if (point != nullptr) {
-        *point = pos;
-    }
-
-    return true;
-}
-
-void EditorCursor::hide() {
-    RenderingServer *rs = RS::get_singleton();
-    for (CursorCell &cell : tiles) {
-        rs->instance_set_visible(cell.mesh_instance, false);
-    }
-}
-void EditorCursor::show() {
-    RenderingServer *rs = RS::get_singleton();
-    for (CursorCell &cell : tiles) {
-        rs->instance_set_visible(cell.mesh_instance, true);
-    }
-}
+void EditorCursor::hide() { mesh_manager.set_visibility(false); }
+void EditorCursor::show() { mesh_manager.set_visibility(true); }
 
 void EditorCursor::cell_size_changed() {
     set_axis(edit_axis);
@@ -333,7 +289,7 @@ void EditorCursor::set_axis(EditorControl::EditAxis axis) {
         case EditorControl::AXIS_Q:
             build_r_grid();
             grid_mesh_transform.rotate(Vector3(0, 1, 0), -Math_PI / 3.0);
-            edit_plane.normal = Vector3(SQRT3_2, 0, -0.5).normalized();
+            edit_plane.normal = Vector3(Math_SQRT3_2, 0, -0.5).normalized();
             break;
         case EditorControl::AXIS_R:
             build_r_grid();
@@ -342,11 +298,11 @@ void EditorCursor::set_axis(EditorControl::EditAxis axis) {
         case EditorControl::AXIS_S:
             build_r_grid();
             grid_mesh_transform.rotate(Vector3(0, 1, 0), Math_PI / 3.0);
-            edit_plane.normal = Vector3(SQRT3_2, 0, 0.5).normalized();
+            edit_plane.normal = Vector3(Math_SQRT3_2, 0, 0.5).normalized();
             break;
     }
 
-    grid_mesh_transform.scale(hex_map->get_cell_scale());
+    grid_mesh_transform.scale(hex_map.get_cell_scale());
     RenderingServer::get_singleton()->instance_set_transform(
             grid_mesh_instance, grid_mesh_transform);
 
@@ -355,7 +311,7 @@ void EditorCursor::set_axis(EditorControl::EditAxis axis) {
 }
 
 void EditorCursor::set_depth(int depth) {
-    Vector3 cell_scale = hex_map->get_cell_scale();
+    Vector3 cell_scale = hex_map.get_cell_scale();
     real_t cell_depth;
 
     switch (edit_axis) {
@@ -381,7 +337,7 @@ void EditorCursor::set_orientation(TileOrientation orientation) {
     transform_meshes();
 }
 
-EditorCursor::EditorCursor(HexMap *map) {
+EditorCursor::EditorCursor(HexMapBase &map) : hex_map(map) {
     RenderingServer *rs = RenderingServer::get_singleton();
 
     grid_mat.instantiate();
@@ -395,17 +351,13 @@ EditorCursor::EditorCursor(HexMap *map) {
 
     grid_mesh = rs->mesh_create();
 
-    RID scenario = EditorInterface::get_singleton()
-                           ->get_editor_viewport_3d()
-                           ->get_tree()
-                           ->get_root()
-                           ->get_world_3d()
-                           ->get_scenario();
+    RID scenario = map.get_world_3d()->get_scenario();
+    mesh_manager.set_scenario(scenario);
+
     grid_mesh_instance = rs->instance_create2(grid_mesh, scenario);
+
     // 24 = Node3DEditorViewport::MISC_TOOL_LAYER
     rs->instance_set_layer_mask(grid_mesh_instance, 1 << 24);
-
-    hex_map = map;
 
     set_axis(edit_axis);
     set_depth(0);
@@ -413,8 +365,6 @@ EditorCursor::EditorCursor(HexMap *map) {
 }
 
 EditorCursor::~EditorCursor() {
-    free_tile_meshes();
-
     // free the grid meshes
     RenderingServer *rs = RenderingServer::get_singleton();
     rs->free_rid(grid_mesh);

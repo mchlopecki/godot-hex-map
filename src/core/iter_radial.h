@@ -5,8 +5,7 @@
 #include <godot_cpp/variant/string.hpp>
 
 #include "cell_id.h"
-#include "hex_map.h"
-#include "hex_map/iter.h"
+#include "iter.h"
 #include "iter_axial.h"
 
 // HexMap cell iterator using axial coordinates to define a volume to iterate
@@ -15,7 +14,7 @@ public:
     HexMapIterRadial(const HexMapCellId center,
             unsigned int radius,
             bool exclude_center = false,
-            const HexMap::Planes &planes = HexMap::Planes::All);
+            const HexMapPlanes &planes = HexMapPlanes::All);
     HexMapIterRadial(HexMapIterAxial iter,
             unsigned int radius,
             bool exclude_center) :

@@ -77,7 +77,7 @@ class HexMapEditorPlugin : public EditorPlugin {
 
     // callbacks for HexMap signals
     void update_mesh_library();
-    void cell_size_changed();
+    void hex_space_changed();
 
     // callbacks used by signals from EditorControl
     void tile_changed(int p_mesh_id);

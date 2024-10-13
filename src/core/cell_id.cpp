@@ -1,11 +1,12 @@
 #include <climits>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/math.hpp>
+#include <godot_cpp/variant/packed_vector3_array.hpp>
 #include <godot_cpp/variant/string.hpp>
 
 #include "cell_id.h"
-#include "godot_cpp/variant/packed_vector3_array.hpp"
 #include "iter_radial.h"
+#include "math.h"
 
 const HexMapCellId HexMapCellId::Origin(0, 0, 0);
 const HexMapCellId HexMapCellId::Invalid(INT_MAX, INT_MAX, INT_MAX);
@@ -34,7 +35,7 @@ HexMapCellId HexMapCellId::from_unit_point(const Vector3 &point) {
     real_t r = (2.0 / 3 * point.z);
     HexMapCellId cell_id = axial_round(q, r);
 
-    cell_id.y = (int)point.y;
+    cell_id.y = round(point.y);
 
     return cell_id;
 }
@@ -42,11 +43,7 @@ HexMapCellId HexMapCellId::from_unit_point(const Vector3 &point) {
 Vector3 HexMapCellId::unit_center() const {
     // convert axial hex coordinates to a point
     // https://www.redblobgames.com/grids/hexagons/#hex-to-pixel
-    //
-    // XXX the x/z coordinates are in the center of the cell, but the y
-    // coordinate is at the bottom.  This should brobably be changed, but I'm
-    // not sure what all this will break.  Another time.
-    return Vector3((Math_SQRT3 * q + SQRT3_2 * r), y, (3.0 / 2 * r));
+    return Vector3((Math_SQRT3 * q + Math_SQRT3_2 * r), y, (3.0 / 2 * r));
 }
 
 unsigned HexMapCellId::distance(const HexMapCellId &other) const {
@@ -62,7 +59,7 @@ unsigned HexMapCellId::distance(const HexMapCellId &other) const {
 }
 
 HexMapIterRadial HexMapCellId::get_neighbors(unsigned int radius,
-        const HexMap::Planes &planes) const {
+        const HexMapPlanes &planes) const {
     return HexMapIterRadial(*this, radius, true, planes);
 }
 

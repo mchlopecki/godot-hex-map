@@ -18,6 +18,7 @@
 #include <godot_cpp/classes/input_event_mouse_motion.hpp>
 #include <godot_cpp/classes/input_event_pan_gesture.hpp>
 #include <godot_cpp/classes/line_edit.hpp>
+#include <godot_cpp/classes/mesh_instance3d.hpp>
 #include <godot_cpp/classes/object.hpp>
 #include <godot_cpp/classes/packed_scene.hpp>
 #include <godot_cpp/classes/popup_menu.hpp>
@@ -40,9 +41,9 @@
 #include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/variant/vector3i.hpp>
 
+#include "core/cell_id.h"
 #include "editor_control.h"
 #include "editor_cursor.h"
-#include "hex_map/cell_id.h"
 #include "hex_map_editor_plugin.h"
 #include "profiling.h"
 #include "selection_manager.h"
@@ -619,6 +620,7 @@ void HexMapEditorPlugin::update_mesh_library() {
     if (editor_cursor) {
         editor_control->reset_orientation();
         editor_cursor->clear_tiles();
+        bottom_panel->call("clear_selection");
     }
 }
 
@@ -628,8 +630,10 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
         hex_map->set_meta("_editor_floors_", editor_control->get_planes());
 
         // disconnect signals
-        hex_map->disconnect("cell_size_changed",
-                callable_mp(this, &HexMapEditorPlugin::cell_size_changed));
+        hex_map->disconnect("cell_scale_changed",
+                callable_mp(this, &HexMapEditorPlugin::hex_space_changed));
+        hex_map->disconnect("mesh_offset_changed",
+                callable_mp(this, &HexMapEditorPlugin::hex_space_changed));
         hex_map->disconnect("mesh_library_changed",
                 callable_mp(this, &HexMapEditorPlugin::update_mesh_library));
 
@@ -672,8 +676,8 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
     make_bottom_panel_item_visible(bottom_panel);
 
     // not a godot Object subclass, so `new` instead of `memnew()`
-    editor_cursor = new EditorCursor(hex_map);
-    selection_manager = new SelectionManager(hex_map);
+    editor_cursor = new EditorCursor(*hex_map);
+    selection_manager = new SelectionManager(*hex_map);
     Array floors = hex_map->get_meta("_editor_floors_", Array());
     if (floors.size() == 4) {
         editor_control->set_planes(floors);
@@ -681,8 +685,10 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
 
     set_process(true);
 
-    hex_map->connect("cell_size_changed",
-            callable_mp(this, &HexMapEditorPlugin::cell_size_changed));
+    hex_map->connect("cell_scale_changed",
+            callable_mp(this, &HexMapEditorPlugin::hex_space_changed));
+    hex_map->connect("mesh_offset_changed",
+            callable_mp(this, &HexMapEditorPlugin::hex_space_changed));
     hex_map->connect("mesh_library_changed",
             callable_mp(this, &HexMapEditorPlugin::update_mesh_library));
     update_mesh_library();
@@ -729,7 +735,7 @@ void HexMapEditorPlugin::_notification(int p_what) {
     }
 }
 
-void HexMapEditorPlugin::cell_size_changed() {
+void HexMapEditorPlugin::hex_space_changed() {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
     editor_cursor->cell_size_changed();
     selection_manager->redraw_selection();

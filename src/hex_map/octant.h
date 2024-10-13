@@ -7,7 +7,9 @@
 #include <godot_cpp/templates/vector.hpp>
 #include <godot_cpp/variant/rid.hpp>
 
-#include "cell_id.h"
+#include "core/cell_id.h"
+#include "core/mesh_manager.h"
+#include "core/tile_orientation.h"
 
 using namespace godot;
 
@@ -26,10 +28,11 @@ private:
     HexMap &hex_map;
     HashSet<CellKey> cells;
 
+    HexMapMeshManager mesh_manager;
+
     // The baked mesh and the multimeshes are mutually exclusive
     Ref<ArrayMesh> baked_mesh;
     RID baked_mesh_instance;
-    Vector<struct MultiMesh> multimeshes;
 
     RID physics_body;
     RID collision_debug_mesh;
@@ -39,13 +42,8 @@ private:
 
     // clear and rebuild the multimeshes
     void build_physics_body();
-    void build_multimesh();
     void build_baked_mesh();
 
-    // apply the HexMap global transform
-    void apply_global_transform();
-
-    void free_multimeshes();
     void free_baked_mesh();
 
     // bake the mesh
@@ -86,13 +84,12 @@ public:
 
     void update_collision_properties();
     void update_physics_params();
-    void update_transform();
     void update_visibility();
 
     void apply_changes();
 
-    void add_cell(const CellKey);
-    void remove_cell(const CellKey);
+    void set_cell(CellKey, int, HexMapTileOrientation);
+    void clear_cell(CellKey);
 
     inline bool is_empty() const { return cells.is_empty(); };
     inline bool is_dirty() const { return dirty; };

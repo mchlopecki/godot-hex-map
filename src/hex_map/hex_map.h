@@ -16,12 +16,13 @@
 #include <godot_cpp/variant/transform3d.hpp>
 #include <godot_cpp/variant/vector3i.hpp>
 
-#include "cell_id.h"
-#include "hex_map/iter.h"
-#include "hex_map/iter_cube.h"
+#include "core/cell_id.h"
+#include "core/hex_map_base.h"
+#include "core/iter.h"
+#include "core/iter_cube.h"
+#include "core/planes.h"
+#include "core/tile_orientation.h"
 #include "octant.h"
-#include "planes.h"
-#include "tile_orientation.h"
 
 // SQRT(3)/2; used both in the editor and the GridMap.  Due to the division, it
 // didn't fit the pattern of other Math_SQRTN defines, so I'm putting it here.
@@ -30,12 +31,12 @@
 
 using namespace godot;
 
-class HexMap : public Node3D {
-    GDCLASS(HexMap, Node3D);
+class HexMap : public HexMapBase {
+    GDCLASS(HexMap, HexMapBase);
 
     using CellKey = HexMapCellId::Key;
     using Octant = HexMapOctant;
-    friend Octant;
+    friend HexMapOctant;
     using OctantKey = Octant::Key;
 
 public:
@@ -64,13 +65,15 @@ private:
         RID instance;
     };
 
+    // map properties
     real_t cell_radius = 1.0;
     real_t cell_height = 1.0;
-    int octant_size = 8;
     bool center_y = false;
 
-    Ref<MeshLibrary> mesh_library;
+    // rendering properties
+    int octant_size = 8;
 
+    // physics body properties
     Ref<StandardMaterial3D> collision_debug_mat;
     uint32_t collision_layer = 1;
     uint32_t collision_mask = 1;
@@ -142,29 +145,17 @@ public:
     void set_physics_material(Ref<PhysicsMaterial> p_material);
     Ref<PhysicsMaterial> get_physics_material() const;
 
-    void set_mesh_library(const Ref<MeshLibrary> &p_mesh_library);
-    Ref<MeshLibrary> get_mesh_library() const;
-
     void set_cell_height(real_t p_height);
-    real_t get_cell_height() const;
-
     void set_cell_radius(real_t p_radius);
-    real_t get_cell_radius() const;
+    void set_center_y(bool p_enable);
 
     void set_navigation_bake_only_navmesh_tiles(bool);
     bool get_navigation_bake_only_navmesh_tiles() const;
 
-    // get the scaling factor for the cell from a radius 1, height 1 cell
-    Vector3 get_cell_scale() const;
-
-    // get the offset applied to a mesh in a cell
-    Vector3 get_cell_mesh_offset() const;
-
     void set_octant_size(int p_size);
     int get_octant_size() const;
 
-    void set_center_y(bool p_enable);
-    bool get_center_y() const;
+    Transform3D get_cell_transform(const HexMapCellId &) const;
 
     void set_cell_item(const HexMapCellId &cell_id, int p_item, int p_rot = 0);
     void _set_cell_item(const Ref<HexMapCellIdWrapper> cell_id,
@@ -180,7 +171,10 @@ public:
 
     // used by the editor to conceal cells for the editor cursor
     // value is not saved
-    void set_cell_visibility(const HexMapCellId &cell_id, bool visibility);
+    void set_cell_visibility(const HexMapCellId &cell_id,
+            bool visibility) override;
+
+    bool mesh_library_changed() override;
 
     HexMapCellId local_to_cell_id(const Vector3 &local_position) const;
     Ref<HexMapCellIdWrapper> _local_to_cell_id(
@@ -188,13 +182,6 @@ public:
     Vector3 cell_id_to_local(const HexMapCellId &cell_id) const;
     Vector3 _cell_id_to_local(
             const Ref<HexMapCellIdWrapper> p_local_position) const;
-
-    // given a point in local space, snap it to the center of the cell it is in
-    Vector3 local_to_cell_center(const Vector3 &point) const {
-        return HexMapCellId::from_unit_point(point / get_cell_scale())
-                       .unit_center() *
-                get_cell_scale();
-    }
 
     // given a quad defined by four points on one of the coordinate axis,
     // return the cellids that fall within that quad.

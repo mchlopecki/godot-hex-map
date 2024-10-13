@@ -1,3 +1,4 @@
+#include <cassert>
 #ifdef TOOLS_ENABLED
 
 #include <godot_cpp/classes/editor_interface.hpp>
@@ -7,6 +8,7 @@
 #include <godot_cpp/classes/window.hpp>
 #include <godot_cpp/classes/world3d.hpp>
 
+#include "core/math.h"
 #include "selection_manager.h"
 
 using CellId = HexMap::CellId;
@@ -54,17 +56,17 @@ void SelectionManager::build_cell_mesh() {
     mesh_array[RS::ARRAY_VERTEX] = lines_array[RS::ARRAY_VERTEX] =
             PackedVector3Array({
                     Vector3(0.0, 0.5, -1.0), // 0
-                    Vector3(-SQRT3_2, 0.5, -0.5), // 1
-                    Vector3(-SQRT3_2, 0.5, 0.5), // 2
+                    Vector3(-Math_SQRT3_2, 0.5, -0.5), // 1
+                    Vector3(-Math_SQRT3_2, 0.5, 0.5), // 2
                     Vector3(0.0, 0.5, 1.0), // 3
-                    Vector3(SQRT3_2, 0.5, 0.5), // 4
-                    Vector3(SQRT3_2, 0.5, -0.5), // 5
+                    Vector3(Math_SQRT3_2, 0.5, 0.5), // 4
+                    Vector3(Math_SQRT3_2, 0.5, -0.5), // 5
                     Vector3(0.0, -0.5, -1.0), // 6
-                    Vector3(-SQRT3_2, -0.5, -0.5), // 7
-                    Vector3(-SQRT3_2, -0.5, 0.5), // 8
+                    Vector3(-Math_SQRT3_2, -0.5, -0.5), // 7
+                    Vector3(-Math_SQRT3_2, -0.5, 0.5), // 8
                     Vector3(0.0, -0.5, 1.0), // 9
-                    Vector3(SQRT3_2, -0.5, 0.5), // 10 (0xa)
-                    Vector3(SQRT3_2, -0.5, -0.5), // 11 (0xb)
+                    Vector3(Math_SQRT3_2, -0.5, 0.5), // 10 (0xa)
+                    Vector3(Math_SQRT3_2, -0.5, -0.5), // 11 (0xb)
             });
 
     // clang-format off
@@ -128,7 +130,7 @@ void SelectionManager::build_cell_mesh() {
     });
 
     RenderingServer *rs = RS::get_singleton();
-    RID cell_mesh = rs->mesh_create();
+    cell_mesh = rs->mesh_create();
     rs->mesh_add_surface_from_arrays(
             cell_mesh, RS::PRIMITIVE_TRIANGLES, mesh_array);
     rs->mesh_surface_set_material(cell_mesh, 0, mesh_mat->get_rid());
@@ -137,87 +139,63 @@ void SelectionManager::build_cell_mesh() {
     rs->mesh_add_surface_from_arrays(
             cell_mesh, RS::PRIMITIVE_LINE_STRIP, lines_array);
     rs->mesh_surface_set_material(cell_mesh, 1, line_mat->get_rid());
-
-    // create the multimesh for rendering the tile mesh in multiple locations.
-    selection_multimesh = rs->multimesh_create();
-    rs->multimesh_set_mesh(selection_multimesh, cell_mesh);
-
-    RID scenario = EditorInterface::get_singleton()
-                           ->get_editor_viewport_3d()
-                           ->get_tree()
-                           ->get_root()
-                           ->get_world_3d()
-                           ->get_scenario();
-    selection_multimesh_instance =
-            rs->instance_create2(selection_multimesh, scenario);
-    rs->instance_set_layer_mask(selection_multimesh_instance,
-            /* Node3DEditorViewport::MISC_TOOL_LAYER */ 1 << 24);
 }
 
 void SelectionManager::redraw_selection() {
     RenderingServer *rs = RS::get_singleton();
 
-    // Scaling and translation for the center of the cell mesh.
-    Vector3 cell_center = Vector3(0, hex_map->get_cell_height() / 2, 0);
-    Transform3D cell_transform =
-            Transform3D()
-                    .scaled_local(hex_map->get_cell_scale())
-                    .translated(cell_center);
+    // transform the mesh manager and redraw it
+    Vector<CellId> cells = get_cells();
+    mesh_manager.clear();
+    mesh_manager.set_space(hex_map.get_space());
+    set_cells(cells);
 
-    // Add the cells to our selection multimesh
-    rs->multimesh_allocate_data(
-            selection_multimesh, cells.size(), RS::MULTIMESH_TRANSFORM_3D);
-    for (int i = 0; i < cells.size(); i++) {
-        Vector3i cell = cells[i];
-        rs->multimesh_instance_set_transform(selection_multimesh,
-                i,
-                cell_transform.translated(hex_map->cell_id_to_local(cell)));
-    }
-
-    // transform the multimesh to match the HexMap transform
-    rs->instance_set_transform(
-            selection_multimesh_instance, hex_map->get_global_transform());
-    // make sure the multimesh is visible
-    RenderingServer::get_singleton()->instance_set_visible(
-            selection_multimesh_instance, true);
+    // make sure it is visible
+    mesh_manager.set_visibility(true);
 }
 
-void SelectionManager::clear() {
-    cells.clear();
-    redraw_selection();
-    RenderingServer::get_singleton()->instance_set_visible(
-            selection_multimesh_instance, false);
-}
+void SelectionManager::clear() { mesh_manager.clear(); }
 
 void SelectionManager::add_cell(CellId cell) {
-    cells.append(cell);
-    redraw_selection();
+    assert(cell_mesh.is_valid() && "mesh should be valid");
+    mesh_manager.set_cell(
+            cell, cell_mesh, Basis::from_scale(hex_map.get_cell_scale()));
+    mesh_manager.refresh();
 }
 
 void SelectionManager::set_cells(Vector<CellId> other) {
-    cells.clear();
-    cells.append_array(other);
-    redraw_selection();
+    mesh_manager.clear();
+
+    for (const CellId &cell : other) {
+        mesh_manager.set_cell(
+                cell, cell_mesh, Basis::from_scale(hex_map.get_cell_scale()));
+    }
+    mesh_manager.refresh();
 }
 
 void SelectionManager::set_cells(Array other) {
-    cells.clear();
+    mesh_manager.clear();
+
     auto size = other.size();
     for (int i = 0; i < size; i++) {
         Vector3i cell = other[i];
-        cells.push_back(cell);
+        mesh_manager.set_cell(
+                cell, cell_mesh, Basis::from_scale(hex_map.get_cell_scale()));
     }
-    redraw_selection();
+    mesh_manager.refresh();
 }
 
 CellId SelectionManager::get_center() {
+    auto cells = mesh_manager.get_cells();
     if (cells.is_empty()) {
         return CellId();
     }
 
-    Vector3 center = cells[0].unit_center();
+    CellId first = cells.begin()->key;
+    Vector3 center = first.unit_center();
     Vector3 min = center, max = center;
-    for (const CellId &cell : cells) {
+    for (const auto &it : cells) {
+        CellId cell = it.key;
         center = cell.unit_center();
         if (center.x < min.x) {
             min.x = center.x;
@@ -239,22 +217,38 @@ CellId SelectionManager::get_center() {
     return CellId::from_unit_point((max + min) / 2);
 }
 
-Array SelectionManager::get_cells_v() const {
-    Array out;
-    for (const CellId &cell : cells) {
-        out.push_back((Vector3i)cell);
+Vector<HexMapCellId> SelectionManager::get_cells() const {
+    Vector<HexMapCellId> out;
+    for (const auto &cell : mesh_manager.get_cells()) {
+        out.push_back((CellId)cell.key);
     }
     return out;
 }
 
-SelectionManager::SelectionManager(HexMap *hex_map) : hex_map(hex_map) {
+Array SelectionManager::get_cells_v() const {
+    Array out;
+    for (const auto &cell : mesh_manager.get_cells()) {
+        out.push_back((CellId)cell.key);
+    }
+    return out;
+}
+
+SelectionManager::SelectionManager(HexMap &hex_map) : hex_map(hex_map) {
     build_cell_mesh();
+    assert(cell_mesh.is_valid() && "mesh should be valid");
+
+    mesh_manager.set_scenario(hex_map.get_world_3d()->get_scenario());
+
+    // copy the HexMap's space, but clear the mesh offset; our cell mesh is
+    // centered around the origin.
+    HexSpace space = hex_map.get_space();
+    space.set_mesh_offset(Vector3());
+    mesh_manager.set_space(space);
 }
 
 SelectionManager::~SelectionManager() {
     RenderingServer *rs = RS::get_singleton();
-    rs->free_rid(selection_multimesh_instance);
-    rs->free_rid(selection_multimesh);
+    mesh_manager.clear();
     rs->free_rid(cell_mesh);
 }
 

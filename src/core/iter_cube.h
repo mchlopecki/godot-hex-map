@@ -5,7 +5,7 @@
 #include <godot_cpp/variant/string.hpp>
 
 #include "cell_id.h"
-#include "hex_map/iter.h"
+#include "iter.h"
 
 // HexMap cell iterator using oddr coordinates
 struct HexMapIterCube : public HexMapIter {

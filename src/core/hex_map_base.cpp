@@ -1,0 +1,107 @@
+#include "hex_map_base.h"
+#include "cell_id.h"
+
+void HexMapBase::_bind_methods() {
+    ClassDB::bind_method(D_METHOD("set_cell_height", "height"),
+            &HexMapBase::set_cell_height);
+    ClassDB::bind_method(
+            D_METHOD("get_cell_height"), &HexMapBase::get_cell_height);
+    ClassDB::bind_method(D_METHOD("set_cell_radius", "radius"),
+            &HexMapBase::set_cell_radius);
+    ClassDB::bind_method(
+            D_METHOD("get_cell_radius"), &HexMapBase::get_cell_radius);
+
+    ClassDB::bind_method(
+            D_METHOD("set_center_y", "enable"), &HexMapBase::set_center_y);
+    ClassDB::bind_method(D_METHOD("get_center_y"), &HexMapBase::get_center_y);
+
+    ClassDB::bind_method(D_METHOD("set_mesh_library", "mesh_library"),
+            &HexMapBase::set_mesh_library);
+    ClassDB::bind_method(
+            D_METHOD("get_mesh_library"), &HexMapBase::get_mesh_library);
+
+    ADD_PROPERTY(PropertyInfo(Variant::OBJECT,
+                         "mesh_library",
+                         PROPERTY_HINT_RESOURCE_TYPE,
+                         "MeshLibrary"),
+            "set_mesh_library",
+            "get_mesh_library");
+    ADD_GROUP("Cell", "cell_");
+    ADD_PROPERTY(PropertyInfo(Variant::FLOAT,
+                         "cell_height",
+                         PROPERTY_HINT_NONE,
+                         "suffix:m"),
+            "set_cell_height",
+            "get_cell_height");
+    ADD_PROPERTY(PropertyInfo(Variant::FLOAT,
+                         "cell_radius",
+                         PROPERTY_HINT_NONE,
+                         "suffix:m"),
+            "set_cell_radius",
+            "get_cell_radius");
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "cell_center_y"),
+            "set_center_y",
+            "get_center_y");
+
+    ADD_SIGNAL(MethodInfo("cell_scale_changed"));
+    ADD_SIGNAL(MethodInfo("mesh_offset_changed"));
+    ADD_SIGNAL(MethodInfo("mesh_library_changed"));
+}
+
+void HexMapBase::set_cell_height(real_t p_height) {
+    space.set_cell_height(p_height);
+    emit_signal("cell_scale_changed");
+}
+
+real_t HexMapBase::get_cell_height() const { return space.get_cell_height(); }
+
+void HexMapBase::set_cell_radius(real_t p_radius) {
+    space.set_cell_radius(p_radius);
+    emit_signal("cell_scale_changed");
+}
+
+real_t HexMapBase::get_cell_radius() const { return space.get_cell_radius(); }
+
+void HexMapBase::set_center_y(bool p_value) {
+    if (p_value) {
+        space.set_mesh_offset(Vector3(0, 0, 0));
+    } else {
+        space.set_mesh_offset(Vector3(0, -0.5, 0));
+    }
+    emit_signal("mesh_offset_changed");
+}
+
+bool HexMapBase::get_center_y() const {
+    return space.get_mesh_offset().y == 0;
+}
+
+Vector3 HexMapBase::get_cell_scale() const { return space.get_cell_scale(); }
+
+void HexMapBase::set_mesh_library(const Ref<MeshLibrary> &p_mesh_library) {
+    if (!mesh_library.is_null()) {
+        // XXX this is not working in a way to allow subclass to override
+        mesh_library->disconnect("changed",
+                callable_mp(this, &HexMapBase::mesh_library_changed));
+    }
+    mesh_library = p_mesh_library;
+    if (!mesh_library.is_null()) {
+        mesh_library->connect("changed",
+                callable_mp(this, &HexMapBase::mesh_library_changed));
+    }
+    mesh_library_changed();
+}
+
+bool HexMapBase::mesh_library_changed() {
+    emit_signal("mesh_library_changed");
+    return true;
+}
+
+Ref<MeshLibrary> HexMapBase::get_mesh_library() const { return mesh_library; }
+
+Vector3 HexMapBase::get_cell_center(const HexMapCellId &cell_id) const {
+    return space.get_cell_center(cell_id);
+}
+
+HexMapCellId HexMapBase::get_cell_id(Vector3 pos) const {
+    return space.get_cell_id(pos);
+}

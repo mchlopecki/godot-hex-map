@@ -11,8 +11,6 @@
 #include <climits>
 #include <cstdint>
 
-#define SQRT3_2 0.8660254037844386
-
 using namespace godot;
 
 class HexMapCellIdWrapper;

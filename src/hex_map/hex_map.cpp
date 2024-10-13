@@ -1,5 +1,6 @@
 #include <godot_cpp/classes/array_mesh.hpp>
 #include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/geometry2d.hpp>
 #include <godot_cpp/classes/main_loop.hpp>
 #include <godot_cpp/classes/material.hpp>
 #include <godot_cpp/classes/mesh.hpp>
@@ -18,23 +19,23 @@
 #include <godot_cpp/classes/world3d.hpp>
 #include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/templates/pair.hpp>
+#include <godot_cpp/variant/aabb.hpp>
 #include <godot_cpp/variant/basis.hpp>
 #include <godot_cpp/variant/callable_method_pointer.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/packed_byte_array.hpp>
 #include <godot_cpp/variant/packed_vector3_array.hpp>
+#include <godot_cpp/variant/plane.hpp>
 #include <godot_cpp/variant/transform3d.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/variant/variant.hpp>
 #include <godot_cpp/variant/vector3.hpp>
 
-#include "cell_id.h"
-#include "godot_cpp/classes/geometry2d.hpp"
-#include "godot_cpp/variant/aabb.hpp"
-#include "godot_cpp/variant/plane.hpp"
+#include "core/cell_id.h"
+#include "core/iter_cube.h"
+#include "core/math.h"
 #include "hex_map.h"
-#include "hex_map/iter_cube.h"
-#include "hex_map/octant.h"
+#include "octant.h"
 #include "profiling.h"
 
 bool HexMap::_set(const StringName &p_name, const Variant &p_value) {
@@ -66,7 +67,6 @@ bool HexMap::_set(const StringName &p_name, const Variant &p_value) {
         }
 
         _recreate_octant_data();
-
     } else if (name == "baked_meshes") {
         clear_baked_meshes();
 
@@ -257,64 +257,38 @@ bool HexMap::get_collision_mask_value(int p_layer_number) const {
     return get_collision_mask() & (1 << (p_layer_number - 1));
 }
 
-void HexMap::set_mesh_library(const Ref<MeshLibrary> &p_mesh_library) {
-    if (!mesh_library.is_null()) {
-        mesh_library->disconnect(
-                "changed", callable_mp(this, &HexMap::update_octant_meshes));
-    }
-    mesh_library = p_mesh_library;
-    if (!mesh_library.is_null()) {
-        mesh_library->connect(
-                "changed", callable_mp(this, &HexMap::update_octant_meshes));
-    }
-
-    update_octant_meshes();
-    emit_signal("mesh_library_changed");
+bool HexMap::mesh_library_changed() {
+    HexMapBase::mesh_library_changed();
+    _recreate_octant_data();
+    return true;
 }
-
-Ref<MeshLibrary> HexMap::get_mesh_library() const { return mesh_library; }
 
 void HexMap::set_cell_height(real_t value) {
-    if (value != cell_height) {
-        cell_height = value;
-        update_octant_meshes();
-        emit_signal("cell_size_changed");
-    }
+    HexMapBase::set_cell_height(value);
+    clear_baked_meshes();
+    update_octant_meshes();
 }
 
-real_t HexMap::get_cell_height() const { return cell_height; }
-
+// XXX this is not called because the parent godot object handler is registered
 void HexMap::set_cell_radius(real_t value) {
-    if (value != cell_radius) {
-        cell_radius = value;
-        update_octant_meshes();
-        emit_signal("cell_size_changed");
-    }
-}
-real_t HexMap::get_cell_radius() const { return cell_radius; }
-
-Vector3 HexMap::get_cell_scale() const {
-    return Vector3(cell_radius, cell_height, cell_radius);
+    HexMapBase::set_cell_radius(value);
+    clear_baked_meshes();
+    update_octant_meshes();
 }
 
-Vector3 HexMap::get_cell_mesh_offset() const {
-    return Vector3(0, center_y ? cell_height / 2 : 0, 0);
+void HexMap::set_center_y(bool p_value) {
+    HexMapBase::set_center_y(p_value);
+    clear_baked_meshes();
+    update_octant_meshes();
 }
 
 void HexMap::set_octant_size(int p_size) {
     ERR_FAIL_COND(p_size == 0);
     octant_size = p_size;
-    update_octant_meshes();
+    _recreate_octant_data();
 }
 
 int HexMap::get_octant_size() const { return octant_size; }
-
-void HexMap::set_center_y(bool p_enable) {
-    center_y = p_enable;
-    update_octant_meshes();
-}
-
-bool HexMap::get_center_y() const { return center_y; }
 
 void HexMap::set_navigation_bake_only_navmesh_tiles(bool value) {
     navigation_bake_only_navmesh_tiles = value;
@@ -375,7 +349,7 @@ void HexMap::set_cell_item(const HexMapCellId &cell_id,
         }
 
         // add a cell to the octant, and schedule an update
-        octant->add_cell(cell_key);
+        octant->set_cell(cell_key, p_item, p_rot);
         update_dirty_octants();
 
     } else if (current_cell != nullptr) {
@@ -384,7 +358,7 @@ void HexMap::set_cell_item(const HexMapCellId &cell_id,
         updated_cells.insert(cell_key);
 
         ERR_FAIL_COND_MSG(octant == nullptr, "octant for cell does not exist");
-        octant->remove_cell(cell_key);
+        octant->clear_cell(cell_key);
         update_dirty_octants();
     }
 
@@ -503,8 +477,7 @@ static inline Vector3i oddr_to_axial(Vector3i oddr) {
 }
 
 HexMapCellId HexMap::local_to_cell_id(const Vector3 &local_position) const {
-    Vector3 unit_pos = local_position / get_cell_scale();
-    return HexMapCellId::from_unit_point(unit_pos);
+    return space.get_cell_id(local_position);
 }
 
 Ref<HexMapCellIdWrapper> HexMap::_local_to_cell_id(
@@ -513,7 +486,7 @@ Ref<HexMapCellIdWrapper> HexMap::_local_to_cell_id(
 }
 
 Vector3 HexMap::cell_id_to_local(const HexMapCellId &cell_id) const {
-    return cell_id.unit_center() * get_cell_scale() + get_cell_mesh_offset();
+    return space.get_cell_center(cell_id);
 }
 
 Vector3 HexMap::_cell_id_to_local(
@@ -585,17 +558,17 @@ Vector<HexMapCellId> HexMap::local_quad_to_cell_ids(Vector3 a,
     // XXX pull these points in to make it easier to select SW/SE line
     const PackedVector3Array vertices = PackedVector3Array({
             Vector3(0.0, 0.5, -1.0) * 0.5, // 0
-            Vector3(-SQRT3_2, 0.5, -0.5) * 0.5, // 1
-            Vector3(-SQRT3_2, 0.5, 0.5) * 0.5, // 2
+            Vector3(-Math_SQRT3_2, 0.5, -0.5) * 0.5, // 1
+            Vector3(-Math_SQRT3_2, 0.5, 0.5) * 0.5, // 2
             Vector3(0.0, 0.5, 1.0) * 0.5, // 3
-            Vector3(SQRT3_2, 0.5, 0.5) * 0.5, // 4
-            Vector3(SQRT3_2, 0.5, -0.5) * 0.5, // 5
+            Vector3(Math_SQRT3_2, 0.5, 0.5) * 0.5, // 4
+            Vector3(Math_SQRT3_2, 0.5, -0.5) * 0.5, // 5
             Vector3(0.0, -0.5, -1.0) * 0.5, // 6
-            Vector3(-SQRT3_2, -0.5, -0.5) * 0.5, // 7
-            Vector3(-SQRT3_2, -0.5, 0.5) * 0.5, // 8
+            Vector3(-Math_SQRT3_2, -0.5, -0.5) * 0.5, // 7
+            Vector3(-Math_SQRT3_2, -0.5, 0.5) * 0.5, // 8
             Vector3(0.0, -0.5, 1.0) * 0.5, // 9
-            Vector3(SQRT3_2, -0.5, 0.5) * 0.5, // 10 (0xa)
-            Vector3(SQRT3_2, -0.5, -0.5) * 0.5, // 11 (0xb)
+            Vector3(Math_SQRT3_2, -0.5, 0.5) * 0.5, // 10 (0xa)
+            Vector3(Math_SQRT3_2, -0.5, -0.5) * 0.5, // 11 (0xb)
     });
 
     Geometry2D *geo = Geometry2D::get_singleton();
@@ -668,10 +641,8 @@ void HexMap::_notification(int p_what) {
         case NOTIFICATION_TRANSFORM_CHANGED: {
             Transform3D transform = get_global_transform();
             if (transform != last_transform) {
-                // recalculate the octant cell transforms
-                for (auto &it : octants) {
-                    it.value->update_transform();
-                }
+                space.set_transform(transform);
+                update_octant_meshes();
                 last_transform = transform;
             }
             break;
@@ -742,6 +713,7 @@ void HexMap::update_dirty_octants() {
 }
 
 void HexMap::update_octant_meshes() {
+    UtilityFunctions::print("calling apply_changes() on all meshes");
     for (auto &it : octants) {
         it.value->apply_changes();
     }
@@ -810,24 +782,6 @@ void HexMap::_bind_methods() {
     ClassDB::bind_method(
             D_METHOD("get_physics_material"), &HexMap::get_physics_material);
 
-    ClassDB::bind_method(D_METHOD("set_mesh_library", "mesh_library"),
-            &HexMap::set_mesh_library);
-    ClassDB::bind_method(
-            D_METHOD("get_mesh_library"), &HexMap::get_mesh_library);
-
-    ClassDB::bind_method(
-            D_METHOD("set_cell_height", "height"), &HexMap::set_cell_height);
-    ClassDB::bind_method(
-            D_METHOD("get_cell_height"), &HexMap::get_cell_height);
-    ClassDB::bind_method(
-            D_METHOD("set_cell_radius", "radius"), &HexMap::set_cell_radius);
-    ClassDB::bind_method(
-            D_METHOD("get_cell_radius"), &HexMap::get_cell_radius);
-
-    ClassDB::bind_method(
-            D_METHOD("set_center_y", "enable"), &HexMap::set_center_y);
-    ClassDB::bind_method(D_METHOD("get_center_y"), &HexMap::get_center_y);
-
     ClassDB::bind_method(
             D_METHOD("set_navigation_bake_only_navmesh_tiles", "enable"),
             &HexMap::set_navigation_bake_only_navmesh_tiles);
@@ -886,39 +840,18 @@ void HexMap::_bind_methods() {
             DEFVAL(0.1));
 
     ADD_PROPERTY(PropertyInfo(Variant::OBJECT,
-                         "mesh_library",
-                         PROPERTY_HINT_RESOURCE_TYPE,
-                         "MeshLibrary"),
-            "set_mesh_library",
-            "get_mesh_library");
-    ADD_PROPERTY(PropertyInfo(Variant::OBJECT,
                          "physics_material",
                          PROPERTY_HINT_RESOURCE_TYPE,
                          "PhysicsMaterial"),
             "set_physics_material",
             "get_physics_material");
     ADD_GROUP("Cell", "cell_");
-    ADD_PROPERTY(PropertyInfo(Variant::FLOAT,
-                         "cell_height",
-                         PROPERTY_HINT_NONE,
-                         "suffix:m"),
-            "set_cell_height",
-            "get_cell_height");
-    ADD_PROPERTY(PropertyInfo(Variant::FLOAT,
-                         "cell_radius",
-                         PROPERTY_HINT_NONE,
-                         "suffix:m"),
-            "set_cell_radius",
-            "get_cell_radius");
     ADD_PROPERTY(PropertyInfo(Variant::INT,
                          "cell_octant_size",
                          PROPERTY_HINT_RANGE,
                          "1,1024,1"),
             "set_octant_size",
             "get_octant_size");
-    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "cell_center_y"),
-            "set_center_y",
-            "get_center_y");
     ADD_GROUP("Collision", "collision_");
     ADD_PROPERTY(PropertyInfo(Variant::BOOL,
                          "collision_debug",
@@ -947,8 +880,6 @@ void HexMap::_bind_methods() {
 
     BIND_CONSTANT(INVALID_CELL_ITEM);
 
-    ADD_SIGNAL(MethodInfo("cell_size_changed"));
-    ADD_SIGNAL(MethodInfo("mesh_library_changed"));
     ADD_SIGNAL(MethodInfo(
             "cell_changed", PropertyInfo(Variant::VECTOR3I, "cell")));
     ADD_SIGNAL(MethodInfo(
@@ -1037,12 +968,11 @@ bool HexMap::generate_navigation_source_geometry(Ref<NavigationMesh>,
             continue;
         }
 
-        Transform3D cell_transform;
-        cell_transform.basis = cell.get_basis();
-        cell_transform.set_origin(cell_id_to_local(it.key));
-        cell_transform *= mesh_library->get_item_mesh_transform(cell.item);
-
-        source_geometry_data->add_mesh(mesh, cell_transform);
+        Transform3D cell_transform(
+                cell.get_basis(), space.get_mesh_origin(it.key));
+        source_geometry_data->add_mesh(mesh,
+                cell_transform *
+                        mesh_library->get_item_mesh_transform(cell.item));
     }
 
     // Unused return value.  To turn this function into a Callable, the

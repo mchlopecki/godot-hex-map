@@ -12,6 +12,7 @@ env = SConscript("godot-cpp/SConstruct")
 env.Append(CPPPATH=["src/"])
 sources = [
     Glob("src/*.cpp"),
+    Glob("src/core/*.cpp"),
     Glob("src/hex_map/*.cpp"),
     Glob("src/hex_map/editor/*.cpp"),
 ]
