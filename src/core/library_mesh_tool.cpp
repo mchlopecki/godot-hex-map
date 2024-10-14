@@ -5,18 +5,6 @@
 #include "math.h"
 #include "space.h"
 
-void HexMapLibraryMeshTool::set_scenario(RID scenario) {
-    mesh_tool.set_scenario(scenario);
-}
-
-void HexMapLibraryMeshTool::set_space(const HexSpace &space) {
-    mesh_tool.space = space;
-}
-
-void HexMapLibraryMeshTool::set_transform(const Transform3D &value) {
-    mesh_tool.space.transform = value;
-}
-
 void HexMapLibraryMeshTool::set_mesh_library(Ref<MeshLibrary> &value) {
     mesh_library = value;
 }
@@ -124,9 +112,7 @@ Ref<ArrayMesh> HexMapLibraryMeshTool::get_placeholder_mesh() {
 }
 
 void HexMapLibraryMeshTool::refresh() {
-    const HexSpace &space = mesh_tool.get_space();
-
-    mesh_tool.clear();
+    HexMapMeshTool::clear();
 
     if (!mesh_library.is_valid()) {
         // if the MeshLibrary isn't set, use all placeholder meshes
@@ -137,7 +123,7 @@ void HexMapLibraryMeshTool::refresh() {
                         -space.get_mesh_offset());
 
         for (const auto &iter : cell_map) {
-            mesh_tool.set_cell(iter.key, mesh, transform);
+            HexMapMeshTool::set_cell(iter.key, mesh, transform);
         }
     } else {
         // mesh_library is valid, use it to look up meshes
@@ -160,16 +146,16 @@ void HexMapLibraryMeshTool::refresh() {
             // get the cell transform based on cell orientation
             Transform3D cell_transform(iter.value.orientation);
 
-            mesh_tool.set_cell(iter.key,
+            HexMapMeshTool::set_cell(iter.key,
                     mesh->get_rid(),
                     cell_transform * mesh_transform);
         }
     }
 
-    mesh_tool.refresh();
+    HexMapMeshTool::refresh();
 }
 
 void HexMapLibraryMeshTool::clear() {
     cell_map.clear();
-    mesh_tool.clear();
+    HexMapMeshTool::clear();
 }
