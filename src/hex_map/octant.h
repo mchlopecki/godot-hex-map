@@ -50,7 +50,7 @@ private:
     void bake_mesh();
 
 public:
-    // octant key used in HexMap
+    /// Key type to use in HashMaps when referencing Octants
     union Key {
         struct {
             int16_t x, y, z;
@@ -90,6 +90,8 @@ public:
 
     void set_cell(CellKey, int, HexMapTileOrientation);
     void clear_cell(CellKey);
+    void set_cell_visibility(HexMapCellId, bool visible);
+    void set_all_cells_visible();
 
     inline bool is_empty() const { return cells.is_empty(); };
     inline bool is_dirty() const { return dirty; };

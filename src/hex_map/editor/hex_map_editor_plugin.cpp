@@ -208,7 +208,10 @@ void HexMapEditorPlugin::selection_clone_cancel() {
     editor_control->reset_orientation();
 
     editor_cursor->clear_tiles();
-    editor_cursor->set_tile(HexMapCellId(), bottom_panel->get("mesh_id"));
+    int index = bottom_panel->get("mesh_id");
+    if (index >= 0) {
+        editor_cursor->set_tile(HexMapCellId(), index);
+    }
     editor_cursor->update(true);
 }
 
@@ -245,7 +248,10 @@ void HexMapEditorPlugin::selection_clone_apply() {
 
     editor_control->reset_orientation();
     editor_cursor->clear_tiles();
-    editor_cursor->set_tile(HexMapCellId(), bottom_panel->get("mesh_id"));
+    int index = bottom_panel->get("mesh_id");
+    if (index >= 0) {
+        editor_cursor->set_tile(HexMapCellId(), index);
+    }
     editor_cursor->update(true);
 }
 
@@ -291,7 +297,10 @@ void HexMapEditorPlugin::selection_move_cancel() {
     editor_control->reset_orientation();
 
     editor_cursor->clear_tiles();
-    editor_cursor->set_tile(HexMapCellId(), bottom_panel->get("mesh_id"));
+    int index = bottom_panel->get("mesh_id");
+    if (index >= 0) {
+        editor_cursor->set_tile(HexMapCellId(), index);
+    }
     editor_cursor->update(true);
 }
 
@@ -350,7 +359,10 @@ void HexMapEditorPlugin::selection_move_apply() {
 
     editor_control->reset_orientation();
     editor_cursor->clear_tiles();
-    editor_cursor->set_tile(HexMapCellId(), bottom_panel->get("mesh_id"));
+    int index = bottom_panel->get("mesh_id");
+    if (index >= 0) {
+        editor_cursor->set_tile(HexMapCellId(), index);
+    }
     editor_cursor->update(true);
 }
 
@@ -683,6 +695,8 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
     // not a godot Object subclass, so `new` instead of `memnew()`
     editor_cursor = new EditorCursor(hex_map->get_world_3d()->get_scenario());
     editor_cursor->set_space(hex_map->get_space());
+    editor_cursor->set_cells_visibility_callback(
+            callable_mp(hex_map, &HexMap::set_cells_visibility_callback));
 
     selection_manager = new SelectionManager(*hex_map);
     Array floors = hex_map->get_meta("_editor_floors_", Array());
@@ -751,8 +765,8 @@ void HexMapEditorPlugin::hex_space_changed() {
 void HexMapEditorPlugin::tile_changed(int p_mesh_id) {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
     editor_cursor->clear_tiles();
-    if (p_mesh_id != -1) {
-        editor_cursor->set_tile(Vector3i(), p_mesh_id);
+    if (p_mesh_id >= 0) {
+        editor_cursor->set_tile(HexMapCellId(), p_mesh_id);
         editor_cursor->update(true);
     }
     editor_control->reset_orientation();

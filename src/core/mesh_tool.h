@@ -17,7 +17,7 @@ using namespace godot;
 class HexMapLibraryMeshTool;
 
 class HexMapMeshTool {
-private:
+public:
     /// Type used as a key when looking up cells
     using CellId = HexMapCellId;
     using CellKey = CellId::Key;
@@ -28,34 +28,9 @@ private:
         RID mesh;
         /// mesh transform including rotation
         Transform3D transform;
+        /// flag for mesh visibility; set to false to exclude from multimesh
+        bool visible = true;
     };
-
-    /// multimesh & multimesh instance pair
-    struct MultiMesh {
-        RID multimesh;
-        RID instance;
-    };
-
-    /// map of cell keys to the visual for each cell
-    HashMap<CellKey, Cell> cell_map;
-
-    /// list of multimeshes
-    Vector<MultiMesh> multimeshes;
-
-    /// scenario for mesh instances
-    RID scenario;
-
-    /// godot object id all mesh instances belong to
-    ObjectID object_id;
-
-    /// hexagonal space to use for converting cell ids to points
-    HexSpace space;
-
-    void free_multimeshes();
-    void build_multimeshes();
-
-public:
-    friend HexMapLibraryMeshTool;
 
     HexMapMeshTool(RID scenario = RID(), uint64_t object_id = 0) :
             scenario(scenario), object_id(object_id){};
@@ -83,8 +58,21 @@ public:
     /// clear the specified cell
     void clear_cell(CellId);
 
+    /// set per-cell visibility
+    ///
+    /// If the cell has not been added to the `HexMapMeshTool`, this will have
+    /// no affect.  If the cell is set after visibility has been changed, the
+    /// cell will become visible.
+    void set_cell_visibility(CellId, bool visible);
+
+    /// make all cells in the mesh visible
+    ///
+    /// This function is provided to easily restore cell visibility without the
+    /// caller having to maintain a list of every hidden cell.
+    void set_all_cells_visible();
+
     /// get an iterator to go over the cell ids in the mesh
-    const HashMap<CellKey, Cell> get_cells() const { return cell_map; };
+    const HashMap<CellKey, Cell> &get_cells() const { return cell_map; };
 
     /// update the meshes that are displayed
     void refresh();
@@ -100,4 +88,30 @@ public:
 
     /// helper function to simplify needed calls when hexmap exits world
     void exit_world();
+
+protected:
+    /// hexagonal space to use for converting cell ids to points
+    HexSpace space;
+
+private:
+    /// multimesh & multimesh instance pair
+    struct MultiMesh {
+        RID multimesh;
+        RID instance;
+    };
+
+    /// map of cell keys to the visual for each cell
+    HashMap<CellKey, Cell> cell_map;
+
+    /// list of multimeshes
+    Vector<MultiMesh> multimeshes;
+
+    /// scenario for mesh instances
+    RID scenario;
+
+    /// godot object id all mesh instances belong to
+    ObjectID object_id;
+
+    void free_multimeshes();
+    void build_multimeshes();
 };

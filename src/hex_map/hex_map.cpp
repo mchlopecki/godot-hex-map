@@ -447,6 +447,30 @@ void HexMap::set_cell_visibility(const HexMapCellId &cell_id,
     return;
 }
 
+bool HexMap::set_cells_visibility_callback(Array cells) {
+    if (!baked_mesh_octants.is_empty()) {
+        UtilityFunctions::print(
+                "HexMap: map modified; clearing baked lighting meshes");
+        clear_baked_meshes();
+    }
+
+    size_t size = cells.size();
+    for (unsigned i = 0; i < size; i += 2) {
+        CellId cell_id((Vector3i)cells[i]);
+        ERR_CONTINUE_MSG(
+                !cell_id.in_bounds(), "cell id is not in bounds: " + cell_id);
+        OctantKey octant_key(cell_id, octant_size);
+        Octant **octant = octants.getptr(octant_key);
+        if (octant == nullptr) {
+            continue;
+        }
+        (*octant)->set_cell_visibility(cell_id, cells[i + 1]);
+    }
+
+    update_dirty_octants();
+    return true;
+}
+
 // based on blog post https://observablehq.com/@jrus/hexround
 static inline Vector2i axial_round(real_t q_in, real_t r_in) {
     int q = round(q_in);
@@ -513,9 +537,9 @@ Vector<HexMapCellId> HexMap::local_quad_to_cell_ids(Vector3 a,
             "quad points must all be on the same plane");
     //
     // Vector3 center = (a + b + c + d) / 4;
-    // Vector3 cell_center = HexMapCellId::from_unit_point(a).unit_center();
-    // Vector3 direction = a - center;
-    // a = cell_center + direction * 0.01;
+    // Vector3 cell_center =
+    // HexMapCellId::from_unit_point(a).unit_center(); Vector3 direction =
+    // a - center; a = cell_center + direction * 0.01;
     //
     // cell_center = HexMapCellId::from_unit_point(c).unit_center();
     // direction = c - center;
@@ -528,8 +552,8 @@ Vector<HexMapCellId> HexMap::local_quad_to_cell_ids(Vector3 a,
 
     HexMapIterCube iter(top_right, bottom_left);
 
-    // we're going to reduce the 3d problem to 2d by using the planes that are
-    // most perpendicular to the plane normal.
+    // we're going to reduce the 3d problem to 2d by using the planes that
+    // are most perpendicular to the plane normal.
     int axis[2];
     switch (plane.normal.abs().max_axis_index()) {
         case godot::Vector3::AXIS_X:
@@ -801,6 +825,7 @@ void HexMap::_bind_methods() {
             D_METHOD("set_cell_item_v", "position", "item", "orientation"),
             &HexMap::_set_cell_item_v,
             DEFVAL(0));
+
     ClassDB::bind_method(
             D_METHOD("get_cell_item", "cell_id"), &HexMap::_get_cell_item);
     ClassDB::bind_method(D_METHOD("get_cell_item_v", "cell_vector"),

@@ -81,4 +81,10 @@ public:
         Vector3 local = transform.inverse().xform(global_pos);
         return get_cell_id(local);
     }
+
+    inline bool operator!=(const HexSpace &other) const {
+        return cell_scale != other.cell_scale ||
+                mesh_offset != other.mesh_offset ||
+                transform != other.transform;
+    }
 };

@@ -33,6 +33,14 @@ public:
 
     void set_space(HexSpace);
     void set_mesh_library(Ref<MeshLibrary> &);
+
+    /// Set the callback function for `EditorCursor` to call when it needs to
+    /// show/hide cells in the parent HexMap.  The arguments to this function
+    /// will be an `Array` of `Vector3i` followed by `bool`.  The `Vector3i`
+    /// can be converted to a `HexMapCellId`, while the `bool` is whether the
+    /// cell should be visible.
+    void set_cells_visibility_callback(Callable);
+
     void set_orientation(TileOrientation orientation);
     void set_axis(EditorControl::EditAxis axis);
     inline EditorControl::EditAxis get_axis() { return edit_axis; };
@@ -40,6 +48,9 @@ public:
     /// set the depth of the edit plane
     void set_depth(int);
 
+    /// update the cursor based on the camera and pointer positition
+    ///
+    /// Function will return `true` when the cursor moves to a different cell
     bool update(const Camera3D *camera, const Point2 &pointer, Vector3 *point);
     void update(bool force = false);
 
@@ -80,6 +91,9 @@ private:
 
     EditorControl::EditAxis edit_axis = EditorControl::EditAxis::AXIS_Y;
     TileOrientation orientation;
+    /// callback used for toggling cell visibility in the parent class to
+    /// prevent existing cells from hiding cursor cells
+    Callable set_cells_visibility;
 
     /// Copy of parent HexMap's HexSpace
     ///
@@ -100,6 +114,10 @@ private:
     RID grid_mesh;
     RID grid_mesh_instance;
     Transform3D grid_mesh_transform;
+
+    /// HashSet of the cells we're currently hiding; used to limit the
+    /// callbacks we make
+    HashSet<CellKey> hidden_cells;
 
     /// Update the grid & tile meshes, along with `cursor_transform()`
     void transform_meshes();

@@ -312,6 +312,18 @@ void HexMapOctant::clear_cell(const CellKey cell_key) {
     dirty = true;
 }
 
+void HexMapOctant::set_cell_visibility(HexMapCellId cell_id, bool visible) {
+    free_baked_mesh();
+    mesh_tool.set_cell_visibility(cell_id, visible);
+    dirty = true;
+}
+
+void HexMapOctant::set_all_cells_visible() {
+    free_baked_mesh();
+    mesh_tool.set_all_cells_visible();
+    dirty = true;
+}
+
 void HexMapOctant::set_baked_mesh(Ref<Mesh> mesh) { baked_mesh = mesh; }
 
 Ref<Mesh> HexMapOctant::get_baked_mesh() {

@@ -22,6 +22,9 @@ public:
 
     using CellMap = HashMap<HexMapCellId::Key, CellState>;
 
+    /// Set the hex space parameters
+    void set_space(const HexSpace &);
+
     /// Set the `MeshLibrary`; will take effect on next `refresh()` call
     void set_mesh_library(Ref<MeshLibrary> &);
     inline Ref<MeshLibrary> get_mesh_library() const { return mesh_library; }
@@ -58,4 +61,8 @@ private:
     Ref<MeshLibrary> mesh_library;
     CellMap cell_map;
     Ref<ArrayMesh> placeholder_mesh;
+
+    /// flag to denote that the `HexMapMeshTool` must be rebuilt from the
+    /// `cell_map`.
+    bool rebuild = false;
 };

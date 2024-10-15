@@ -173,6 +173,7 @@ public:
     // value is not saved
     void set_cell_visibility(const HexMapCellId &cell_id,
             bool visibility) override;
+    bool set_cells_visibility_callback(Array cells);
 
     bool mesh_library_changed() override;
 

@@ -18,6 +18,8 @@ void HexMapMeshTool::free_multimeshes() {
     multimeshes.clear();
 }
 
+// XXX maybe implement a performance oriented update that preserves multimesh
+// instances when possible.  Should be possible unless the cell_map changes.
 void HexMapMeshTool::build_multimeshes() {
     ERR_FAIL_COND_MSG(!scenario.is_valid(),
             "HexMapMeshManager instances does not have a valid scenario");
@@ -33,6 +35,11 @@ void HexMapMeshTool::build_multimeshes() {
     for (const auto &iter : cell_map) {
         CellId cell_id(iter.key);
         const Cell &cell = iter.value;
+
+        // skip hidden cells
+        if (!cell.visible) {
+            continue;
+        }
 
         Vector<Transform3D> *mesh_transforms = mesh_cells.getptr(cell.mesh);
         if (mesh_transforms == nullptr) {
@@ -69,9 +76,6 @@ void HexMapMeshTool::build_multimeshes() {
     }
 }
 
-// XXX maybe implement a performance oriented update that preserves multimesh
-// instances when possible.  Should be possible unless the cell_map changes.
-
 void HexMapMeshTool::set_cell(CellId cell_id,
         RID mesh,
         Transform3D mesh_transform) {
@@ -83,6 +87,19 @@ void HexMapMeshTool::set_cell(CellId cell_id,
 }
 
 void HexMapMeshTool::clear_cell(CellId key) { cell_map.erase(key); }
+
+void HexMapMeshTool::set_cell_visibility(CellId cell_id, bool visible) {
+    Cell *cell = cell_map.getptr(cell_id);
+    if (cell != nullptr) {
+        cell->visible = visible;
+    }
+}
+
+void HexMapMeshTool::set_all_cells_visible() {
+    for (auto &iter : cell_map) {
+        iter.value.visible = true;
+    }
+}
 
 void HexMapMeshTool::refresh() {
     free_multimeshes();

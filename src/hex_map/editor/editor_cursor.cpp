@@ -22,6 +22,7 @@
 #include "core/iter_radial.h"
 #include "core/math.h"
 #include "editor_cursor.h"
+#include "profiling.h"
 
 #define GRID_RADIUS 40u
 
@@ -40,6 +41,10 @@ void EditorCursor::set_space(HexSpace space) {
 void EditorCursor::set_mesh_library(Ref<MeshLibrary> &value) {
     mesh_tool.set_mesh_library(value);
     transform_meshes();
+}
+
+void EditorCursor::set_cells_visibility_callback(Callable value) {
+    set_cells_visibility = value;
 }
 
 void EditorCursor::set_orientation(TileOrientation orientation) {
@@ -62,7 +67,32 @@ void EditorCursor::transform_meshes() {
     mesh_tool.set_space(space);
     mesh_tool.refresh();
 
-    // XXX handle cell visibility on hexmap
+    if (!set_cells_visibility.is_valid()) {
+        return;
+    }
+
+    auto profile = profiling_begin("EditorCursor: updating hidden cell list");
+    Array changes;
+    HashSet<CellKey> current_cells = hidden_cells;
+    for (const auto &iter : mesh_tool.get_cells()) {
+        Vector3 center = space.get_cell_center_global(iter.key);
+        CellId cell_id = parent_space.get_cell_id_global(center);
+        if (!current_cells.erase(cell_id)) {
+            hidden_cells.insert(cell_id);
+            changes.push_back((Vector3i)cell_id);
+            changes.push_back(false);
+        }
+    }
+
+    for (const auto key : current_cells) {
+        hidden_cells.erase(key);
+        changes.push_back((Vector3i)key);
+        changes.push_back(true);
+    }
+
+    if (!changes.is_empty()) {
+        set_cells_visibility.call(changes);
+    }
 }
 
 void EditorCursor::clear_tiles() {
@@ -136,7 +166,7 @@ bool EditorCursor::update(const Camera3D *camera,
 
     HexMapCellId cell = parent_space.get_cell_id(pos);
     if (cell == pointer_cell) {
-        return true;
+        return false;
     }
     pointer_cell = cell;
     UtilityFunctions::print("editor cursor " + pointer_pos + " in cell " +
