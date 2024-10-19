@@ -701,7 +701,7 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
             callable_mp(hex_map, &HexMap::set_cells_visibility_callback));
 
     selection_manager = new SelectionManager(scenario);
-    editor_cursor->set_space(hex_map->get_space());
+    selection_manager->set_space(hex_map->get_space());
 
     Array floors = hex_map->get_meta("_editor_floors_", Array());
     if (floors.size() == 4) {
