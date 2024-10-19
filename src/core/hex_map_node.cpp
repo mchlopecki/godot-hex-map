@@ -1,4 +1,4 @@
-#include "hex_map_base.h"
+#include "hex_map_node.h"
 #include "cell_id.h"
 
 void HexMapNode::_bind_methods() {

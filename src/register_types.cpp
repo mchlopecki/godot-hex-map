@@ -5,7 +5,7 @@
 #include <godot_cpp/godot.hpp>
 
 #include "core/cell_id.h"
-#include "core/hex_map_base.h"
+#include "core/hex_map_node.h"
 #include "core/iter.h"
 #include "tiled_node/editor/editor_plugin.h"
 #include "tiled_node/tiled_node.h"

@@ -17,7 +17,7 @@
 #include <godot_cpp/variant/vector3i.hpp>
 
 #include "core/cell_id.h"
-#include "core/hex_map_base.h"
+#include "core/hex_map_node.h"
 #include "core/iter.h"
 #include "core/iter_cube.h"
 #include "core/planes.h"
