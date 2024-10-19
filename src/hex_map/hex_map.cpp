@@ -263,23 +263,11 @@ bool HexMap::mesh_library_changed() {
     return true;
 }
 
-void HexMap::set_cell_height(real_t value) {
-    HexMapBase::set_cell_height(value);
+bool HexMap::cell_scale_changed() {
+    HexMapBase::cell_scale_changed();
     clear_baked_meshes();
-    update_octant_meshes();
-}
-
-// XXX this is not called because the parent godot object handler is registered
-void HexMap::set_cell_radius(real_t value) {
-    HexMapBase::set_cell_radius(value);
-    clear_baked_meshes();
-    update_octant_meshes();
-}
-
-void HexMap::set_center_y(bool p_value) {
-    HexMapBase::set_center_y(p_value);
-    clear_baked_meshes();
-    update_octant_meshes();
+    _recreate_octant_data();
+    return true;
 }
 
 void HexMap::set_octant_size(int p_size) {

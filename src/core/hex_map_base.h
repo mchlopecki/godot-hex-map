@@ -48,6 +48,9 @@ public:
     /// `cell_height = 1.0`.
     Vector3 get_cell_scale() const;
 
+    /// called when the cell scale changes
+    virtual bool cell_scale_changed();
+
     void set_mesh_library(const Ref<MeshLibrary> &);
     Ref<MeshLibrary> get_mesh_library() const;
 

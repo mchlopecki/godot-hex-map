@@ -145,10 +145,6 @@ public:
     void set_physics_material(Ref<PhysicsMaterial> p_material);
     Ref<PhysicsMaterial> get_physics_material() const;
 
-    void set_cell_height(real_t p_height);
-    void set_cell_radius(real_t p_radius);
-    void set_center_y(bool p_enable);
-
     void set_navigation_bake_only_navmesh_tiles(bool);
     bool get_navigation_bake_only_navmesh_tiles() const;
 
@@ -175,6 +171,7 @@ public:
             bool visibility) override;
     bool set_cells_visibility_callback(Array cells);
 
+    bool cell_scale_changed() override;
     bool mesh_library_changed() override;
 
     HexMapCellId local_to_cell_id(const Vector3 &local_position) const;

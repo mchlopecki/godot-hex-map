@@ -50,14 +50,14 @@ void HexMapBase::_bind_methods() {
 
 void HexMapBase::set_cell_height(real_t p_height) {
     space.set_cell_height(p_height);
-    emit_signal("cell_scale_changed");
+    cell_scale_changed();
 }
 
 real_t HexMapBase::get_cell_height() const { return space.get_cell_height(); }
 
 void HexMapBase::set_cell_radius(real_t p_radius) {
     space.set_cell_radius(p_radius);
-    emit_signal("cell_scale_changed");
+    cell_scale_changed();
 }
 
 real_t HexMapBase::get_cell_radius() const { return space.get_cell_radius(); }
@@ -68,11 +68,16 @@ void HexMapBase::set_center_y(bool p_value) {
     } else {
         space.set_mesh_offset(Vector3(0, -0.5, 0));
     }
-    emit_signal("mesh_offset_changed");
+    cell_scale_changed();
 }
 
 bool HexMapBase::get_center_y() const {
     return space.get_mesh_offset().y == 0;
+}
+
+bool HexMapBase::cell_scale_changed() {
+    emit_signal("cell_scale_changed");
+    return true;
 }
 
 Vector3 HexMapBase::get_cell_scale() const { return space.get_cell_scale(); }
