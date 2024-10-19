@@ -1,12 +1,11 @@
+#include "core/cell_id.h"
+#include "core/iter_radial.h"
 #include "doctest.h"
 #include "formatters.h"
-#include "hex_map/cell_id.h"
-#include "hex_map/hex_map.h"
-#include "hex_map/iter_radial.h"
 #include <sys/signal.h>
 #include <csignal>
 
-using CellId = HexMap::CellId;
+using CellId = HexMapCellId;
 
 TEST_CASE("HexMapIterRadial") {
     struct TestCase {
