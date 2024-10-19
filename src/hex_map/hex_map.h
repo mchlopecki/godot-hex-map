@@ -65,6 +65,8 @@ private:
         RID instance;
     };
 
+    Ref<MeshLibrary> mesh_library;
+
     // map properties
     real_t cell_radius = 1.0;
     real_t cell_height = 1.0;
@@ -124,6 +126,12 @@ protected:
 public:
     enum { INVALID_CELL_ITEM = -1 };
 
+    void set_mesh_library(const Ref<MeshLibrary> &);
+    Ref<MeshLibrary> get_mesh_library() const;
+    bool mesh_library_changed();
+
+    bool cell_scale_changed() override;
+
     void set_collision_debug(bool value);
     bool get_collision_debug() const;
 
@@ -167,12 +175,8 @@ public:
 
     // used by the editor to conceal cells for the editor cursor
     // value is not saved
-    void set_cell_visibility(const HexMapCellId &cell_id,
-            bool visibility) override;
+    void set_cell_visibility(const HexMapCellId &cell_id, bool visibility);
     bool set_cells_visibility_callback(Array cells);
-
-    bool cell_scale_changed() override;
-    bool mesh_library_changed() override;
 
     HexMapCellId local_to_cell_id(const Vector3 &local_position) const;
     Ref<HexMapCellIdWrapper> _local_to_cell_id(

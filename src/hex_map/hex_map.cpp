@@ -257,8 +257,22 @@ bool HexMap::get_collision_mask_value(int p_layer_number) const {
     return get_collision_mask() & (1 << (p_layer_number - 1));
 }
 
+void HexMap::set_mesh_library(const Ref<MeshLibrary> &p_mesh_library) {
+    if (!mesh_library.is_null()) {
+        mesh_library->disconnect(
+                "changed", callable_mp(this, &HexMap::mesh_library_changed));
+    }
+    mesh_library = p_mesh_library;
+    if (!mesh_library.is_null()) {
+        mesh_library->connect(
+                "changed", callable_mp(this, &HexMap::mesh_library_changed));
+    }
+    mesh_library_changed();
+}
+
+Ref<MeshLibrary> HexMap::get_mesh_library() const { return mesh_library; }
+
 bool HexMap::mesh_library_changed() {
-    HexMapBase::mesh_library_changed();
     _recreate_octant_data();
     return true;
 }
@@ -757,6 +771,11 @@ void HexMap::clear() {
 }
 
 void HexMap::_bind_methods() {
+    ClassDB::bind_method(D_METHOD("set_mesh_library", "mesh_library"),
+            &HexMap::set_mesh_library);
+    ClassDB::bind_method(
+            D_METHOD("get_mesh_library"), &HexMap::get_mesh_library);
+
     ClassDB::bind_method(D_METHOD("set_collision_debug", "debug"),
             &HexMap::set_collision_debug);
     ClassDB::bind_method(
@@ -852,6 +871,12 @@ void HexMap::_bind_methods() {
             DEFVAL(false),
             DEFVAL(0.1));
 
+    ADD_PROPERTY(PropertyInfo(Variant::OBJECT,
+                         "mesh_library",
+                         PROPERTY_HINT_RESOURCE_TYPE,
+                         "MeshLibrary"),
+            "set_mesh_library",
+            "get_mesh_library");
     ADD_PROPERTY(PropertyInfo(Variant::OBJECT,
                          "physics_material",
                          PROPERTY_HINT_RESOURCE_TYPE,

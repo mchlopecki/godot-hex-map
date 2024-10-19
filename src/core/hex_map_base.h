@@ -28,7 +28,6 @@ class HexMapBase : public Node3D {
 
 protected:
     HexSpace space;
-    Ref<MeshLibrary> mesh_library;
 
     static void _bind_methods();
 
@@ -51,19 +50,9 @@ public:
     /// called when the cell scale changes
     virtual bool cell_scale_changed();
 
-    void set_mesh_library(const Ref<MeshLibrary> &);
-    Ref<MeshLibrary> get_mesh_library() const;
-
-    /// called when `mesh_libary` emits a `changed` signal
-    virtual bool mesh_library_changed();
-
     /// given a cell id, return the local position of the cell
     Vector3 get_cell_center(const HexMapCellId &) const;
 
     /// given a local position, return the cell id that contains that point
     HexMapCellId get_cell_id(Vector3) const;
-
-    /// Used by HexMapEditorCursor to conceal tiles that may overlap the cursor
-    /// tiles.
-    virtual void set_cell_visibility(const HexMapCellId &, bool) = 0;
 };

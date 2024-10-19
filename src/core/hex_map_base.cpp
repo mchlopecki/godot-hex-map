@@ -15,17 +15,6 @@ void HexMapBase::_bind_methods() {
             D_METHOD("set_center_y", "enable"), &HexMapBase::set_center_y);
     ClassDB::bind_method(D_METHOD("get_center_y"), &HexMapBase::get_center_y);
 
-    ClassDB::bind_method(D_METHOD("set_mesh_library", "mesh_library"),
-            &HexMapBase::set_mesh_library);
-    ClassDB::bind_method(
-            D_METHOD("get_mesh_library"), &HexMapBase::get_mesh_library);
-
-    ADD_PROPERTY(PropertyInfo(Variant::OBJECT,
-                         "mesh_library",
-                         PROPERTY_HINT_RESOURCE_TYPE,
-                         "MeshLibrary"),
-            "set_mesh_library",
-            "get_mesh_library");
     ADD_GROUP("Cell", "cell_");
     ADD_PROPERTY(PropertyInfo(Variant::FLOAT,
                          "cell_height",
@@ -81,27 +70,6 @@ bool HexMapBase::cell_scale_changed() {
 }
 
 Vector3 HexMapBase::get_cell_scale() const { return space.get_cell_scale(); }
-
-void HexMapBase::set_mesh_library(const Ref<MeshLibrary> &p_mesh_library) {
-    if (!mesh_library.is_null()) {
-        // XXX this is not working in a way to allow subclass to override
-        mesh_library->disconnect("changed",
-                callable_mp(this, &HexMapBase::mesh_library_changed));
-    }
-    mesh_library = p_mesh_library;
-    if (!mesh_library.is_null()) {
-        mesh_library->connect("changed",
-                callable_mp(this, &HexMapBase::mesh_library_changed));
-    }
-    mesh_library_changed();
-}
-
-bool HexMapBase::mesh_library_changed() {
-    emit_signal("mesh_library_changed");
-    return true;
-}
-
-Ref<MeshLibrary> HexMapBase::get_mesh_library() const { return mesh_library; }
 
 Vector3 HexMapBase::get_cell_center(const HexMapCellId &cell_id) const {
     return space.get_cell_center(cell_id);
