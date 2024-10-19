@@ -147,7 +147,6 @@ void SelectionManager::redraw_selection() {
     // transform the mesh manager and redraw it
     Vector<CellId> cells = get_cells();
     mesh_manager.clear();
-    mesh_manager.set_space(hex_map.get_space());
     set_cells(cells);
 
     // make sure it is visible
@@ -158,17 +157,19 @@ void SelectionManager::clear() { mesh_manager.clear(); }
 
 void SelectionManager::add_cell(CellId cell) {
     assert(cell_mesh.is_valid() && "mesh should be valid");
-    mesh_manager.set_cell(
-            cell, cell_mesh, Basis::from_scale(hex_map.get_cell_scale()));
+    mesh_manager.set_cell(cell,
+            cell_mesh,
+            Basis::from_scale(mesh_manager.get_space().get_cell_scale()));
     mesh_manager.refresh();
 }
 
 void SelectionManager::set_cells(Vector<CellId> other) {
     mesh_manager.clear();
 
+    Transform3D mesh_transform(
+            Basis::from_scale(mesh_manager.get_space().get_cell_scale()));
     for (const CellId &cell : other) {
-        mesh_manager.set_cell(
-                cell, cell_mesh, Basis::from_scale(hex_map.get_cell_scale()));
+        mesh_manager.set_cell(cell, cell_mesh, mesh_transform);
     }
     mesh_manager.refresh();
 }
@@ -176,11 +177,12 @@ void SelectionManager::set_cells(Vector<CellId> other) {
 void SelectionManager::set_cells(Array other) {
     mesh_manager.clear();
 
+    Transform3D mesh_transform(
+            Basis::from_scale(mesh_manager.get_space().get_cell_scale()));
     auto size = other.size();
     for (int i = 0; i < size; i++) {
         Vector3i cell = other[i];
-        mesh_manager.set_cell(
-                cell, cell_mesh, Basis::from_scale(hex_map.get_cell_scale()));
+        mesh_manager.set_cell(cell, cell_mesh, mesh_transform);
     }
     mesh_manager.refresh();
 }
@@ -233,17 +235,23 @@ Array SelectionManager::get_cells_v() const {
     return out;
 }
 
-SelectionManager::SelectionManager(HexMap &hex_map) : hex_map(hex_map) {
+void SelectionManager::set_space(HexSpace space) {
+    space.set_mesh_offset(Vector3());
+    bool redraw = space.get_cell_scale() !=
+            mesh_manager.get_space().get_cell_scale();
+    mesh_manager.set_space(space);
+    if (redraw) {
+        redraw_selection();
+    } else {
+        mesh_manager.refresh();
+    }
+}
+
+SelectionManager::SelectionManager(RID scenario) {
     build_cell_mesh();
     assert(cell_mesh.is_valid() && "mesh should be valid");
 
-    mesh_manager.set_scenario(hex_map.get_world_3d()->get_scenario());
-
-    // copy the HexMap's space, but clear the mesh offset; our cell mesh is
-    // centered around the origin.
-    HexSpace space = hex_map.get_space();
-    space.set_mesh_offset(Vector3());
-    mesh_manager.set_space(space);
+    mesh_manager.set_scenario(scenario);
 }
 
 SelectionManager::~SelectionManager() {

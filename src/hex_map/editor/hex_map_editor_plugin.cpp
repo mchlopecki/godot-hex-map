@@ -692,13 +692,17 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
     add_control_to_bottom_panel(bottom_panel, "HexMap");
     make_bottom_panel_item_visible(bottom_panel);
 
+    RID scenario = hex_map->get_world_3d()->get_scenario();
+
     // not a godot Object subclass, so `new` instead of `memnew()`
-    editor_cursor = new EditorCursor(hex_map->get_world_3d()->get_scenario());
+    editor_cursor = new EditorCursor(scenario);
     editor_cursor->set_space(hex_map->get_space());
     editor_cursor->set_cells_visibility_callback(
             callable_mp(hex_map, &HexMap::set_cells_visibility_callback));
 
-    selection_manager = new SelectionManager(*hex_map);
+    selection_manager = new SelectionManager(scenario);
+    editor_cursor->set_space(hex_map->get_space());
+
     Array floors = hex_map->get_meta("_editor_floors_", Array());
     if (floors.size() == 4) {
         editor_control->set_planes(floors);
@@ -729,8 +733,8 @@ void HexMapEditorPlugin::_notification(int p_what) {
             Transform3D transform = hex_map->get_global_transform();
             if (transform != cached_transform) {
                 cached_transform = transform;
-                editor_cursor->update(true);
-                selection_manager->redraw_selection();
+                editor_cursor->set_space(hex_map->get_space());
+                selection_manager->set_space(hex_map->get_space());
             }
         } break;
 
@@ -759,7 +763,7 @@ void HexMapEditorPlugin::_notification(int p_what) {
 void HexMapEditorPlugin::hex_space_changed() {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
     editor_cursor->set_space(hex_map->get_space());
-    selection_manager->redraw_selection();
+    selection_manager->set_space(hex_map->get_space());
 }
 
 void HexMapEditorPlugin::tile_changed(int p_mesh_id) {
