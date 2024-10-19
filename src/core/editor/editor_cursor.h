@@ -11,7 +11,6 @@
 #include "core/cell_id.h"
 #include "core/library_mesh_tool.h"
 #include "core/tile_orientation.h"
-#include "editor_control.h"
 
 using namespace godot;
 
@@ -20,6 +19,13 @@ public:
     using CellId = HexMapCellId;
     using CellKey = HexMapCellId::Key;
     using TileOrientation = HexMapTileOrientation;
+
+    enum EditAxis {
+        AXIS_Y,
+        AXIS_Q, // northwest/southeast
+        AXIS_R, // east/west
+        AXIS_S, // northeast/southeast
+    };
 
     //
     struct CellState {
@@ -42,8 +48,8 @@ public:
     void set_cells_visibility_callback(Callable);
 
     void set_orientation(TileOrientation orientation);
-    void set_axis(EditorControl::EditAxis axis);
-    inline EditorControl::EditAxis get_axis() { return edit_axis; };
+    void set_axis(EditAxis axis);
+    inline EditAxis get_axis() { return edit_axis; };
 
     /// set the depth of the edit plane
     void set_depth(int);
@@ -89,7 +95,7 @@ private:
     /// Mesh tool for drawing meshes
     HexMapLibraryMeshTool mesh_tool;
 
-    EditorControl::EditAxis edit_axis = EditorControl::EditAxis::AXIS_Y;
+    EditAxis edit_axis = EditAxis::AXIS_Y;
     TileOrientation orientation;
     /// callback used for toggling cell visibility in the parent class to
     /// prevent existing cells from hiding cursor cells

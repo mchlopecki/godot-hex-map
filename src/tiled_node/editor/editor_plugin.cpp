@@ -42,11 +42,13 @@
 #include <godot_cpp/variant/vector3i.hpp>
 
 #include "core/cell_id.h"
+#include "core/editor/editor_cursor.h"
+#include "core/editor/selection_manager.h"
 #include "editor_control.h"
-#include "editor_cursor.h"
 #include "editor_plugin.h"
 #include "profiling.h"
-#include "selection_manager.h"
+
+using EditAxis = EditorCursor::EditAxis;
 
 // XXX selecting too many cells then deleting causes cpu spin/hang
 // XXX middle click in orthographic axis view moves camera; block that
@@ -534,7 +536,7 @@ int32_t HexMapTiledNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                     // when working on the Y axis, we want to snap the
                     // selection rectangle to 30 degree angles to better line
                     // up with the hex grid.
-                    case EditorControl::AXIS_Y: {
+                    case EditAxis::AXIS_Y: {
                         real_t snap = Math_PI / 6;
                         real_t rot = p_camera->get_global_rotation().y;
                         real_t delta = snap * round(rot / snap);
@@ -546,9 +548,9 @@ int32_t HexMapTiledNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                                      .rotated(Vector3(0, 1, 0), delta);
 
                     } break;
-                    case EditorControl::AXIS_Q:
-                    case EditorControl::AXIS_R:
-                    case EditorControl::AXIS_S:
+                    case EditAxis::AXIS_Q:
+                    case EditAxis::AXIS_R:
+                    case EditAxis::AXIS_S:
                         p2 = Vector3(p1.x, p3.y, p1.z);
                         p4 = Vector3(p3.x, p1.y, p3.z);
                         break;
@@ -793,7 +795,7 @@ void HexMapTiledNodeEditorPlugin::plane_changed(int p_plane) {
 
 void HexMapTiledNodeEditorPlugin::axis_changed(int p_axis) {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
-    editor_cursor->set_axis((EditorControl::EditAxis)p_axis);
+    editor_cursor->set_axis((EditAxis)p_axis);
 }
 
 void HexMapTiledNodeEditorPlugin::cursor_changed(Variant p_orientation) {

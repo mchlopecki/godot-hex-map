@@ -24,9 +24,9 @@
 #include <godot_cpp/variant/dictionary.hpp>
 
 #include "../tiled_node.h"
+#include "core/editor/editor_cursor.h"
+#include "core/editor/selection_manager.h"
 #include "editor_control.h"
-#include "editor_cursor.h"
-#include "selection_manager.h"
 
 using namespace godot;
 

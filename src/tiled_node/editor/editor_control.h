@@ -1,6 +1,7 @@
 #ifdef TOOLS_ENABLED
 
 #include "../tiled_node.h"
+#include "core/editor/editor_cursor.h"
 #include "godot_cpp/classes/h_box_container.hpp"
 #include "godot_cpp/classes/input_event_key.hpp"
 #include "godot_cpp/classes/label.hpp"
@@ -16,14 +17,9 @@ using namespace godot;
 class EditorControl : public godot::HBoxContainer {
     GDCLASS(EditorControl, godot::HBoxContainer);
 
-public:
-    enum EditAxis {
-        AXIS_Y,
-        AXIS_Q, // northwest/southeast
-        AXIS_R, // east/west
-        AXIS_S, // northeast/southeast
-    };
+    using EditAxis = EditorCursor::EditAxis;
 
+public:
 private:
     enum Action {
         ACTION_PLANE_DOWN,
@@ -51,8 +47,8 @@ private:
     MenuButton *menu_button = nullptr;
 
     // plane value for each axis
-    EditAxis active_axis = AXIS_Y;
-    int plane[AXIS_S + 1] = { 0 };
+    EditAxis active_axis = EditAxis::AXIS_Y;
+    int plane[EditAxis::AXIS_S + 1] = { 0 };
     HexMapTiledNode::TileOrientation cursor_orientation;
 
     Ref<Shortcut> editor_shortcut(const String &p_path,
@@ -72,7 +68,7 @@ public:
         return Array::make(plane[0], plane[1], plane[2], plane[3]);
     };
     void set_planes(Array values) {
-        for (int i = 0; i < AXIS_S + 1; i++) {
+        for (int i = 0; i < EditAxis::AXIS_S + 1; i++) {
             plane[i] = values[i];
         }
     }

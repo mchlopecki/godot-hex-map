@@ -24,6 +24,8 @@
 #include "editor_cursor.h"
 #include "profiling.h"
 
+using RS = RenderingServer;
+
 #define GRID_RADIUS 40u
 
 void EditorCursor::set_space(HexMapSpace space) {
@@ -136,7 +138,7 @@ EditorCursor::CellState EditorCursor::get_only_cell_state() const {
     return CellState{
         .cell_id = cell_id,
         .index = iter.value.index,
-        .orientation = iter.value.orientation,
+        .orientation = iter.value.orientation + orientation,
     };
 }
 
@@ -198,7 +200,7 @@ void EditorCursor::set_visibility(bool visible) {
     mesh_manager.set_visibility(visible);
 }
 
-void EditorCursor::set_axis(EditorControl::EditAxis axis) {
+void EditorCursor::set_axis(EditAxis axis) {
     // some axis values may have rotated the grid mesh transform.  We want to
     // reset that rotation while preserving the origin.
     grid_mesh_transform = Transform3D();
@@ -208,20 +210,20 @@ void EditorCursor::set_axis(EditorControl::EditAxis axis) {
     rs->mesh_clear(grid_mesh);
 
     switch (axis) {
-        case EditorControl::AXIS_Y:
+        case EditAxis::AXIS_Y:
             build_y_grid();
             edit_plane.normal = Vector3(0, 1, 0);
             break;
-        case EditorControl::AXIS_Q:
+        case EditAxis::AXIS_Q:
             build_r_grid();
             grid_mesh_transform.rotate(Vector3(0, 1, 0), -Math_PI / 3.0);
             edit_plane.normal = Vector3(Math_SQRT3_2, 0, -0.5).normalized();
             break;
-        case EditorControl::AXIS_R:
+        case EditAxis::AXIS_R:
             build_r_grid();
             edit_plane.normal = Vector3(0, 0, 1);
             break;
-        case EditorControl::AXIS_S:
+        case EditAxis::AXIS_S:
             build_r_grid();
             grid_mesh_transform.rotate(Vector3(0, 1, 0), Math_PI / 3.0);
             edit_plane.normal = Vector3(Math_SQRT3_2, 0, 0.5).normalized();
@@ -241,15 +243,15 @@ void EditorCursor::set_depth(int depth) {
     real_t cell_depth;
 
     switch (edit_axis) {
-        case EditorControl::AXIS_Y:
+        case EditAxis::AXIS_Y:
             // the y plane is at the bottom of the cell, but to avoid floating
             // point errors during raycast, we pull it slightly higher into the
             // cell.
             edit_plane.d = depth * cell_scale.y + (cell_scale.y * 0.1);
             break;
-        case EditorControl::AXIS_Q:
-        case EditorControl::AXIS_R:
-        case EditorControl::AXIS_S:
+        case EditAxis::AXIS_Q:
+        case EditAxis::AXIS_R:
+        case EditAxis::AXIS_S:
             // Q/R/S plane goes through the center of the cell, so no floating
             // point concerns here.
             edit_plane.d = depth * cell_scale.x * 1.5;
@@ -278,7 +280,7 @@ void EditorCursor::build_y_grid() {
     PackedVector3Array grid_points;
     PackedColorArray grid_colors;
     for (const auto cell : HexMapCellId::Origin.get_neighbors(
-                 GRID_RADIUS, HexMapTiledNode::Planes::QRS)) {
+                 GRID_RADIUS, HexMapPlanes::QRS)) {
         Vector3 center = cell.unit_center();
         float transparency =
                 Math::pow(MAX(0, (max - center.length_squared()) / max), 2);
@@ -316,7 +318,7 @@ void EditorCursor::build_r_grid() {
     PackedVector3Array grid_points;
     PackedColorArray grid_colors;
     for (const auto cell : HexMapCellId::Origin.get_neighbors(
-                 GRID_RADIUS, HexMapTiledNode::Planes::YQS)) {
+                 GRID_RADIUS, HexMapPlanes::YQS)) {
         Vector3 center = cell.unit_center();
         float transparency =
                 Math::pow(MAX(0, (max - center.length_squared()) / max), 2);

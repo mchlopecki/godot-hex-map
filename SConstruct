@@ -13,6 +13,7 @@ env.Append(CPPPATH=["src/"])
 sources = [
     Glob("src/*.cpp"),
     Glob("src/core/*.cpp"),
+    Glob("src/core/editor/*.cpp"),
     Glob("src/tiled_node/*.cpp"),
     Glob("src/tiled_node/editor/*.cpp"),
 ]

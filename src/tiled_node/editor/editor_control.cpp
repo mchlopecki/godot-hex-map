@@ -75,38 +75,38 @@ void EditorControl::handle_action(int p_action) {
             plane_spin_box->set_value(plane_spin_box->get_value() + 1);
             break;
         case ACTION_AXIS_Y:
-            active_axis = AXIS_Y;
+            active_axis = EditAxis::AXIS_Y;
             emit_signal("axis_changed", active_axis);
             plane_spin_box->set_value(plane[active_axis]);
             break;
         case ACTION_AXIS_Q:
-            active_axis = AXIS_Q;
+            active_axis = EditAxis::AXIS_Q;
             emit_signal("axis_changed", active_axis);
             plane_spin_box->set_value(plane[active_axis]);
             break;
         case ACTION_AXIS_R:
-            active_axis = AXIS_R;
+            active_axis = EditAxis::AXIS_R;
             emit_signal("axis_changed", active_axis);
             plane_spin_box->set_value(plane[active_axis]);
             break;
         case ACTION_AXIS_S:
-            active_axis = AXIS_S;
+            active_axis = EditAxis::AXIS_S;
             emit_signal("axis_changed", active_axis);
             plane_spin_box->set_value(plane[active_axis]);
             break;
         case ACTION_AXIS_ROTATE_CW:
             switch (active_axis) {
-                case AXIS_Y:
-                    active_axis = AXIS_R;
+                case EditAxis::AXIS_Y:
+                    active_axis = EditAxis::AXIS_R;
                     break;
-                case AXIS_Q:
-                    active_axis = AXIS_S;
+                case EditAxis::AXIS_Q:
+                    active_axis = EditAxis::AXIS_S;
                     break;
-                case AXIS_R:
-                    active_axis = AXIS_Q;
+                case EditAxis::AXIS_R:
+                    active_axis = EditAxis::AXIS_Q;
                     break;
-                case AXIS_S:
-                    active_axis = AXIS_R;
+                case EditAxis::AXIS_S:
+                    active_axis = EditAxis::AXIS_R;
                     break;
             }
             emit_signal("axis_changed", active_axis);
@@ -114,17 +114,17 @@ void EditorControl::handle_action(int p_action) {
             break;
         case ACTION_AXIS_ROTATE_CCW:
             switch (active_axis) {
-                case AXIS_Y:
-                    active_axis = AXIS_S;
+                case EditAxis::AXIS_Y:
+                    active_axis = EditAxis::AXIS_S;
                     break;
-                case AXIS_Q:
-                    active_axis = AXIS_R;
+                case EditAxis::AXIS_Q:
+                    active_axis = EditAxis::AXIS_R;
                     break;
-                case AXIS_R:
-                    active_axis = AXIS_S;
+                case EditAxis::AXIS_R:
+                    active_axis = EditAxis::AXIS_S;
                     break;
-                case AXIS_S:
-                    active_axis = AXIS_Q;
+                case EditAxis::AXIS_S:
+                    active_axis = EditAxis::AXIS_Q;
                     break;
             }
             emit_signal("axis_changed", active_axis);
