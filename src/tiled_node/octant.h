@@ -13,7 +13,7 @@
 
 using namespace godot;
 
-class HexMap;
+class HexMapTiledNode;
 
 class HexMapOctant {
 private:
@@ -25,7 +25,7 @@ private:
         RID multimesh_instance; // need scene scenario
     };
 
-    HexMap &hex_map;
+    HexMapTiledNode &hex_map;
     HashSet<CellKey> cells;
 
     HexMapLibraryMeshTool mesh_tool;
@@ -76,7 +76,7 @@ public:
         _FORCE_INLINE_ operator uint64_t() const { return key; }
     };
 
-    HexMapOctant(HexMap &hex_map);
+    HexMapOctant(HexMapTiledNode &hex_map);
     ~HexMapOctant();
 
     void enter_world();

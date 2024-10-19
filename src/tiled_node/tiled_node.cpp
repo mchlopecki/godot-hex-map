@@ -34,11 +34,11 @@
 #include "core/cell_id.h"
 #include "core/iter_cube.h"
 #include "core/math.h"
-#include "hex_map.h"
 #include "octant.h"
 #include "profiling.h"
+#include "tiled_node.h"
 
-bool HexMap::_set(const StringName &p_name, const Variant &p_value) {
+bool HexMapTiledNode::_set(const StringName &p_name, const Variant &p_value) {
     String name = p_name;
 
     if (name == "data") {
@@ -88,7 +88,7 @@ bool HexMap::_set(const StringName &p_name, const Variant &p_value) {
     return true;
 }
 
-bool HexMap::_get(const StringName &p_name, Variant &r_ret) const {
+bool HexMapTiledNode::_get(const StringName &p_name, Variant &r_ret) const {
     String name = p_name;
 
     if (name == "data") {
@@ -130,7 +130,7 @@ bool HexMap::_get(const StringName &p_name, Variant &r_ret) const {
     return true;
 }
 
-void HexMap::_get_property_list(List<PropertyInfo> *p_list) const {
+void HexMapTiledNode::_get_property_list(List<PropertyInfo> *p_list) const {
     p_list->push_back(PropertyInfo(Variant::DICTIONARY,
             "data",
             PROPERTY_HINT_NONE,
@@ -143,7 +143,7 @@ void HexMap::_get_property_list(List<PropertyInfo> *p_list) const {
             PROPERTY_USAGE_STORAGE));
 }
 
-void HexMap::set_collision_debug(bool value) {
+void HexMapTiledNode::set_collision_debug(bool value) {
     if (collision_debug == value) {
         return;
     }
@@ -155,27 +155,30 @@ void HexMap::set_collision_debug(bool value) {
     }
 }
 
-bool HexMap::get_collision_debug() const { return collision_debug; }
+bool HexMapTiledNode::get_collision_debug() const { return collision_debug; }
 
-void HexMap::set_collision_layer(uint32_t p_layer) {
+void HexMapTiledNode::set_collision_layer(uint32_t p_layer) {
     collision_layer = p_layer;
     for (const auto &it : octants) {
         it.value->update_collision_properties();
     }
 }
 
-uint32_t HexMap::get_collision_layer() const { return collision_layer; }
+uint32_t HexMapTiledNode::get_collision_layer() const {
+    return collision_layer;
+}
 
-void HexMap::set_collision_mask(uint32_t p_mask) {
+void HexMapTiledNode::set_collision_mask(uint32_t p_mask) {
     collision_mask = p_mask;
     for (const auto &it : octants) {
         it.value->update_collision_properties();
     }
 }
 
-uint32_t HexMap::get_collision_mask() const { return collision_mask; }
+uint32_t HexMapTiledNode::get_collision_mask() const { return collision_mask; }
 
-void HexMap::set_collision_layer_value(int p_layer_number, bool p_value) {
+void HexMapTiledNode::set_collision_layer_value(int p_layer_number,
+        bool p_value) {
     ERR_FAIL_COND_MSG(p_layer_number < 1,
             "Collision layer number must be between 1 and 32 inclusive.");
     ERR_FAIL_COND_MSG(p_layer_number > 32,
@@ -189,7 +192,7 @@ void HexMap::set_collision_layer_value(int p_layer_number, bool p_value) {
     set_collision_layer(collision_layer_new);
 }
 
-bool HexMap::get_collision_layer_value(int p_layer_number) const {
+bool HexMapTiledNode::get_collision_layer_value(int p_layer_number) const {
     ERR_FAIL_COND_V_MSG(p_layer_number < 1,
             false,
             "Collision layer number must be between 1 and 32 inclusive.");
@@ -199,7 +202,8 @@ bool HexMap::get_collision_layer_value(int p_layer_number) const {
     return get_collision_layer() & (1 << (p_layer_number - 1));
 }
 
-void HexMap::set_collision_mask_value(int p_layer_number, bool p_value) {
+void HexMapTiledNode::set_collision_mask_value(int p_layer_number,
+        bool p_value) {
     ERR_FAIL_COND_MSG(p_layer_number < 1,
             "Collision layer number must be between 1 and 32 inclusive.");
     ERR_FAIL_COND_MSG(p_layer_number > 32,
@@ -213,14 +217,16 @@ void HexMap::set_collision_mask_value(int p_layer_number, bool p_value) {
     set_collision_mask(mask);
 }
 
-void HexMap::set_collision_priority(real_t p_priority) {
+void HexMapTiledNode::set_collision_priority(real_t p_priority) {
     collision_priority = p_priority;
     for (const auto &it : octants) {
         it.value->update_collision_properties();
     }
 }
 
-real_t HexMap::get_collision_priority() const { return collision_priority; }
+real_t HexMapTiledNode::get_collision_priority() const {
+    return collision_priority;
+}
 
 // PhysicsMaterial.computed_friction() & computed_bounce() not exposed in
 // godot-cpp
@@ -228,7 +234,7 @@ real_t HexMap::get_collision_priority() const { return collision_priority; }
     ((mat)->is_rough() ? -mat->get_friction() : mat->get_friction())
 #define computed_bounce(mat)                                                  \
     ((mat)->is_absorbent() ? -mat->get_bounce() : mat->get_bounce())
-void HexMap::set_physics_material(Ref<PhysicsMaterial> p_material) {
+void HexMapTiledNode::set_physics_material(Ref<PhysicsMaterial> p_material) {
     physics_material = p_material;
     physics_body_friction = 1.0;
     physics_body_bounce = 0.0;
@@ -243,11 +249,11 @@ void HexMap::set_physics_material(Ref<PhysicsMaterial> p_material) {
     }
 }
 
-Ref<PhysicsMaterial> HexMap::get_physics_material() const {
+Ref<PhysicsMaterial> HexMapTiledNode::get_physics_material() const {
     return physics_material;
 }
 
-bool HexMap::get_collision_mask_value(int p_layer_number) const {
+bool HexMapTiledNode::get_collision_mask_value(int p_layer_number) const {
     ERR_FAIL_COND_V_MSG(p_layer_number < 1,
             false,
             "Collision layer number must be between 1 and 32 inclusive.");
@@ -257,50 +263,54 @@ bool HexMap::get_collision_mask_value(int p_layer_number) const {
     return get_collision_mask() & (1 << (p_layer_number - 1));
 }
 
-void HexMap::set_mesh_library(const Ref<MeshLibrary> &p_mesh_library) {
+void HexMapTiledNode::set_mesh_library(
+        const Ref<MeshLibrary> &p_mesh_library) {
     if (!mesh_library.is_null()) {
-        mesh_library->disconnect(
-                "changed", callable_mp(this, &HexMap::mesh_library_changed));
+        mesh_library->disconnect("changed",
+                callable_mp(this, &HexMapTiledNode::mesh_library_changed));
     }
     mesh_library = p_mesh_library;
     if (!mesh_library.is_null()) {
-        mesh_library->connect(
-                "changed", callable_mp(this, &HexMap::mesh_library_changed));
+        mesh_library->connect("changed",
+                callable_mp(this, &HexMapTiledNode::mesh_library_changed));
     }
     mesh_library_changed();
 }
 
-Ref<MeshLibrary> HexMap::get_mesh_library() const { return mesh_library; }
+Ref<MeshLibrary> HexMapTiledNode::get_mesh_library() const {
+    return mesh_library;
+}
 
-bool HexMap::mesh_library_changed() {
+bool HexMapTiledNode::mesh_library_changed() {
+    emit_signal("mesh_library_changed");
     _recreate_octant_data();
     return true;
 }
 
-bool HexMap::cell_scale_changed() {
-    HexMapBase::cell_scale_changed();
+bool HexMapTiledNode::cell_scale_changed() {
+    HexMapNode::cell_scale_changed();
     clear_baked_meshes();
     _recreate_octant_data();
     return true;
 }
 
-void HexMap::set_octant_size(int p_size) {
+void HexMapTiledNode::set_octant_size(int p_size) {
     ERR_FAIL_COND(p_size == 0);
     octant_size = p_size;
     _recreate_octant_data();
 }
 
-int HexMap::get_octant_size() const { return octant_size; }
+int HexMapTiledNode::get_octant_size() const { return octant_size; }
 
-void HexMap::set_navigation_bake_only_navmesh_tiles(bool value) {
+void HexMapTiledNode::set_navigation_bake_only_navmesh_tiles(bool value) {
     navigation_bake_only_navmesh_tiles = value;
 }
 
-bool HexMap::get_navigation_bake_only_navmesh_tiles() const {
+bool HexMapTiledNode::get_navigation_bake_only_navmesh_tiles() const {
     return navigation_bake_only_navmesh_tiles;
 }
 
-void HexMap::set_cell_item(const HexMapCellId &cell_id,
+void HexMapTiledNode::set_cell_item(const HexMapCellId &cell_id,
         int p_item,
         int p_rot) {
     auto prof = profiling_begin("set cell item");
@@ -367,18 +377,20 @@ void HexMap::set_cell_item(const HexMapCellId &cell_id,
     return;
 }
 
-void HexMap::_set_cell_item(const Ref<HexMapCellIdWrapper> cell_id,
+void HexMapTiledNode::_set_cell_item(const Ref<HexMapCellIdWrapper> cell_id,
         int p_item,
         int p_rot) {
     ERR_FAIL_COND_MSG(!cell_id.is_valid(), "null cell id");
     set_cell_item(**cell_id, p_item, p_rot);
 }
 
-void HexMap::_set_cell_item_v(const Vector3i &cell_id, int p_item, int p_rot) {
+void HexMapTiledNode::_set_cell_item_v(const Vector3i &cell_id,
+        int p_item,
+        int p_rot) {
     set_cell_item(cell_id, p_item, p_rot);
 }
 
-int HexMap::get_cell_item(const HexMapCellId &cell_id) const {
+int HexMapTiledNode::get_cell_item(const HexMapCellId &cell_id) const {
     ERR_FAIL_COND_V_MSG(!cell_id.in_bounds(),
             INVALID_CELL_ITEM,
             "cell id not in bounds: " + cell_id);
@@ -391,15 +403,17 @@ int HexMap::get_cell_item(const HexMapCellId &cell_id) const {
     return cell_map[key].item;
 }
 
-int HexMap::_get_cell_item(const Ref<HexMapCellIdWrapper> p_cell_id) const {
+int HexMapTiledNode::_get_cell_item(
+        const Ref<HexMapCellIdWrapper> p_cell_id) const {
     ERR_FAIL_COND_V_MSG(!p_cell_id.is_valid(), -1, "null cell id");
     return get_cell_item(**p_cell_id);
 }
-int HexMap::_get_cell_item_v(const Vector3i &p_cell_vector) const {
+int HexMapTiledNode::_get_cell_item_v(const Vector3i &p_cell_vector) const {
     return get_cell_item(p_cell_vector);
 }
 
-int HexMap::get_cell_item_orientation(const HexMapCellId &cell_id) const {
+int HexMapTiledNode::get_cell_item_orientation(
+        const HexMapCellId &cell_id) const {
     ERR_FAIL_COND_V_MSG(!cell_id.in_bounds(), -1, "CellId out of bounds");
 
     CellKey key(cell_id);
@@ -409,13 +423,13 @@ int HexMap::get_cell_item_orientation(const HexMapCellId &cell_id) const {
     return cell_map[key].rot;
 }
 
-int HexMap::_get_cell_item_orientation(
+int HexMapTiledNode::_get_cell_item_orientation(
         const Ref<HexMapCellIdWrapper> p_cell_id) const {
     ERR_FAIL_COND_V_MSG(!p_cell_id.is_valid(), 0, "null cell id");
     return get_cell_item_orientation(**p_cell_id);
 }
 
-void HexMap::set_cell_visibility(const HexMapCellId &cell_id,
+void HexMapTiledNode::set_cell_visibility(const HexMapCellId &cell_id,
         bool visibility) {
     ERR_FAIL_COND_MSG(
             !cell_id.in_bounds(), "cell id is not in bounds:" + cell_id);
@@ -449,7 +463,7 @@ void HexMap::set_cell_visibility(const HexMapCellId &cell_id,
     return;
 }
 
-bool HexMap::set_cells_visibility_callback(Array cells) {
+bool HexMapTiledNode::set_cells_visibility_callback(Array cells) {
     if (!baked_mesh_octants.is_empty()) {
         UtilityFunctions::print(
                 "HexMap: map modified; clearing baked lighting meshes");
@@ -502,26 +516,27 @@ static inline Vector3i oddr_to_axial(Vector3i oddr) {
     return Vector3i(q, oddr.y, oddr.z);
 }
 
-HexMapCellId HexMap::local_to_cell_id(const Vector3 &local_position) const {
+HexMapCellId HexMapTiledNode::local_to_cell_id(
+        const Vector3 &local_position) const {
     return space.get_cell_id(local_position);
 }
 
-Ref<HexMapCellIdWrapper> HexMap::_local_to_cell_id(
+Ref<HexMapCellIdWrapper> HexMapTiledNode::_local_to_cell_id(
         const Vector3 &p_local_position) const {
     return local_to_cell_id(p_local_position);
 }
 
-Vector3 HexMap::cell_id_to_local(const HexMapCellId &cell_id) const {
+Vector3 HexMapTiledNode::cell_id_to_local(const HexMapCellId &cell_id) const {
     return space.get_cell_center(cell_id);
 }
 
-Vector3 HexMap::_cell_id_to_local(
+Vector3 HexMapTiledNode::_cell_id_to_local(
         const Ref<HexMapCellIdWrapper> p_cell_id) const {
     ERR_FAIL_COND_V_MSG(!p_cell_id.is_valid(), Vector3(), "null cell id");
     return cell_id_to_local(**p_cell_id);
 }
 
-Vector<HexMapCellId> HexMap::local_quad_to_cell_ids(Vector3 a,
+Vector<HexMapCellId> HexMapTiledNode::local_quad_to_cell_ids(Vector3 a,
         Vector3 b,
         Vector3 c,
         Vector3 d) const {
@@ -634,18 +649,18 @@ Vector<HexMapCellId> HexMap::local_quad_to_cell_ids(Vector3 a,
     return out;
 }
 
-HexMapIterCube HexMap::local_region_to_cell_ids(Vector3 p_a,
+HexMapIterCube HexMapTiledNode::local_region_to_cell_ids(Vector3 p_a,
         Vector3 p_b,
         Planes planes) const {
     return HexMapIterCube(p_a, p_b);
 }
 
-Ref<HexMapIterWrapper> HexMap::_local_region_to_cell_ids(Vector3 p_a,
+Ref<HexMapIterWrapper> HexMapTiledNode::_local_region_to_cell_ids(Vector3 p_a,
         Vector3 p_b) const {
     return local_region_to_cell_ids(p_a, p_b);
 }
 
-void HexMap::_notification(int p_what) {
+void HexMapTiledNode::_notification(int p_what) {
     static Transform3D last_transform;
 
     switch (p_what) {
@@ -685,7 +700,7 @@ void HexMap::_notification(int p_what) {
     }
 }
 
-void HexMap::_update_visibility() {
+void HexMapTiledNode::_update_visibility() {
     if (!is_inside_tree()) {
         return;
     }
@@ -695,7 +710,7 @@ void HexMap::_update_visibility() {
     }
 }
 
-void HexMap::update_dirty_octants_callback() {
+void HexMapTiledNode::update_dirty_octants_callback() {
     ERR_FAIL_COND_MSG(!awaiting_update,
             "update_dirty_octants_callback() called unexpectedly");
     Vector<OctantKey> empty_octants;
@@ -730,22 +745,23 @@ void HexMap::update_dirty_octants_callback() {
     }
 }
 
-void HexMap::update_dirty_octants() {
+void HexMapTiledNode::update_dirty_octants() {
     if (awaiting_update) {
         return;
     }
     awaiting_update = true;
-    callable_mp(this, &HexMap::update_dirty_octants_callback).call_deferred();
+    callable_mp(this, &HexMapTiledNode::update_dirty_octants_callback)
+            .call_deferred();
 }
 
-void HexMap::update_octant_meshes() {
+void HexMapTiledNode::update_octant_meshes() {
     UtilityFunctions::print("calling apply_changes() on all meshes");
     for (auto &it : octants) {
         it.value->apply_changes();
     }
 }
 
-void HexMap::_recreate_octant_data() {
+void HexMapTiledNode::_recreate_octant_data() {
     HashMap<CellKey, Cell> cell_copy = cell_map;
     _clear_internal();
     for (const KeyValue<CellKey, Cell> &E : cell_copy) {
@@ -753,7 +769,7 @@ void HexMap::_recreate_octant_data() {
     }
 }
 
-void HexMap::_clear_internal() {
+void HexMapTiledNode::_clear_internal() {
     for (auto &octant_pair : octants) {
         Octant *octant = octant_pair.value;
         if (is_inside_tree()) {
@@ -765,109 +781,110 @@ void HexMap::_clear_internal() {
     cell_map.clear();
 }
 
-void HexMap::clear() {
+void HexMapTiledNode::clear() {
     _clear_internal();
     clear_baked_meshes();
 }
 
-void HexMap::_bind_methods() {
+void HexMapTiledNode::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_mesh_library", "mesh_library"),
-            &HexMap::set_mesh_library);
+            &HexMapTiledNode::set_mesh_library);
     ClassDB::bind_method(
-            D_METHOD("get_mesh_library"), &HexMap::get_mesh_library);
+            D_METHOD("get_mesh_library"), &HexMapTiledNode::get_mesh_library);
 
     ClassDB::bind_method(D_METHOD("set_collision_debug", "debug"),
-            &HexMap::set_collision_debug);
-    ClassDB::bind_method(
-            D_METHOD("get_collision_debug"), &HexMap::get_collision_debug);
+            &HexMapTiledNode::set_collision_debug);
+    ClassDB::bind_method(D_METHOD("get_collision_debug"),
+            &HexMapTiledNode::get_collision_debug);
 
     ClassDB::bind_method(D_METHOD("set_collision_layer", "layer"),
-            &HexMap::set_collision_layer);
-    ClassDB::bind_method(
-            D_METHOD("get_collision_layer"), &HexMap::get_collision_layer);
+            &HexMapTiledNode::set_collision_layer);
+    ClassDB::bind_method(D_METHOD("get_collision_layer"),
+            &HexMapTiledNode::get_collision_layer);
 
     ClassDB::bind_method(D_METHOD("set_collision_mask", "mask"),
-            &HexMap::set_collision_mask);
-    ClassDB::bind_method(
-            D_METHOD("get_collision_mask"), &HexMap::get_collision_mask);
+            &HexMapTiledNode::set_collision_mask);
+    ClassDB::bind_method(D_METHOD("get_collision_mask"),
+            &HexMapTiledNode::get_collision_mask);
 
     ClassDB::bind_method(
             D_METHOD("set_collision_mask_value", "layer_number", "value"),
-            &HexMap::set_collision_mask_value);
+            &HexMapTiledNode::set_collision_mask_value);
     ClassDB::bind_method(D_METHOD("get_collision_mask_value", "layer_number"),
-            &HexMap::get_collision_mask_value);
+            &HexMapTiledNode::get_collision_mask_value);
 
     ClassDB::bind_method(
             D_METHOD("set_collision_layer_value", "layer_number", "value"),
-            &HexMap::set_collision_layer_value);
+            &HexMapTiledNode::set_collision_layer_value);
     ClassDB::bind_method(D_METHOD("get_collision_layer_value", "layer_number"),
-            &HexMap::get_collision_layer_value);
+            &HexMapTiledNode::get_collision_layer_value);
 
     ClassDB::bind_method(D_METHOD("set_collision_priority", "priority"),
-            &HexMap::set_collision_priority);
+            &HexMapTiledNode::set_collision_priority);
     ClassDB::bind_method(D_METHOD("get_collision_priority"),
-            &HexMap::get_collision_priority);
+            &HexMapTiledNode::get_collision_priority);
 
     ClassDB::bind_method(D_METHOD("set_physics_material", "material"),
-            &HexMap::set_physics_material);
-    ClassDB::bind_method(
-            D_METHOD("get_physics_material"), &HexMap::get_physics_material);
+            &HexMapTiledNode::set_physics_material);
+    ClassDB::bind_method(D_METHOD("get_physics_material"),
+            &HexMapTiledNode::get_physics_material);
 
     ClassDB::bind_method(
             D_METHOD("set_navigation_bake_only_navmesh_tiles", "enable"),
-            &HexMap::set_navigation_bake_only_navmesh_tiles);
+            &HexMapTiledNode::set_navigation_bake_only_navmesh_tiles);
     ClassDB::bind_method(D_METHOD("get_navigation_bake_only_navmesh_tiles"),
-            &HexMap::get_navigation_bake_only_navmesh_tiles);
+            &HexMapTiledNode::get_navigation_bake_only_navmesh_tiles);
 
+    ClassDB::bind_method(D_METHOD("set_octant_size", "size"),
+            &HexMapTiledNode::set_octant_size);
     ClassDB::bind_method(
-            D_METHOD("set_octant_size", "size"), &HexMap::set_octant_size);
-    ClassDB::bind_method(
-            D_METHOD("get_octant_size"), &HexMap::get_octant_size);
+            D_METHOD("get_octant_size"), &HexMapTiledNode::get_octant_size);
 
     ClassDB::bind_method(
             D_METHOD("set_cell_item", "position", "item", "orientation"),
-            &HexMap::_set_cell_item,
+            &HexMapTiledNode::_set_cell_item,
             DEFVAL(0));
     ClassDB::bind_method(
             D_METHOD("set_cell_item_v", "position", "item", "orientation"),
-            &HexMap::_set_cell_item_v,
+            &HexMapTiledNode::_set_cell_item_v,
             DEFVAL(0));
 
-    ClassDB::bind_method(
-            D_METHOD("get_cell_item", "cell_id"), &HexMap::_get_cell_item);
+    ClassDB::bind_method(D_METHOD("get_cell_item", "cell_id"),
+            &HexMapTiledNode::_get_cell_item);
     ClassDB::bind_method(D_METHOD("get_cell_item_v", "cell_vector"),
-            &HexMap::_get_cell_item_v);
+            &HexMapTiledNode::_get_cell_item_v);
 
     ClassDB::bind_method(D_METHOD("get_cell_item_orientation", "position"),
-            &HexMap::_get_cell_item_orientation);
+            &HexMapTiledNode::_get_cell_item_orientation);
 
     ClassDB::bind_method(D_METHOD("local_region_to_cell_ids",
                                  "local_point_a",
                                  "local_point_b"),
-            &HexMap::_local_region_to_cell_ids);
+            &HexMapTiledNode::_local_region_to_cell_ids);
 
     ClassDB::bind_method(D_METHOD("local_to_cell_id", "local_position"),
-            &HexMap::_local_to_cell_id);
+            &HexMapTiledNode::_local_to_cell_id);
     ClassDB::bind_method(D_METHOD("cell_id_to_local", "cell_id"),
-            &HexMap::_cell_id_to_local);
+            &HexMapTiledNode::_cell_id_to_local);
 
-    ClassDB::bind_method(D_METHOD("clear"), &HexMap::clear);
+    ClassDB::bind_method(D_METHOD("clear"), &HexMapTiledNode::clear);
 
-    ClassDB::bind_method(D_METHOD("get_used_cells"), &HexMap::get_used_cells);
+    ClassDB::bind_method(
+            D_METHOD("get_used_cells"), &HexMapTiledNode::get_used_cells);
     ClassDB::bind_method(D_METHOD("get_used_cells_by_item", "item"),
-            &HexMap::get_used_cells_by_item);
+            &HexMapTiledNode::get_used_cells_by_item);
 
     ClassDB::bind_method(
-            D_METHOD("get_bake_meshes"), &HexMap::get_bake_meshes);
+            D_METHOD("get_bake_meshes"), &HexMapTiledNode::get_bake_meshes);
     ClassDB::bind_method(D_METHOD("get_bake_mesh_instance", "idx"),
-            &HexMap::get_bake_mesh_instance);
-    ClassDB::bind_method(
-            D_METHOD("clear_baked_meshes"), &HexMap::clear_baked_meshes);
+            &HexMapTiledNode::get_bake_mesh_instance);
+    ClassDB::bind_method(D_METHOD("clear_baked_meshes"),
+            &HexMapTiledNode::clear_baked_meshes);
 
     ClassDB::bind_method(D_METHOD("make_baked_meshes",
                                  "gen_lightmap_uv",
                                  "lightmap_uv_texel_size"),
-            &HexMap::make_baked_meshes,
+            &HexMapTiledNode::make_baked_meshes,
             DEFVAL(false),
             DEFVAL(0.1));
 
@@ -924,7 +941,7 @@ void HexMap::_bind_methods() {
             "cells_changed", PropertyInfo(Variant::ARRAY, "cell_id_vectors")));
 }
 
-Array HexMap::get_used_cells() const {
+Array HexMapTiledNode::get_used_cells() const {
     Array a;
     a.resize(cell_map.size());
     int i = 0;
@@ -936,7 +953,8 @@ Array HexMap::get_used_cells() const {
     return a;
 }
 
-TypedArray<Vector3i> HexMap::get_used_cells_by_item(int p_item) const {
+TypedArray<Vector3i> HexMapTiledNode::get_used_cells_by_item(
+        int p_item) const {
     Array a;
     for (const KeyValue<CellKey, Cell> &E : cell_map) {
         if ((int)E.value.item == p_item) {
@@ -948,17 +966,17 @@ TypedArray<Vector3i> HexMap::get_used_cells_by_item(int p_item) const {
     return a;
 }
 
-void HexMap::clear_baked_meshes() {
+void HexMapTiledNode::clear_baked_meshes() {
     for (auto &it : octants) {
         it.value->clear_baked_mesh();
     }
     baked_mesh_octants.clear();
 }
 
-void HexMap::make_baked_meshes(bool p_gen_lightmap_uv,
+void HexMapTiledNode::make_baked_meshes(bool p_gen_lightmap_uv,
         float p_lightmap_uv_texel_size) {}
 
-Array HexMap::get_bake_meshes() {
+Array HexMapTiledNode::get_bake_meshes() {
     baked_mesh_octants.clear();
     Array arr;
     for (auto &it : octants) {
@@ -969,7 +987,7 @@ Array HexMap::get_bake_meshes() {
     return arr;
 }
 
-RID HexMap::get_bake_mesh_instance(int p_idx) {
+RID HexMapTiledNode::get_bake_mesh_instance(int p_idx) {
     ERR_FAIL_INDEX_V(p_idx, baked_mesh_octants.size(), RID());
     OctantKey key = baked_mesh_octants[p_idx];
     ERR_FAIL_COND_V_MSG(
@@ -977,7 +995,7 @@ RID HexMap::get_bake_mesh_instance(int p_idx) {
     return octants.get(key)->get_baked_mesh_instance();
 }
 
-bool HexMap::generate_navigation_source_geometry(Ref<NavigationMesh>,
+bool HexMapTiledNode::generate_navigation_source_geometry(Ref<NavigationMesh>,
         Ref<NavigationMeshSourceGeometryData3D> source_geometry_data,
         Node *) const {
     UtilityFunctions::print("navigation source generator");
@@ -1019,7 +1037,7 @@ bool HexMap::generate_navigation_source_geometry(Ref<NavigationMesh>,
     return true;
 }
 
-HexMap::HexMap() {
+HexMapTiledNode::HexMapTiledNode() {
     set_notify_transform(true);
 
     // copied from SceneTree::get_debug_collision_material()
@@ -1041,10 +1059,11 @@ HexMap::HexMap() {
     NavigationServer3D *ns = NavigationServer3D::get_singleton();
     navigation_source_geometry_parser = ns->source_geometry_parser_create();
     ns->source_geometry_parser_set_callback(navigation_source_geometry_parser,
-            callable_mp(this, &HexMap::generate_navigation_source_geometry));
+            callable_mp(this,
+                    &HexMapTiledNode::generate_navigation_source_geometry));
 }
 
-HexMap::~HexMap() {
+HexMapTiledNode::~HexMapTiledNode() {
     clear();
     NavigationServer3D::get_singleton()->free_rid(
             navigation_source_geometry_parser);

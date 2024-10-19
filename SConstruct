@@ -13,8 +13,8 @@ env.Append(CPPPATH=["src/"])
 sources = [
     Glob("src/*.cpp"),
     Glob("src/core/*.cpp"),
-    Glob("src/hex_map/*.cpp"),
-    Glob("src/hex_map/editor/*.cpp"),
+    Glob("src/tiled_node/*.cpp"),
+    Glob("src/tiled_node/editor/*.cpp"),
 ]
 
 if env["platform"] == "macos":

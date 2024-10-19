@@ -1,19 +1,19 @@
 #include "hex_map_base.h"
 #include "cell_id.h"
 
-void HexMapBase::_bind_methods() {
+void HexMapNode::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_cell_height", "height"),
-            &HexMapBase::set_cell_height);
+            &HexMapNode::set_cell_height);
     ClassDB::bind_method(
-            D_METHOD("get_cell_height"), &HexMapBase::get_cell_height);
+            D_METHOD("get_cell_height"), &HexMapNode::get_cell_height);
     ClassDB::bind_method(D_METHOD("set_cell_radius", "radius"),
-            &HexMapBase::set_cell_radius);
+            &HexMapNode::set_cell_radius);
     ClassDB::bind_method(
-            D_METHOD("get_cell_radius"), &HexMapBase::get_cell_radius);
+            D_METHOD("get_cell_radius"), &HexMapNode::get_cell_radius);
 
     ClassDB::bind_method(
-            D_METHOD("set_center_y", "enable"), &HexMapBase::set_center_y);
-    ClassDB::bind_method(D_METHOD("get_center_y"), &HexMapBase::get_center_y);
+            D_METHOD("set_center_y", "enable"), &HexMapNode::set_center_y);
+    ClassDB::bind_method(D_METHOD("get_center_y"), &HexMapNode::get_center_y);
 
     ADD_GROUP("Cell", "cell_");
     ADD_PROPERTY(PropertyInfo(Variant::FLOAT,
@@ -37,21 +37,21 @@ void HexMapBase::_bind_methods() {
     ADD_SIGNAL(MethodInfo("mesh_library_changed"));
 }
 
-void HexMapBase::set_cell_height(real_t p_height) {
+void HexMapNode::set_cell_height(real_t p_height) {
     space.set_cell_height(p_height);
     cell_scale_changed();
 }
 
-real_t HexMapBase::get_cell_height() const { return space.get_cell_height(); }
+real_t HexMapNode::get_cell_height() const { return space.get_cell_height(); }
 
-void HexMapBase::set_cell_radius(real_t p_radius) {
+void HexMapNode::set_cell_radius(real_t p_radius) {
     space.set_cell_radius(p_radius);
     cell_scale_changed();
 }
 
-real_t HexMapBase::get_cell_radius() const { return space.get_cell_radius(); }
+real_t HexMapNode::get_cell_radius() const { return space.get_cell_radius(); }
 
-void HexMapBase::set_center_y(bool p_value) {
+void HexMapNode::set_center_y(bool p_value) {
     if (p_value) {
         space.set_mesh_offset(Vector3(0, 0, 0));
     } else {
@@ -60,21 +60,21 @@ void HexMapBase::set_center_y(bool p_value) {
     cell_scale_changed();
 }
 
-bool HexMapBase::get_center_y() const {
+bool HexMapNode::get_center_y() const {
     return space.get_mesh_offset().y == 0;
 }
 
-bool HexMapBase::cell_scale_changed() {
+bool HexMapNode::cell_scale_changed() {
     emit_signal("cell_scale_changed");
     return true;
 }
 
-Vector3 HexMapBase::get_cell_scale() const { return space.get_cell_scale(); }
+Vector3 HexMapNode::get_cell_scale() const { return space.get_cell_scale(); }
 
-Vector3 HexMapBase::get_cell_center(const HexMapCellId &cell_id) const {
+Vector3 HexMapNode::get_cell_center(const HexMapCellId &cell_id) const {
     return space.get_cell_center(cell_id);
 }
 
-HexMapCellId HexMapBase::get_cell_id(Vector3 pos) const {
+HexMapCellId HexMapNode::get_cell_id(Vector3 pos) const {
     return space.get_cell_id(pos);
 }

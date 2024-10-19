@@ -1,7 +1,9 @@
 #ifdef TOOLS_ENABLED
 
 #pragma once
-#include "../hex_map.h"
+#include "core/cell_id.h"
+#include "core/mesh_tool.h"
+#include "core/space.h"
 
 #include <godot_cpp/classes/standard_material3d.hpp>
 #include <godot_cpp/core/defs.hpp>
@@ -24,12 +26,12 @@ public:
     inline bool is_empty() const {
         return mesh_manager.get_cells().is_empty();
     };
-    Vector<HexMap::CellId> get_cells() const;
+    Vector<HexMapCellId> get_cells() const;
     Array get_cells_v() const;
 
     void clear();
-    void add_cell(HexMap::CellId);
-    void set_cells(Vector<HexMap::CellId>);
+    void add_cell(HexMapCellId);
+    void set_cells(Vector<HexMapCellId>);
     void set_cells(Array);
     void redraw_selection(); // for cell size change
 

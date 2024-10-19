@@ -16,9 +16,9 @@
 #include <godot_cpp/variant/packed_vector3_array.hpp>
 #include <godot_cpp/variant/transform3d.hpp>
 
-#include "hex_map.h"
 #include "octant.h"
 #include "profiling.h"
+#include "tiled_node.h"
 
 void HexMapOctant::free_baked_mesh() {
     baked_mesh = Ref<Mesh>();
@@ -56,7 +56,7 @@ void HexMapOctant::build_physics_body() {
     // creation later, update the physics body, and if collision debugging is
     // enabled, update that mesh.
     for (const CellKey &cell_key : cells) {
-        const HexMap::Cell *cell = hex_map.cell_map.getptr(cell_key);
+        const HexMapTiledNode::Cell *cell = hex_map.cell_map.getptr(cell_key);
         ERR_CONTINUE_MSG(cell == nullptr, "nonexistent HexMap cell in Octant");
 
         Ref<Mesh> mesh = mesh_library->get_item_mesh(cell->item);
@@ -130,7 +130,7 @@ void HexMapOctant::bake_mesh() {
     // iterate through the cells, add cell mesh surfaces to the surface tool
     // for each material.
     for (const CellKey &cell_key : cells) {
-        const HexMap::Cell *cell = hex_map.cell_map.getptr(cell_key);
+        const HexMapTiledNode::Cell *cell = hex_map.cell_map.getptr(cell_key);
         ERR_CONTINUE_MSG(cell == nullptr, "nonexistent HexMap cell in Octant");
 
         Ref<ArrayMesh> mesh = mesh_library->get_item_mesh(cell->item);
@@ -353,7 +353,7 @@ void HexMapOctant::clear_baked_mesh() {
     }
 }
 
-HexMapOctant::HexMapOctant(HexMap &hex_map) : hex_map(hex_map) {
+HexMapOctant::HexMapOctant(HexMapTiledNode &hex_map) : hex_map(hex_map) {
     PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
 
     mesh_tool.set_object_id(hex_map.get_instance_id());

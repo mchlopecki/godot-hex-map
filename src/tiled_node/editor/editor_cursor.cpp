@@ -278,7 +278,7 @@ void EditorCursor::build_y_grid() {
     PackedVector3Array grid_points;
     PackedColorArray grid_colors;
     for (const auto cell : HexMapCellId::Origin.get_neighbors(
-                 GRID_RADIUS, HexMap::Planes::QRS)) {
+                 GRID_RADIUS, HexMapTiledNode::Planes::QRS)) {
         Vector3 center = cell.unit_center();
         float transparency =
                 Math::pow(MAX(0, (max - center.length_squared()) / max), 2);
@@ -316,7 +316,7 @@ void EditorCursor::build_r_grid() {
     PackedVector3Array grid_points;
     PackedColorArray grid_colors;
     for (const auto cell : HexMapCellId::Origin.get_neighbors(
-                 GRID_RADIUS, HexMap::Planes::YQS)) {
+                 GRID_RADIUS, HexMapTiledNode::Planes::YQS)) {
         Vector3 center = cell.unit_center();
         float transparency =
                 Math::pow(MAX(0, (max - center.length_squared()) / max), 2);

@@ -7,8 +7,8 @@
 #include "core/cell_id.h"
 #include "core/hex_map_base.h"
 #include "core/iter.h"
-#include "hex_map/editor/hex_map_editor_plugin.h"
-#include "hex_map/hex_map.h"
+#include "tiled_node/editor/editor_plugin.h"
+#include "tiled_node/tiled_node.h"
 
 using namespace godot;
 
@@ -16,15 +16,15 @@ void initialize_hexmap_module(ModuleInitializationLevel p_level) {
     if (p_level == godot::MODULE_INITIALIZATION_LEVEL_SCENE) {
         ClassDB::register_class<HexMapCellIdWrapper>();
         ClassDB::register_class<HexMapIterWrapper>();
-        ClassDB::register_abstract_class<HexMapBase>();
-        ClassDB::register_class<HexMap>();
+        ClassDB::register_abstract_class<HexMapNode>();
+        ClassDB::register_class<HexMapTiledNode>();
     }
 
 #ifdef TOOLS_ENABLED
     if (p_level == godot::MODULE_INITIALIZATION_LEVEL_EDITOR) {
         ClassDB::register_internal_class<EditorControl>();
-        ClassDB::register_internal_class<HexMapEditorPlugin>();
-        EditorPlugins::add_by_type<HexMapEditorPlugin>();
+        ClassDB::register_internal_class<HexMapTiledNodeEditorPlugin>();
+        EditorPlugins::add_by_type<HexMapTiledNodeEditorPlugin>();
     }
 #endif
 }

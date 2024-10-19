@@ -11,7 +11,8 @@
 #include "core/math.h"
 #include "selection_manager.h"
 
-using CellId = HexMap::CellId;
+using CellId = HexMapCellId;
+using RS = RenderingServer;
 
 void SelectionManager::build_cell_mesh() {
     mesh_mat.instantiate();

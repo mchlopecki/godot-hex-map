@@ -131,7 +131,7 @@ void EditorControl::handle_action(int p_action) {
             plane_spin_box->set_value(plane[active_axis]);
             break;
         case ACTION_TILE_RESET:
-            cursor_orientation = HexMap::TileOrientation::Upright0;
+            cursor_orientation = HexMapTileOrientation::Upright0;
             emit_signal("cursor_orientation_changed", cursor_orientation);
             break;
         case ACTION_TILE_FLIP:

@@ -23,7 +23,7 @@
 #include <godot_cpp/classes/v_box_container.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 
-#include "../hex_map.h"
+#include "../tiled_node.h"
 #include "editor_control.h"
 #include "editor_cursor.h"
 #include "selection_manager.h"
@@ -31,10 +31,10 @@
 using namespace godot;
 
 // XXX move palette to bottom panel for HexGrid
-class HexMapEditorPlugin : public EditorPlugin {
-    GDCLASS(HexMapEditorPlugin, EditorPlugin);
+class HexMapTiledNodeEditorPlugin : public EditorPlugin {
+    GDCLASS(HexMapTiledNodeEditorPlugin, EditorPlugin);
 
-    HexMap *hex_map = nullptr;
+    HexMapTiledNode *hex_map = nullptr;
     Ref<MeshLibrary> mesh_library = nullptr;
     EditorControl *editor_control = nullptr;
     Control *bottom_panel = nullptr;
@@ -57,9 +57,9 @@ class HexMapEditorPlugin : public EditorPlugin {
     struct CellChange {
         HexMapCellId cell_id;
         int orig_tile = 0;
-        HexMap::TileOrientation orig_orientation;
+        HexMapTiledNode::TileOrientation orig_orientation;
         int new_tile = 0;
-        HexMap::TileOrientation new_orientation;
+        HexMapTiledNode::TileOrientation new_orientation;
     };
     Vector<CellChange> cells_changed;
 
@@ -113,8 +113,8 @@ public:
     virtual int32_t _forward_3d_gui_input(Camera3D *viewport_camera,
             const Ref<InputEvent> &event) override;
 
-    HexMapEditorPlugin();
-    ~HexMapEditorPlugin();
+    HexMapTiledNodeEditorPlugin();
+    ~HexMapTiledNodeEditorPlugin();
 };
 
 #endif

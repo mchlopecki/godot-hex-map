@@ -31,8 +31,9 @@
 
 using namespace godot;
 
-class HexMap : public HexMapBase {
-    GDCLASS(HexMap, HexMapBase);
+class HexMapTiledNode : public HexMapNode {
+    using HexMapTiled = HexMapTiledNode;
+    GDCLASS(HexMapTiled, HexMapNode);
 
     using CellKey = HexMapCellId::Key;
     using Octant = HexMapOctant;
@@ -214,6 +215,6 @@ public:
 
     void clear();
 
-    HexMap();
-    ~HexMap();
+    HexMapTiledNode();
+    ~HexMapTiledNode();
 };

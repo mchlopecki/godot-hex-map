@@ -23,8 +23,8 @@ using namespace godot;
 
 class HexMapOctant;
 
-class HexMapBase : public Node3D {
-    GDCLASS(HexMapBase, Node3D);
+class HexMapNode : public Node3D {
+    GDCLASS(HexMapNode, Node3D);
 
 protected:
     HexMapSpace space;

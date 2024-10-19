@@ -44,13 +44,13 @@
 #include "core/cell_id.h"
 #include "editor_control.h"
 #include "editor_cursor.h"
-#include "hex_map_editor_plugin.h"
+#include "editor_plugin.h"
 #include "profiling.h"
 #include "selection_manager.h"
 
 // XXX selecting too many cells then deleting causes cpu spin/hang
 // XXX middle click in orthographic axis view moves camera; block that
-void HexMapEditorPlugin::commit_cell_changes(String desc) {
+void HexMapTiledNodeEditorPlugin::commit_cell_changes(String desc) {
     EditorUndoRedoManager *undo_redo = get_undo_redo();
     undo_redo->create_action(desc);
     for (const CellChange &change : cells_changed) {
@@ -74,7 +74,7 @@ void HexMapEditorPlugin::commit_cell_changes(String desc) {
     cells_changed.clear();
 }
 
-void HexMapEditorPlugin::deselect_cells() {
+void HexMapTiledNodeEditorPlugin::deselect_cells() {
     EditorUndoRedoManager *undo_redo = get_undo_redo();
     undo_redo->create_action("HexMap: deselect cells");
 
@@ -87,21 +87,21 @@ void HexMapEditorPlugin::deselect_cells() {
     undo_redo->commit_action();
 }
 
-void HexMapEditorPlugin::_deselect_cells() {
+void HexMapTiledNodeEditorPlugin::_deselect_cells() {
     ERR_FAIL_COND_MSG(selection_manager == nullptr,
             "HexMap: SelectionManager not present");
     selection_manager->clear();
     editor_control->update_selection_menu(false);
 }
 
-void HexMapEditorPlugin::_select_cell(Vector3i cell) {
+void HexMapTiledNodeEditorPlugin::_select_cell(Vector3i cell) {
     ERR_FAIL_COND_MSG(selection_manager == nullptr,
             "HexMap: SelectionManager not present");
     selection_manager->add_cell(cell);
     editor_control->update_selection_menu(true);
 }
 
-void HexMapEditorPlugin::_set_selection_v(Array cells) {
+void HexMapTiledNodeEditorPlugin::_set_selection_v(Array cells) {
     ERR_FAIL_COND_MSG(selection_manager == nullptr,
             "HexMap: SelectionManager not present");
 
@@ -111,7 +111,7 @@ void HexMapEditorPlugin::_set_selection_v(Array cells) {
     }
 }
 
-void HexMapEditorPlugin::selection_clear() {
+void HexMapTiledNodeEditorPlugin::selection_clear() {
     ERR_FAIL_COND_MSG(selection_manager == nullptr,
             "HexMap: SelectionManager not present");
 
@@ -119,8 +119,10 @@ void HexMapEditorPlugin::selection_clear() {
     undo_redo->create_action("HexMap: clear selected tiles");
 
     for (const HexMapCellId cell : selection_manager->get_cells()) {
-        undo_redo->add_do_method(
-                hex_map, "set_cell_item_v", cell, HexMap::INVALID_CELL_ITEM);
+        undo_redo->add_do_method(hex_map,
+                "set_cell_item_v",
+                cell,
+                HexMapTiledNode::INVALID_CELL_ITEM);
         undo_redo->add_undo_method(hex_map,
                 "set_cell_item_v",
                 cell,
@@ -131,7 +133,7 @@ void HexMapEditorPlugin::selection_clear() {
     undo_redo->commit_action();
 }
 
-void HexMapEditorPlugin::selection_fill() {
+void HexMapTiledNodeEditorPlugin::selection_fill() {
     ERR_FAIL_COND_MSG(selection_manager->is_empty(), "no cells selected");
 
     ERR_FAIL_COND_MSG(editor_cursor->size() > 1,
@@ -160,7 +162,7 @@ void HexMapEditorPlugin::selection_fill() {
     undo_redo->commit_action();
 }
 
-void HexMapEditorPlugin::copy_selection_to_cursor() {
+void HexMapTiledNodeEditorPlugin::copy_selection_to_cursor() {
     ERR_FAIL_COND(editor_cursor == nullptr);
 
     // make the current pointer cell the origin cell in the cursor.
@@ -175,7 +177,7 @@ void HexMapEditorPlugin::copy_selection_to_cursor() {
 
     for (const HexMapCellId &cell : cells) {
         int tile = hex_map->get_cell_item(cell);
-        if (tile == HexMap::INVALID_CELL_ITEM) {
+        if (tile == HexMapTiledNode::INVALID_CELL_ITEM) {
             continue;
         }
         editor_cursor->set_tile(
@@ -185,7 +187,7 @@ void HexMapEditorPlugin::copy_selection_to_cursor() {
     input_state = INPUT_STATE_MOVING;
 }
 
-void HexMapEditorPlugin::selection_clone() {
+void HexMapTiledNodeEditorPlugin::selection_clone() {
     ERR_FAIL_COND_MSG(input_state != INPUT_STATE_DEFAULT,
             "HexMap: cannot clone cells during another process");
     ERR_FAIL_COND_MSG(selection_manager->is_empty(),
@@ -200,7 +202,7 @@ void HexMapEditorPlugin::selection_clone() {
     input_state = INPUT_STATE_CLONING;
 }
 
-void HexMapEditorPlugin::selection_clone_cancel() {
+void HexMapTiledNodeEditorPlugin::selection_clone_cancel() {
     selection_manager->set_cells(last_selection);
     last_selection.clear();
 
@@ -215,7 +217,7 @@ void HexMapEditorPlugin::selection_clone_cancel() {
     editor_cursor->update(true);
 }
 
-void HexMapEditorPlugin::selection_clone_apply() {
+void HexMapTiledNodeEditorPlugin::selection_clone_apply() {
     EditorUndoRedoManager *undo_redo = get_undo_redo();
     undo_redo->create_action("HexMap: clone selected tiles",
             godot::UndoRedo::MERGE_DISABLE,
@@ -255,7 +257,7 @@ void HexMapEditorPlugin::selection_clone_apply() {
     editor_cursor->update(true);
 }
 
-void HexMapEditorPlugin::selection_move() {
+void HexMapTiledNodeEditorPlugin::selection_move() {
     ERR_FAIL_COND_MSG(input_state != INPUT_STATE_DEFAULT,
             "HexMap: cannot move cells during another process");
     ERR_FAIL_COND_MSG(selection_manager->is_empty(),
@@ -267,7 +269,7 @@ void HexMapEditorPlugin::selection_move() {
 
     for (const HexMapCellId &cell_id : selection_manager->get_cells()) {
         int tile = hex_map->get_cell_item(cell_id);
-        if (tile == HexMap::INVALID_CELL_ITEM) {
+        if (tile == HexMapTiledNode::INVALID_CELL_ITEM) {
             continue;
         }
         cells_changed.push_back(CellChange{
@@ -276,14 +278,14 @@ void HexMapEditorPlugin::selection_move() {
                 .orig_orientation =
                         hex_map->get_cell_item_orientation(cell_id),
         });
-        hex_map->set_cell_item(cell_id, HexMap::INVALID_CELL_ITEM);
+        hex_map->set_cell_item(cell_id, HexMapTiledNode::INVALID_CELL_ITEM);
     }
     _deselect_cells();
 
     input_state = INPUT_STATE_MOVING;
 }
 
-void HexMapEditorPlugin::selection_move_cancel() {
+void HexMapTiledNodeEditorPlugin::selection_move_cancel() {
     for (const CellChange &change : cells_changed) {
         hex_map->set_cell_item(
                 change.cell_id, change.orig_tile, change.orig_orientation);
@@ -304,7 +306,7 @@ void HexMapEditorPlugin::selection_move_cancel() {
     editor_cursor->update(true);
 }
 
-void HexMapEditorPlugin::selection_move_apply() {
+void HexMapTiledNodeEditorPlugin::selection_move_apply() {
     EditorUndoRedoManager *undo_redo = get_undo_redo();
     undo_redo->create_action("HexMap: move selected tiles",
             godot::UndoRedo::MERGE_DISABLE,
@@ -317,7 +319,7 @@ void HexMapEditorPlugin::selection_move_apply() {
         undo_redo->add_do_method(hex_map,
                 "set_cell_item_v",
                 change.cell_id,
-                HexMap::INVALID_CELL_ITEM);
+                HexMapTiledNode::INVALID_CELL_ITEM);
     }
 
     // set the new cells, and start the undo restoring the new cells
@@ -366,11 +368,11 @@ void HexMapEditorPlugin::selection_move_apply() {
     editor_cursor->update(true);
 }
 
-bool HexMapEditorPlugin::_handles(Object *p_object) const {
-    return p_object->is_class("HexMap");
+bool HexMapTiledNodeEditorPlugin::_handles(Object *p_object) const {
+    return p_object->is_class("HexMapTiled");
 }
 
-void HexMapEditorPlugin::_make_visible(bool p_visible) {
+void HexMapTiledNodeEditorPlugin::_make_visible(bool p_visible) {
     if (p_visible) {
         editor_control->show();
         set_process(true);
@@ -380,7 +382,7 @@ void HexMapEditorPlugin::_make_visible(bool p_visible) {
     }
 }
 
-int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
+int32_t HexMapTiledNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
         const Ref<InputEvent> &p_event) {
     if (!hex_map) {
         return EditorPlugin::AFTER_GUI_INPUT_PASS;
@@ -508,7 +510,8 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                                 hex_map->get_cell_item_orientation(cell_id),
                         .new_tile = -1,
                 });
-                hex_map->set_cell_item(cell_id, HexMap::INVALID_CELL_ITEM);
+                hex_map->set_cell_item(
+                        cell_id, HexMapTiledNode::INVALID_CELL_ITEM);
             }
             if (mouse_right_released) {
                 commit_cell_changes("HexMap: erase cells");
@@ -627,7 +630,7 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
     return EditorPlugin::AFTER_GUI_INPUT_PASS;
 }
 
-void HexMapEditorPlugin::update_mesh_library() {
+void HexMapTiledNodeEditorPlugin::update_mesh_library() {
     ERR_FAIL_NULL(hex_map);
 
     mesh_library = hex_map->get_mesh_library();
@@ -638,21 +641,25 @@ void HexMapEditorPlugin::update_mesh_library() {
         editor_cursor->set_mesh_library(mesh_library);
         editor_control->reset_orientation();
         bottom_panel->call("clear_selection");
+        bottom_panel->call("update_mesh_list");
     }
 }
 
-void HexMapEditorPlugin::_edit(Object *p_object) {
+void HexMapTiledNodeEditorPlugin::_edit(Object *p_object) {
     if (hex_map) {
         // save off the current floors
         hex_map->set_meta("_editor_floors_", editor_control->get_planes());
 
         // disconnect signals
         hex_map->disconnect("cell_scale_changed",
-                callable_mp(this, &HexMapEditorPlugin::hex_space_changed));
+                callable_mp(this,
+                        &HexMapTiledNodeEditorPlugin::hex_space_changed));
         hex_map->disconnect("mesh_offset_changed",
-                callable_mp(this, &HexMapEditorPlugin::hex_space_changed));
+                callable_mp(this,
+                        &HexMapTiledNodeEditorPlugin::hex_space_changed));
         hex_map->disconnect("mesh_library_changed",
-                callable_mp(this, &HexMapEditorPlugin::update_mesh_library));
+                callable_mp(this,
+                        &HexMapTiledNodeEditorPlugin::update_mesh_library));
 
         // clear the mesh library
         mesh_library = Ref<MeshLibrary>();
@@ -676,7 +683,7 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
         memfree(bottom_panel);
     }
 
-    hex_map = Object::cast_to<HexMap>(p_object);
+    hex_map = Object::cast_to<HexMapTiledNode>(p_object);
 
     if (!hex_map) {
         set_process(false);
@@ -688,7 +695,7 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
             "hex_map_editor_bottom_panel.tscn");
     bottom_panel = (Control *)panel_scene->instantiate();
     bottom_panel->connect("mesh_changed",
-            callable_mp(this, &HexMapEditorPlugin::tile_changed));
+            callable_mp(this, &HexMapTiledNodeEditorPlugin::tile_changed));
     add_control_to_bottom_panel(bottom_panel, "HexMap");
     make_bottom_panel_item_visible(bottom_panel);
 
@@ -697,8 +704,8 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
     // not a godot Object subclass, so `new` instead of `memnew()`
     editor_cursor = new EditorCursor(scenario);
     editor_cursor->set_space(hex_map->get_space());
-    editor_cursor->set_cells_visibility_callback(
-            callable_mp(hex_map, &HexMap::set_cells_visibility_callback));
+    editor_cursor->set_cells_visibility_callback(callable_mp(
+            hex_map, &HexMapTiledNode::set_cells_visibility_callback));
 
     selection_manager = new SelectionManager(scenario);
     selection_manager->set_space(hex_map->get_space());
@@ -711,22 +718,25 @@ void HexMapEditorPlugin::_edit(Object *p_object) {
     set_process(true);
 
     hex_map->connect("cell_scale_changed",
-            callable_mp(this, &HexMapEditorPlugin::hex_space_changed));
+            callable_mp(
+                    this, &HexMapTiledNodeEditorPlugin::hex_space_changed));
     hex_map->connect("mesh_offset_changed",
-            callable_mp(this, &HexMapEditorPlugin::hex_space_changed));
+            callable_mp(
+                    this, &HexMapTiledNodeEditorPlugin::hex_space_changed));
     hex_map->connect("mesh_library_changed",
-            callable_mp(this, &HexMapEditorPlugin::update_mesh_library));
+            callable_mp(
+                    this, &HexMapTiledNodeEditorPlugin::update_mesh_library));
     update_mesh_library();
 }
 
-void HexMapEditorPlugin::_notification(int p_what) {
+void HexMapTiledNodeEditorPlugin::_notification(int p_what) {
     switch (p_what) {
         case NOTIFICATION_PROCESS: {
             // we cache the global transform of the HexMap.  When the global
             // transform changes, we'll update our visuals accordingly.
             static Transform3D cached_transform;
             ERR_FAIL_COND_MSG(hex_map == nullptr,
-                    "HexMapEditorPlugin process without HexMap");
+                    "HexMapTiledNodeEditorPlugin process without HexMap");
 
             // if the transform of the HexMap node has been changed, update
             // the grid.
@@ -760,13 +770,13 @@ void HexMapEditorPlugin::_notification(int p_what) {
     }
 }
 
-void HexMapEditorPlugin::hex_space_changed() {
+void HexMapTiledNodeEditorPlugin::hex_space_changed() {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
     editor_cursor->set_space(hex_map->get_space());
     selection_manager->set_space(hex_map->get_space());
 }
 
-void HexMapEditorPlugin::tile_changed(int p_mesh_id) {
+void HexMapTiledNodeEditorPlugin::tile_changed(int p_mesh_id) {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
     editor_cursor->clear_tiles();
     if (p_mesh_id >= 0) {
@@ -776,50 +786,50 @@ void HexMapEditorPlugin::tile_changed(int p_mesh_id) {
     editor_control->reset_orientation();
 }
 
-void HexMapEditorPlugin::plane_changed(int p_plane) {
+void HexMapTiledNodeEditorPlugin::plane_changed(int p_plane) {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
     editor_cursor->set_depth(p_plane);
 }
 
-void HexMapEditorPlugin::axis_changed(int p_axis) {
+void HexMapTiledNodeEditorPlugin::axis_changed(int p_axis) {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
     editor_cursor->set_axis((EditorControl::EditAxis)p_axis);
 }
 
-void HexMapEditorPlugin::cursor_changed(Variant p_orientation) {
+void HexMapTiledNodeEditorPlugin::cursor_changed(Variant p_orientation) {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
     editor_cursor->set_orientation(p_orientation);
 }
 
-void HexMapEditorPlugin::_bind_methods() {
-    ClassDB::bind_method(
-            D_METHOD("deselect_cells"), &HexMapEditorPlugin::_deselect_cells);
+void HexMapTiledNodeEditorPlugin::_bind_methods() {
+    ClassDB::bind_method(D_METHOD("deselect_cells"),
+            &HexMapTiledNodeEditorPlugin::_deselect_cells);
     ClassDB::bind_method(D_METHOD("select_cell", "cell"),
-            &HexMapEditorPlugin::_select_cell);
+            &HexMapTiledNodeEditorPlugin::_select_cell);
     ClassDB::bind_method(D_METHOD("set_selection_v", "cells_vector"),
-            &HexMapEditorPlugin::_set_selection_v);
+            &HexMapTiledNodeEditorPlugin::_set_selection_v);
 }
 
-HexMapEditorPlugin::HexMapEditorPlugin() {
+HexMapTiledNodeEditorPlugin::HexMapTiledNodeEditorPlugin() {
     // context menu in spatial editor
     editor_control = memnew(EditorControl);
     editor_control->hide();
     editor_control->connect("plane_changed",
-            callable_mp(this, &HexMapEditorPlugin::plane_changed));
+            callable_mp(this, &HexMapTiledNodeEditorPlugin::plane_changed));
     editor_control->connect("axis_changed",
-            callable_mp(this, &HexMapEditorPlugin::axis_changed));
+            callable_mp(this, &HexMapTiledNodeEditorPlugin::axis_changed));
     editor_control->connect("cursor_orientation_changed",
-            callable_mp(this, &HexMapEditorPlugin::cursor_changed));
+            callable_mp(this, &HexMapTiledNodeEditorPlugin::cursor_changed));
     editor_control->connect("deselect",
-            callable_mp(this, &HexMapEditorPlugin::deselect_cells));
+            callable_mp(this, &HexMapTiledNodeEditorPlugin::deselect_cells));
     editor_control->connect("selection_fill",
-            callable_mp(this, &HexMapEditorPlugin::selection_fill));
+            callable_mp(this, &HexMapTiledNodeEditorPlugin::selection_fill));
     editor_control->connect("selection_clear",
-            callable_mp(this, &HexMapEditorPlugin::selection_clear));
+            callable_mp(this, &HexMapTiledNodeEditorPlugin::selection_clear));
     editor_control->connect("selection_move",
-            callable_mp(this, &HexMapEditorPlugin::selection_move));
+            callable_mp(this, &HexMapTiledNodeEditorPlugin::selection_move));
     editor_control->connect("selection_clone",
-            callable_mp(this, &HexMapEditorPlugin::selection_clone));
+            callable_mp(this, &HexMapTiledNodeEditorPlugin::selection_clone));
     add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, editor_control);
 
     // Ref<PackedScene> panel_scene = ResourceLoader::get_singleton()->load(
@@ -828,7 +838,7 @@ HexMapEditorPlugin::HexMapEditorPlugin() {
     // bottom_panel = (Control *)panel_scene->instantiate();
 }
 
-HexMapEditorPlugin::~HexMapEditorPlugin() {
+HexMapTiledNodeEditorPlugin::~HexMapTiledNodeEditorPlugin() {
     ERR_FAIL_NULL(RenderingServer::get_singleton());
 
     // if (bottom_panel) {
