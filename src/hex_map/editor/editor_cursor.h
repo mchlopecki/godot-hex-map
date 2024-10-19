@@ -31,7 +31,7 @@ public:
     EditorCursor(RID scenario);
     ~EditorCursor();
 
-    void set_space(HexSpace);
+    void set_space(HexMapSpace);
     void set_mesh_library(Ref<MeshLibrary> &);
 
     /// Set the callback function for `EditorCursor` to call when it needs to
@@ -99,7 +99,7 @@ private:
     ///
     /// We keep this independent of the space in `mesh_tool` because that space
     /// includes our cursor rotation & translation.
-    HexSpace parent_space;
+    HexMapSpace parent_space;
 
     HexMapMeshTool mesh_manager;
     Vector3 pointer_pos;

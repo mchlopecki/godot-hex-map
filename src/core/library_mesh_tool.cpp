@@ -6,7 +6,7 @@
 #include "math.h"
 #include "space.h"
 
-void HexMapLibraryMeshTool::set_space(const HexSpace &value) {
+void HexMapLibraryMeshTool::set_space(const HexMapSpace &value) {
     // only need to rebuild if the cell scale or mesh offset changes.
     if (value.get_cell_scale() != space.get_cell_scale() ||
             value.get_mesh_offset() != space.get_mesh_offset()) {

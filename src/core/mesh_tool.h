@@ -44,10 +44,10 @@ public:
     inline void set_object_id(uint64_t value) { object_id = (ObjectID)value; };
 
     /// Set the hex space parameters
-    void set_space(const HexSpace &);
+    void set_space(const HexMapSpace &);
 
     /// Get the `HexSpace` for this MeshManager
-    inline const HexSpace &get_space() const { return space; }
+    inline const HexMapSpace &get_space() const { return space; }
 
     /// Set the mesh and mesh instance transform for a given cell.  The
     /// transform is relative to the center of the cell.
@@ -91,7 +91,7 @@ public:
 
 protected:
     /// hexagonal space to use for converting cell ids to points
-    HexSpace space;
+    HexMapSpace space;
 
 private:
     /// multimesh & multimesh instance pair

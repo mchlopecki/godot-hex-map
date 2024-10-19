@@ -6,7 +6,7 @@
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/standard_material3d.hpp>
 
-void HexMapMeshTool::set_space(const HexSpace &value) { space = value; }
+void HexMapMeshTool::set_space(const HexMapSpace &value) { space = value; }
 
 void HexMapMeshTool::free_multimeshes() {
     RenderingServer *rs = RenderingServer::get_singleton();

@@ -27,7 +27,7 @@ class HexMapBase : public Node3D {
     GDCLASS(HexMapBase, Node3D);
 
 protected:
-    HexSpace space;
+    HexMapSpace space;
 
     static void _bind_methods();
 
@@ -39,7 +39,7 @@ public:
     real_t get_cell_radius() const;
     void set_center_y(bool value);
     bool get_center_y() const;
-    inline const HexSpace &get_space() { return space; }
+    inline const HexMapSpace &get_space() { return space; }
 
     /// Return the cell scale factor for cells in this hexmap.
     ///

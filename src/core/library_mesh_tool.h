@@ -23,7 +23,7 @@ public:
     using CellMap = HashMap<HexMapCellId::Key, CellState>;
 
     /// Set the hex space parameters
-    void set_space(const HexSpace &);
+    void set_space(const HexMapSpace &);
 
     /// Set the `MeshLibrary`; will take effect on next `refresh()` call
     void set_mesh_library(Ref<MeshLibrary> &);

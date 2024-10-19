@@ -26,7 +26,7 @@
 
 #define GRID_RADIUS 40u
 
-void EditorCursor::set_space(HexSpace space) {
+void EditorCursor::set_space(HexMapSpace space) {
     bool scale_changed =
             space.get_cell_scale() != parent_space.get_cell_scale();
     parent_space = space;
@@ -62,7 +62,7 @@ void EditorCursor::transform_meshes() {
     // update the mesh_tool space to include the new rotation
     Transform3D cursor_transform(
             orientation, parent_space.get_cell_center(pointer_cell));
-    HexSpace space = parent_space;
+    HexMapSpace space = parent_space;
     space.transform *= cursor_transform;
     mesh_tool.set_space(space);
     mesh_tool.refresh();
@@ -109,7 +109,7 @@ void EditorCursor::set_tile(CellId cell,
 }
 
 Vector<EditorCursor::CellState> EditorCursor::get_cells() const {
-    const HexSpace &space = mesh_tool.get_space();
+    const HexMapSpace &space = mesh_tool.get_space();
     Vector<CellState> out;
 
     for (const auto &iter : mesh_tool.get_cells()) {
@@ -129,7 +129,7 @@ EditorCursor::CellState EditorCursor::get_only_cell_state() const {
     auto cell_map = mesh_tool.get_cells();
     assert(cell_map.size() == 1 && "cursor must have only one cell");
 
-    const HexSpace &space = mesh_tool.get_space();
+    const HexMapSpace &space = mesh_tool.get_space();
     const auto &iter = *cell_map.begin();
     Vector3 center = space.get_cell_center_global(iter.key);
     CellId cell_id = parent_space.get_cell_id_global(center);

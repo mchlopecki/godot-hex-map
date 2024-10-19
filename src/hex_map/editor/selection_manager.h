@@ -15,7 +15,7 @@ public:
     SelectionManager(RID scenario);
     ~SelectionManager();
 
-    void set_space(HexSpace space);
+    void set_space(HexMapSpace space);
 
     void show();
     void hide();

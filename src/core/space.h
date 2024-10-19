@@ -7,7 +7,7 @@
 using namespace godot;
 
 /// Helper class for mapping `HexMapCellId` to `Vector3` coordinates
-class HexSpace {
+class HexMapSpace {
     /// cell scale; scale from radius 1, height 1 cell size
     Vector3 cell_scale = Vector3(1, 1, 1);
 
@@ -82,7 +82,7 @@ public:
         return get_cell_id(local);
     }
 
-    inline bool operator!=(const HexSpace &other) const {
+    inline bool operator!=(const HexMapSpace &other) const {
         return cell_scale != other.cell_scale ||
                 mesh_offset != other.mesh_offset ||
                 transform != other.transform;
