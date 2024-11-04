@@ -16,6 +16,8 @@ sources = [
     Glob("src/core/editor/*.cpp"),
     Glob("src/tiled_node/*.cpp"),
     Glob("src/tiled_node/editor/*.cpp"),
+    Glob("src/int_node/*.cpp"),
+    Glob("src/int_node/editor/*.cpp"),
 ]
 
 if env["platform"] == "macos":

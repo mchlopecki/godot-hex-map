@@ -7,6 +7,8 @@
 #include "core/cell_id.h"
 #include "core/hex_map_node.h"
 #include "core/iter.h"
+#include "int_node/editor/editor_plugin.h"
+#include "int_node/int_node.h"
 #include "tiled_node/editor/editor_plugin.h"
 #include "tiled_node/tiled_node.h"
 
@@ -18,6 +20,7 @@ void initialize_hexmap_module(ModuleInitializationLevel p_level) {
         ClassDB::register_class<HexMapIterWrapper>();
         ClassDB::register_abstract_class<HexMapNode>();
         ClassDB::register_class<HexMapTiledNode>();
+        ClassDB::register_class<HexMapIntNode>();
     }
 
 #ifdef TOOLS_ENABLED
@@ -25,6 +28,8 @@ void initialize_hexmap_module(ModuleInitializationLevel p_level) {
         ClassDB::register_internal_class<EditorControl>();
         ClassDB::register_internal_class<HexMapTiledNodeEditorPlugin>();
         EditorPlugins::add_by_type<HexMapTiledNodeEditorPlugin>();
+        ClassDB::register_internal_class<HexMapIntNodeEditorPlugin>();
+        EditorPlugins::add_by_type<HexMapIntNodeEditorPlugin>();
     }
 #endif
 }
