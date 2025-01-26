@@ -47,11 +47,13 @@ public:
     /// cell should be visible.
     void set_cells_visibility_callback(Callable);
 
-    void set_orientation(TileOrientation orientation);
+    void set_orientation(HexMapTileOrientation orientation);
+    inline HexMapTileOrientation get_orientation() { return orientation; }
+
     void set_axis(EditAxis axis);
     inline EditAxis get_axis() { return edit_axis; };
 
-    /// set the depth of the edit plane
+    /// set the depth of the active edit plane
     void set_depth(int);
 
     /// update the cursor based on the camera and pointer positition
@@ -74,10 +76,19 @@ public:
     void clear_tiles();
 
     inline bool is_empty() { return mesh_tool.get_cells().is_empty(); };
+
+    /// returns the number of cells the cursor occupies
     inline size_t size() { return mesh_tool.get_cells().size(); };
 
     /// get the cell map for the cursor, adjusted for cursor transforms
     Vector<CellState> get_cells() const;
+
+    /// get the cell map for the cursor, in Array form described by
+    /// `HexMapNode._set_cells()`
+    Array get_cells_v() const;
+
+    /// get the list of cell ids occupied by the cursor
+    Array get_cell_ids_v() const;
 
     /// Get the state of the only cell in the cursor.
     ///
@@ -95,8 +106,12 @@ private:
     /// Mesh tool for drawing meshes
     HexMapLibraryMeshTool mesh_tool;
 
+    /// axis the cursor is editing
     EditAxis edit_axis = EditAxis::AXIS_Y;
+
+    /// orientation of the cursor
     TileOrientation orientation;
+
     /// callback used for toggling cell visibility in the parent class to
     /// prevent existing cells from hiding cursor cells
     Callable set_cells_visibility;
@@ -131,4 +146,7 @@ private:
     void build_y_grid();
     void build_r_grid();
 };
+
+VARIANT_ENUM_CAST(EditorCursor::EditAxis);
+
 #endif

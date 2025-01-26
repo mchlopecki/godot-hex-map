@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=4 uid="uid://bt0soj2wvavie"]
+[gd_scene load_steps=10 format=4 uid="uid://bt0soj2wvavie"]
 
 [ext_resource type="Script" path="res://sandbox.gd" id="1_yje1l"]
 [ext_resource type="PackedScene" uid="uid://wcaukixhlbo2" path="res://RayPickerCamera/ray_picker_camera.tscn" id="2_1one6"]
@@ -15,6 +15,17 @@ vertices = PackedVector3Array(-17.4873, 1.5, -9.4267, -17.2373, 1.5, -7.9267, -1
 polygons = [PackedInt32Array(4, 3, 0), PackedInt32Array(0, 3, 2), PackedInt32Array(0, 2, 1), PackedInt32Array(7, 6, 8), PackedInt32Array(8, 6, 5), PackedInt32Array(8, 5, 9), PackedInt32Array(12, 11, 10), PackedInt32Array(4, 0, 13), PackedInt32Array(15, 14, 16), PackedInt32Array(16, 14, 17), PackedInt32Array(17, 14, 9), PackedInt32Array(7, 8, 13), PackedInt32Array(13, 8, 4), PackedInt32Array(18, 17, 9), PackedInt32Array(20, 19, 21), PackedInt32Array(21, 19, 18), PackedInt32Array(23, 22, 24), PackedInt32Array(24, 22, 27), PackedInt32Array(24, 27, 26), PackedInt32Array(24, 26, 25), PackedInt32Array(28, 26, 10), PackedInt32Array(10, 26, 27), PackedInt32Array(10, 27, 21), PackedInt32Array(12, 10, 5), PackedInt32Array(5, 10, 9), PackedInt32Array(9, 10, 18), PackedInt32Array(18, 10, 21), PackedInt32Array(30, 29, 12), PackedInt32Array(12, 29, 11), PackedInt32Array(31, 12, 5), PackedInt32Array(33, 32, 25), PackedInt32Array(25, 32, 34), PackedInt32Array(25, 34, 24), PackedInt32Array(35, 38, 36), PackedInt32Array(36, 38, 37), PackedInt32Array(40, 39, 41), PackedInt32Array(41, 39, 42), PackedInt32Array(45, 44, 43), PackedInt32Array(47, 46, 48), PackedInt32Array(48, 46, 49), PackedInt32Array(42, 52, 50), PackedInt32Array(50, 52, 51), PackedInt32Array(43, 53, 41), PackedInt32Array(50, 54, 49), PackedInt32Array(41, 42, 43), PackedInt32Array(43, 42, 50), PackedInt32Array(43, 50, 49), PackedInt32Array(43, 49, 46), PackedInt32Array(55, 45, 46), PackedInt32Array(46, 45, 43), PackedInt32Array(59, 58, 56), PackedInt32Array(56, 58, 57), PackedInt32Array(63, 62, 60), PackedInt32Array(60, 62, 61), PackedInt32Array(66, 65, 64), PackedInt32Array(68, 67, 69), PackedInt32Array(69, 67, 70), PackedInt32Array(73, 72, 71), PackedInt32Array(66, 64, 74), PackedInt32Array(74, 64, 76), PackedInt32Array(74, 76, 75), PackedInt32Array(78, 77, 79), PackedInt32Array(79, 77, 80), PackedInt32Array(80, 77, 81), PackedInt32Array(83, 82, 79), PackedInt32Array(87, 86, 84), PackedInt32Array(84, 86, 85), PackedInt32Array(89, 73, 88), PackedInt32Array(88, 73, 84), PackedInt32Array(84, 73, 87), PackedInt32Array(87, 73, 71), PackedInt32Array(89, 90, 73), PackedInt32Array(89, 88, 91), PackedInt32Array(91, 88, 69), PackedInt32Array(91, 69, 70), PackedInt32Array(92, 81, 75), PackedInt32Array(75, 81, 74), PackedInt32Array(74, 81, 93), PackedInt32Array(93, 81, 77), PackedInt32Array(94, 83, 70), PackedInt32Array(70, 83, 79), PackedInt32Array(70, 79, 80), PackedInt32Array(70, 80, 91), PackedInt32Array(96, 95, 97), PackedInt32Array(97, 95, 98), PackedInt32Array(98, 95, 99), PackedInt32Array(101, 100, 102), PackedInt32Array(102, 100, 103), PackedInt32Array(103, 100, 99), PackedInt32Array(103, 105, 102), PackedInt32Array(102, 105, 104), PackedInt32Array(106, 108, 107), PackedInt32Array(98, 99, 106), PackedInt32Array(106, 99, 108), PackedInt32Array(108, 99, 100), PackedInt32Array(108, 100, 109), PackedInt32Array(111, 110, 109), PackedInt32Array(109, 110, 108), PackedInt32Array(100, 112, 109), PackedInt32Array(117, 116, 113), PackedInt32Array(113, 116, 114), PackedInt32Array(114, 116, 115), PackedInt32Array(118, 121, 119), PackedInt32Array(119, 121, 120), PackedInt32Array(126, 125, 122), PackedInt32Array(122, 125, 124), PackedInt32Array(122, 124, 123), PackedInt32Array(123, 124, 107), PackedInt32Array(117, 113, 127), PackedInt32Array(127, 113, 129), PackedInt32Array(127, 129, 128), PackedInt32Array(130, 128, 131), PackedInt32Array(131, 128, 129), PackedInt32Array(131, 129, 132), PackedInt32Array(132, 129, 133), PackedInt32Array(107, 134, 123), PackedInt32Array(136, 135, 137), PackedInt32Array(137, 135, 122), PackedInt32Array(124, 106, 107), PackedInt32Array(139, 138, 121), PackedInt32Array(121, 138, 120), PackedInt32Array(141, 139, 140), PackedInt32Array(142, 132, 143), PackedInt32Array(143, 132, 133), PackedInt32Array(124, 125, 144), PackedInt32Array(142, 143, 145), PackedInt32Array(145, 143, 147), PackedInt32Array(145, 147, 146), PackedInt32Array(141, 140, 137), PackedInt32Array(137, 140, 136), PackedInt32Array(141, 138, 139), PackedInt32Array(151, 150, 148), PackedInt32Array(148, 150, 149), PackedInt32Array(122, 135, 126), PackedInt32Array(126, 152, 125), PackedInt32Array(153, 118, 154), PackedInt32Array(154, 118, 119), PackedInt32Array(155, 146, 119), PackedInt32Array(119, 146, 147), PackedInt32Array(119, 147, 154), PackedInt32Array(154, 147, 156), PackedInt32Array(151, 122, 150), PackedInt32Array(150, 122, 157), PackedInt32Array(157, 122, 123)]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_rjhbt"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_k812w"]
+albedo_color = Color(1, 0, 1, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_vqplx"]
+material = SubResource("StandardMaterial3D_k812w")
+top_radius = 1.0
+bottom_radius = 1.0
+height = 1.0
+radial_segments = 6
+rings = 1
 
 [node name="Sandbox" type="Node3D"]
 script = ExtResource("1_yje1l")
@@ -43,11 +54,17 @@ data = {
 }
 cell_radius = 1.154
 cell_center_y = false
+visible = false
 metadata/_editor_floors_ = [4, 0, 0, 0]
 
 [node name="Marker" type="MeshInstance3D" parent="."]
+visible = false
 mesh = SubResource("CapsuleMesh_rjhbt")
 
 [node name="HexMapInt" type="HexMapInt" parent="."]
 cell_radius = 1.154
 cell_center_y = false
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.6362, 0, 0)
+mesh = SubResource("CylinderMesh_vqplx")

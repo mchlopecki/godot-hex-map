@@ -1,3 +1,4 @@
+#include "core/hex_map_node.h"
 #ifdef TOOLS_ENABLED
 
 #include <cassert>
@@ -122,6 +123,40 @@ Vector<EditorCursor::CellState> EditorCursor::get_cells() const {
                 .index = iter.value.index,
                 .orientation = iter.value.orientation + orientation,
         });
+    }
+
+    return out;
+}
+
+Array EditorCursor::get_cells_v() const {
+    const HexMapSpace &space = mesh_tool.get_space();
+    const auto cells = mesh_tool.get_cells();
+    auto cell_iter = cells.begin();
+
+    unsigned len = cells.size() * HexMapNode::CellArrayWidth;
+    Array out;
+    out.resize(len);
+
+    for (int i = 0; i < len; i += HexMapNode::CellArrayWidth) {
+        out[i] = (Vector3i)cell_iter->key;
+        out[i + 1] = cell_iter->value.index;
+        out[i + 2] = cell_iter->value.orientation;
+    }
+
+    return out;
+}
+
+Array EditorCursor::get_cell_ids_v() const {
+    const HexMapSpace &space = mesh_tool.get_space();
+    const auto cells = mesh_tool.get_cells();
+    auto cell_iter = cells.begin();
+
+    unsigned len = cells.size();
+    Array out;
+    out.resize(len);
+
+    for (int i = 0; i < len; i++) {
+        out[i] = (Vector3i)cell_iter->key;
     }
 
     return out;

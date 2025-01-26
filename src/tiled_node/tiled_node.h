@@ -125,8 +125,6 @@ protected:
     static void _bind_methods();
 
 public:
-    enum { INVALID_CELL_ITEM = -1 };
-
     void set_mesh_library(const Ref<MeshLibrary> &);
     Ref<MeshLibrary> get_mesh_library() const;
     bool mesh_library_changed();
@@ -162,6 +160,11 @@ public:
 
     Transform3D get_cell_transform(const HexMapCellId &) const;
 
+    void set_cell(const HexMapCellId &,
+            int tile,
+            HexMapTileOrientation orientation = 0) override;
+    CellInfo get_cell(const HexMapCellId &) const override;
+
     void set_cell_item(const HexMapCellId &cell_id, int p_item, int p_rot = 0);
     void _set_cell_item(const Ref<HexMapCellIdWrapper> cell_id,
             int p_item,
@@ -176,7 +179,8 @@ public:
 
     // used by the editor to conceal cells for the editor cursor
     // value is not saved
-    void set_cell_visibility(const HexMapCellId &cell_id, bool visibility);
+    void set_cell_visibility(const HexMapCellId &cell_id,
+            bool visibility) override;
     bool set_cells_visibility_callback(Array cells);
 
     HexMapCellId local_to_cell_id(const Vector3 &local_position) const;

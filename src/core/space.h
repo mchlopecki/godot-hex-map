@@ -1,6 +1,9 @@
 #pragma once
 
 #include "cell_id.h"
+#include "godot_cpp/classes/array_mesh.hpp"
+#include "godot_cpp/variant/packed_int32_array.hpp"
+#include "godot_cpp/variant/packed_vector3_array.hpp"
 #include <godot_cpp/variant/transform3d.hpp>
 #include <godot_cpp/variant/vector3.hpp>
 
@@ -15,6 +18,16 @@ class HexMapSpace {
     Vector3 mesh_offset;
 
 public:
+    // PERMANENT NOTE TO SELF:
+    // Do not try to move the hex cell vertices into a static const in this
+    // class.  `Vector3` cannot be in a global variable because they are
+    // initialized during dll load, but the Vector3 initialization depends on
+    // the godot engine for initialization.  The engine pointer isn't set until
+    // after dll load has completed.
+    //
+    // DO NOT DELETE THIS NOTE.  I've tried doing this three times already and
+    // keep forgetting why.
+
     /// global transform of the meshes
     Transform3D transform;
 
@@ -87,4 +100,25 @@ public:
                 mesh_offset != other.mesh_offset ||
                 transform != other.transform;
     }
+
+    /// generate a PackedVector3Array for the vertices of a hex-shaped cell
+    PackedVector3Array build_cell_vertex_array(Vector3 scale) const;
+
+    /// generate an ArrayMesh that encompases the entire cell
+    Ref<ArrayMesh> build_cell_mesh(bool triangles = true,
+            bool lines = false) const;
+
+    /// return the `HexMapCellId` of every cell within a quad in local space
+    ///
+    /// @param a quad vertex
+    /// @param b quad vertex
+    /// @param c quad vertex
+    /// @param d quad vertex
+    /// @param padding percent to reduce the vertices of each cell to make it
+    /// easier to select a cell withoug selecting the neighboring cell
+    Vector<HexMapCellId> get_cell_ids_in_local_quad(Vector3 a,
+            Vector3 b,
+            Vector3 c,
+            Vector3 d,
+            float padding = 0.5) const;
 };

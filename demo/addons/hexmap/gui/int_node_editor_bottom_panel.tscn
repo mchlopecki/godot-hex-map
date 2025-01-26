@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://bigls27b0vip1"]
+[gd_scene load_steps=16 format=3 uid="uid://bigls27b0vip1"]
 
 [ext_resource type="Texture2D" uid="uid://dew2xbw2uvpy2" path="res://addons/hexmap/icons/Paint.svg" id="1_62m1a"]
 [ext_resource type="Script" path="res://addons/hexmap/gui/int_node_editor_bottom_panel.gd" id="1_h3koj"]
@@ -14,9 +14,17 @@
 [ext_resource type="PackedScene" uid="uid://7do5qk8fxmuy" path="res://addons/hexmap/gui/zoom_widget.tscn" id="11_6xxn2"]
 [ext_resource type="PackedScene" uid="uid://bxi5mdivmmoos" path="res://addons/hexmap/gui/int_node_type_selector.tscn" id="12_ijmfj"]
 
+[sub_resource type="InputEventKey" id="InputEventKey_hms7k"]
+device = -1
+keycode = 88
+unicode = 120
+
+[sub_resource type="Shortcut" id="Shortcut_t1ur3"]
+events = [SubResource("InputEventKey_hms7k")]
+
 [node name="IntNodeEditorBottomPanel" type="VBoxContainer"]
-offset_right = 40.0
-offset_bottom = 40.0
+offset_right = 901.0
+offset_bottom = 535.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_h3koj")
@@ -25,7 +33,6 @@ script = ExtResource("1_h3koj")
 layout_mode = 2
 
 [node name="HBoxContainer3" type="HBoxContainer" parent="ToolbarHBox"]
-visible = false
 layout_mode = 2
 
 [node name="PaintButton" type="Button" parent="ToolbarHBox/HBoxContainer3"]
@@ -81,6 +88,15 @@ layout_mode = 2
 icon = ExtResource("7_2aq7k")
 flat = true
 
+[node name="VSeparator3" type="VSeparator" parent="ToolbarHBox/HBoxContainer3"]
+layout_mode = 2
+
+[node name="OptionButton" type="OptionButton" parent="ToolbarHBox/HBoxContainer3"]
+layout_mode = 2
+item_count = 1
+popup/item_0/text = "Y-Axis"
+popup/item_0/id = 0
+
 [node name="HBoxContainer2" type="HBoxContainer" parent="ToolbarHBox"]
 visible = false
 layout_mode = 2
@@ -120,6 +136,7 @@ unique_name_in_owner = true
 layout_mode = 2
 toggle_mode = true
 button_pressed = true
+shortcut = SubResource("Shortcut_t1ur3")
 icon = ExtResource("9_dwaqi")
 flat = true
 
@@ -144,6 +161,6 @@ size_flags_vertical = 3
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="IntNodeTypeSelector" parent="HBoxContainer/VBoxContainer" instance=ExtResource("12_ijmfj")]
+[node name="TypeSelector" parent="HBoxContainer/VBoxContainer" instance=ExtResource("12_ijmfj")]
 unique_name_in_owner = true
 layout_mode = 2

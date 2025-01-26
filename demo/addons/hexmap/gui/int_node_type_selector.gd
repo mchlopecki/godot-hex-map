@@ -72,6 +72,7 @@ func cell_type_form_submitted(value: int, name: String, color: Color) -> void:
 		int_map.add_cell_type(name, color)
 	else:
 		int_map.update_cell_type(value, name, color)
+	types_changed.emit()
 	rebuild_type_list()
 
 func append_new_type_form() -> void:

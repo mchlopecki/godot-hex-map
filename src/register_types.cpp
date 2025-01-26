@@ -28,6 +28,7 @@ void initialize_hexmap_module(ModuleInitializationLevel p_level) {
         ClassDB::register_internal_class<EditorControl>();
         ClassDB::register_internal_class<HexMapTiledNodeEditorPlugin>();
         EditorPlugins::add_by_type<HexMapTiledNodeEditorPlugin>();
+        ClassDB::register_abstract_class<HexMapNodeEditorPlugin>();
         ClassDB::register_internal_class<HexMapIntNodeEditorPlugin>();
         EditorPlugins::add_by_type<HexMapIntNodeEditorPlugin>();
     }

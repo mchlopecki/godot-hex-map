@@ -42,7 +42,9 @@ public:
     operator int() const { return value; }
     operator Variant() const { return Variant(value); }
 
-    // steps > 0 rotate counter clockwise, steps < 0 rotate clockwise
+    /// rotate the orientation
+    /// @param steps nevative values rotate clockwise, positive rotate
+    /// counter-clockwise
     void rotate(int steps);
     void flip();
 

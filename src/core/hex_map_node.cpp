@@ -15,6 +15,17 @@ void HexMapNode::_bind_methods() {
             D_METHOD("set_center_y", "enable"), &HexMapNode::set_center_y);
     ClassDB::bind_method(D_METHOD("get_center_y"), &HexMapNode::get_center_y);
 
+    ClassDB::bind_method(D_METHOD("set_cell", "cell", "value", "orientation"),
+            static_cast<void (HexMapNode::*)(
+                    const Ref<HexMapCellIdWrapper>, int, int)>(
+                    &HexMapNode::set_cell));
+    ClassDB::bind_method(D_METHOD("set_cells", "cells"),
+            static_cast<void (HexMapNode::*)(const Array)>(
+                    &HexMapNode::set_cells));
+    ClassDB::bind_method(D_METHOD("get_cells", "cells"),
+            static_cast<Array (HexMapNode::*)(const Array)>(
+                    &HexMapNode::get_cells));
+
     ADD_GROUP("Cell", "cell_");
     ADD_PROPERTY(PropertyInfo(Variant::FLOAT,
                          "cell_height",
@@ -77,4 +88,42 @@ Vector3 HexMapNode::get_cell_center(const HexMapCellId &cell_id) const {
 
 HexMapCellId HexMapNode::get_cell_id(Vector3 pos) const {
     return space.get_cell_id(pos);
+}
+
+void HexMapNode::set_cell(const Ref<HexMapCellIdWrapper> cell_id,
+        int p_item,
+        int p_orientation) {
+    set_cell(**cell_id, p_item, p_orientation);
+}
+
+void HexMapNode::set_cells(const Array cells) {
+    int size = cells.size();
+    for (int i = 0; i < size; i += 3) {
+        HexMapCellId cell_id(cells[i]);
+        int value = cells[i + 1];
+        HexMapTileOrientation orientation = cells[i + 2];
+        set_cell(cell_id, value, orientation);
+    }
+}
+
+Array HexMapNode::get_cells(const Array cells) {
+    int size = cells.size();
+    Array out;
+    out.resize(size * 3);
+    for (int i = 0; i < size; i++) {
+        HexMapCellId cell_id(cells[i]);
+        auto [value, orientation] = get_cell(cell_id);
+        int base = i * 3;
+        out[base] = cell_id;
+        out[base + 1] = value;
+        out[base + 2] = orientation;
+    }
+    return out;
+}
+
+void HexMapNode::set_cells_visibility(const Array cells) {
+    int len = cells.size();
+    for (int i = 0; i < len; i += 2) {
+        set_cell_visibility((Vector3i)cells[i], cells[i + 1]);
+    }
 }

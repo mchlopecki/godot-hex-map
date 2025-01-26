@@ -1,4 +1,6 @@
 #include "int_node/int_node.h"
+#include "core/cell_id.h"
+#include "core/tile_orientation.h"
 #include "godot_cpp/core/error_macros.hpp"
 #include "godot_cpp/variant/array.hpp"
 #include "godot_cpp/variant/dictionary.hpp"
@@ -45,4 +47,19 @@ void HexMapIntNode::_bind_methods() {
     ClassDB::bind_method(
             D_METHOD("update_cell_type", "value", "name", "color"),
             &HexMapIntNode::update_cell_type);
+}
+
+void HexMapIntNode::set_cell(const HexMapCellId &cell_id,
+        int value,
+        HexMapTileOrientation _) {
+    cell_map.insert(cell_id, value);
+}
+
+HexMapNode::CellInfo HexMapIntNode::get_cell(
+        const HexMapCellId &cell_id) const {
+    const int *current_cell = cell_map.getptr(cell_id);
+    if (current_cell == nullptr) {
+        return CellInfo{ .value = INVALID_CELL_ITEM };
+    }
+    return CellInfo{ .value = *current_cell };
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/cell_id.h"
 #include "core/hex_map_node.h"
 #include "godot_cpp/classes/wrapped.hpp"
 #include "godot_cpp/templates/hash_map.hpp"
@@ -35,6 +36,13 @@ public:
     /// function
     Array _get_cell_types() const;
 
+    void set_cell(const HexMapCellId &,
+            int tile,
+            HexMapTileOrientation orientation = 0) override;
+    CellInfo get_cell(const HexMapCellId &) const override;
+    void set_cell_visibility(const HexMapCellId &cell_id,
+            bool visibility) override {};
+
 protected:
     // void _notification(int p_what);
     static void _bind_methods();
@@ -42,4 +50,5 @@ protected:
 private:
     unsigned max_type;
     TypeMap cell_types;
+    HashMap<HexMapCellId::Key, int> cell_map;
 };

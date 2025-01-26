@@ -32,8 +32,10 @@
 #include <godot_cpp/variant/vector3.hpp>
 
 #include "core/cell_id.h"
+#include "core/hex_map_node.h"
 #include "core/iter_cube.h"
 #include "core/math.h"
+#include "core/tile_orientation.h"
 #include "octant.h"
 #include "profiling.h"
 #include "tiled_node.h"
@@ -310,6 +312,12 @@ bool HexMapTiledNode::get_navigation_bake_only_navmesh_tiles() const {
     return navigation_bake_only_navmesh_tiles;
 }
 
+void HexMapTiledNode::set_cell(const HexMapCellId &cell_id,
+        int tile,
+        HexMapTileOrientation orientation) {
+    set_cell_item(cell_id, tile, orientation);
+}
+
 void HexMapTiledNode::set_cell_item(const HexMapCellId &cell_id,
         int p_item,
         int p_rot) {
@@ -388,6 +396,16 @@ void HexMapTiledNode::_set_cell_item_v(const Vector3i &cell_id,
         int p_item,
         int p_rot) {
     set_cell_item(cell_id, p_item, p_rot);
+}
+
+HexMapNode::CellInfo HexMapTiledNode::get_cell(
+        const HexMapCellId &cell_id) const {
+    const Cell *current_cell = cell_map.getptr(cell_id);
+    if (current_cell == nullptr) {
+        return CellInfo{ .value = INVALID_CELL_ITEM };
+    }
+    return CellInfo{ .value = current_cell->item,
+        .orientation = current_cell->rot };
 }
 
 int HexMapTiledNode::get_cell_item(const HexMapCellId &cell_id) const {
@@ -596,7 +614,7 @@ Vector<HexMapCellId> HexMapTiledNode::local_quad_to_cell_ids(Vector3 a,
     Vector2 bb(d[axis[0]], d[axis[1]]);
     Vector2 bc(c[axis[0]], c[axis[1]]);
 
-    // XXX pull these points in to make it easier to select SW/SE line
+    // pull these points in to make it easier to select SW/SE line
     const PackedVector3Array vertices = PackedVector3Array({
             Vector3(0.0, 0.5, -1.0) * 0.5, // 0
             Vector3(-Math_SQRT3_2, 0.5, -0.5) * 0.5, // 1
