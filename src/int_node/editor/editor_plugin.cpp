@@ -46,6 +46,9 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
         // create a TiledNode to visualize the contents of the IntNode
         tile_node = memnew(HexMapTiledNode);
         tile_node->set_space(int_node->get_space());
+        // the cell meshes we create in update_mesh_library() are centered on
+        // origin, so set the TileNode to center the mesh in the cell.
+        tile_node->set_center_y(true);
         update_mesh_library();
 
         // populate the tiled node with our cells
@@ -101,10 +104,6 @@ void HexMapIntNodeEditorPlugin::update_mesh_library() {
         mesh_library->create_item(iter.key);
         mesh_library->set_item_name(iter.key, iter.value.name);
         mesh_library->set_item_mesh(iter.key, mesh);
-        if (tile_node) {
-            tile_node->set_cell_item(
-                    HexMapCellId(iter.key, iter.key, iter.key), iter.key);
-        }
     }
 
     if (tile_node) {

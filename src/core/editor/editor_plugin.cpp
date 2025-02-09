@@ -255,13 +255,13 @@ void HexMapNodeEditorPlugin::selection_move() {
     copy_selection_to_cursor();
 
     // save the original cell contents, then clear the cells
+    last_selection = selection_manager->get_cells_v();
     move_source_cells = hex_map->get_cells(last_selection);
     for (const HexMapCellId &cell_id : selection_manager->get_cells()) {
         hex_map->set_cell(cell_id, HexMapNode::INVALID_CELL_ITEM);
     }
 
-    // save off the selectiion and clear it
-    last_selection = selection_manager->get_cells_v();
+    // clear selection
     _deselect_cells();
 
     input_state = INPUT_STATE_MOVING;
@@ -281,10 +281,11 @@ void HexMapNodeEditorPlugin::selection_move_apply() {
     // first phase of redo is to clear the source cells
     int count = move_source_cells.size();
     Array do_set_cells;
-    do_set_cells.resize(count);
-    for (int i = 0; i < count; i += HexMapNode::CellArrayWidth) {
-        do_set_cells[i] = move_source_cells[i];
-        do_set_cells[i + 1] = HexMapNode::INVALID_CELL_ITEM;
+    do_set_cells.resize(count * HexMapNode::CellArrayWidth);
+    for (int i = 0; i < count; i++) {
+        int base = i * HexMapNode::CellArrayWidth;
+        do_set_cells[base] = move_source_cells[i];
+        do_set_cells[base + 1] = HexMapNode::INVALID_CELL_ITEM;
     }
     // second phase is to set the destination cells
     do_set_cells.append_array(editor_cursor->get_cells_v());

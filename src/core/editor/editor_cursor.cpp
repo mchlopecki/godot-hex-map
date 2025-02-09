@@ -58,7 +58,8 @@ void EditorCursor::set_orientation(TileOrientation orientation) {
 void EditorCursor::transform_meshes() {
     // update the grid transform
     grid_mesh_transform.set_origin(
-            parent_space.get_cell_center_global(pointer_cell));
+            parent_space.get_cell_center_global(pointer_cell) -
+            Vector3(0, parent_space.get_cell_height() / 2, 0));
     RenderingServer::get_singleton()->instance_set_transform(
             grid_mesh_instance, grid_mesh_transform);
 
@@ -138,9 +139,12 @@ Array EditorCursor::get_cells_v() const {
     out.resize(len);
 
     for (int i = 0; i < len; i += HexMapNode::CellArrayWidth) {
-        out[i] = (Vector3i)cell_iter->key;
+        Vector3 center = space.get_cell_center_global(cell_iter->key);
+        Vector3i cell_id = parent_space.get_cell_id_global(center);
+        out[i] = (Vector3i)cell_id;
         out[i + 1] = cell_iter->value.index;
         out[i + 2] = cell_iter->value.orientation;
+        ++cell_iter;
     }
 
     return out;
@@ -155,8 +159,10 @@ Array EditorCursor::get_cell_ids_v() const {
     Array out;
     out.resize(len);
 
-    for (int i = 0; i < len; i++) {
-        out[i] = (Vector3i)cell_iter->key;
+    for (int i = 0; i < len; ++i, ++cell_iter) {
+        Vector3 center = space.get_cell_center_global(cell_iter->key);
+        Vector3i cell_id = parent_space.get_cell_id_global(center);
+        out[i] = cell_id;
     }
 
     return out;

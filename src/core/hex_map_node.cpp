@@ -119,7 +119,7 @@ Array HexMapNode::get_cells(const Array cells) {
         HexMapCellId cell_id(cells[i]);
         auto [value, orientation] = get_cell(cell_id);
         int base = i * 3;
-        out[base] = cell_id;
+        out[base] = (Vector3i)cell_id;
         out[base + 1] = value;
         out[base + 2] = orientation;
     }
