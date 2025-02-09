@@ -13,7 +13,7 @@ signal selection_changed(value)
 		if int_map != value:
 			int_map = value
 			rebuild_type_list()
-@export var selected_type: int :
+@export var selected_type: int = -1 :
 	set(value):
 		if value != selected_type:
 			selected_type = value

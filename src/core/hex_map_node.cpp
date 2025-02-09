@@ -48,6 +48,11 @@ void HexMapNode::_bind_methods() {
     ADD_SIGNAL(MethodInfo("mesh_library_changed"));
 }
 
+void HexMapNode::set_space(const HexMapSpace &space) {
+    this->space = space;
+    cell_scale_changed();
+}
+
 void HexMapNode::set_cell_height(real_t p_height) {
     space.set_cell_height(p_height);
     cell_scale_changed();

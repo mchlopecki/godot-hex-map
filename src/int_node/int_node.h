@@ -1,16 +1,21 @@
 #pragma once
 
+#include <godot_cpp/classes/wrapped.hpp>
+#include <godot_cpp/templates/hash_map.hpp>
+#include <godot_cpp/variant/color.hpp>
+
 #include "core/cell_id.h"
 #include "core/hex_map_node.h"
-#include "godot_cpp/classes/wrapped.hpp"
-#include "godot_cpp/templates/hash_map.hpp"
-#include "godot_cpp/variant/color.hpp"
 
 using namespace godot;
+
+class HexMapIntNodeEditorPlugin;
 
 class HexMapIntNode : public HexMapNode {
     using HexMapInt = HexMapIntNode;
     GDCLASS(HexMapInt, HexMapNode);
+
+    friend HexMapIntNodeEditorPlugin;
 
 public:
     struct CellType {
@@ -40,6 +45,7 @@ public:
             int tile,
             HexMapTileOrientation orientation = 0) override;
     CellInfo get_cell(const HexMapCellId &) const override;
+    Array get_cell_ids_v() const override;
     void set_cell_visibility(const HexMapCellId &cell_id,
             bool visibility) override {};
 

@@ -48,6 +48,11 @@ public:
     real_t get_cell_radius() const;
     void set_center_y(bool value);
     bool get_center_y() const;
+
+    /// set the HexMapSpace
+    void set_space(const HexMapSpace &space);
+
+    /// get the HexMapSpace
     inline const HexMapSpace &get_space() { return space; }
 
     /// Return the cell scale factor for cells in this hexmap.
@@ -92,6 +97,9 @@ public:
     /// @returns flat Array of [Vector3i, int, int] for each cell id requested.
     ///          The results will be in the same order as requested.
     Array get_cells(const Array p_cells);
+
+    /// get the list of CellIds as Vector3i occupied in this node
+    virtual Array get_cell_ids_v() const = 0;
 
     /// number of elements that are used to represent a cell in the Array
     /// returned by `_get_cells()`

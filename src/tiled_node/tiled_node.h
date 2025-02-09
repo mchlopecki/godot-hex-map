@@ -24,9 +24,6 @@
 #include "core/tile_orientation.h"
 #include "octant.h"
 
-// SQRT(3)/2; used both in the editor and the GridMap.  Due to the division, it
-// didn't fit the pattern of other Math_SQRTN defines, so I'm putting it here.
-#define Math_SQRT3 1.7320508075688772935274463415059
 #define RS RenderingServer
 
 using namespace godot;
@@ -164,6 +161,7 @@ public:
             int tile,
             HexMapTileOrientation orientation = 0) override;
     CellInfo get_cell(const HexMapCellId &) const override;
+    Array get_cell_ids_v() const override;
 
     void set_cell_item(const HexMapCellId &cell_id, int p_item, int p_rot = 0);
     void _set_cell_item(const Ref<HexMapCellIdWrapper> cell_id,

@@ -398,6 +398,14 @@ void HexMapTiledNode::_set_cell_item_v(const Vector3i &cell_id,
     set_cell_item(cell_id, p_item, p_rot);
 }
 
+Array HexMapTiledNode::get_cell_ids_v() const {
+    Array out;
+    for (const auto &iter : cell_map) {
+        out.push_back((Vector3i)iter.key);
+    }
+    return out;
+}
+
 HexMapNode::CellInfo HexMapTiledNode::get_cell(
         const HexMapCellId &cell_id) const {
     const Cell *current_cell = cell_map.getptr(cell_id);

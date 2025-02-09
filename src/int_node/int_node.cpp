@@ -47,12 +47,20 @@ void HexMapIntNode::_bind_methods() {
     ClassDB::bind_method(
             D_METHOD("update_cell_type", "value", "name", "color"),
             &HexMapIntNode::update_cell_type);
+#ifdef TOOLS_ENABLED
+    ADD_SIGNAL(MethodInfo("editor_plugin_cell_changed",
+            PropertyInfo(Variant::VECTOR3I, "cell"),
+            PropertyInfo(Variant::INT, "type")));
+#endif // TOOLS_ENABLED
 }
 
 void HexMapIntNode::set_cell(const HexMapCellId &cell_id,
         int value,
         HexMapTileOrientation _) {
     cell_map.insert(cell_id, value);
+#ifdef TOOLS_ENABLED
+    emit_signal("editor_plugin_cell_changed", (Vector3i)cell_id, value);
+#endif // TOOLS_ENABLED
 }
 
 HexMapNode::CellInfo HexMapIntNode::get_cell(
@@ -62,4 +70,12 @@ HexMapNode::CellInfo HexMapIntNode::get_cell(
         return CellInfo{ .value = INVALID_CELL_ITEM };
     }
     return CellInfo{ .value = *current_cell };
+}
+
+Array HexMapIntNode::get_cell_ids_v() const {
+    Array out;
+    for (const auto &iter : cell_map) {
+        out.push_back((Vector3i)iter.key);
+    }
+    return out;
 }

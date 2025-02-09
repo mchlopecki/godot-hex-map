@@ -177,7 +177,7 @@ private:
     void read_editor_state(const HexMapNode *);
 
     /// rebuild the cursor from the UI state
-    void rebuild_cursor();
+    virtual void rebuild_cursor();
 };
 
 #endif
