@@ -22,13 +22,11 @@ public:
             axial_iter(iter), radius(radius), exclude_center(exclude_center){};
     HexMapIterRadial(const HexMapIterRadial &) = default;
 
-    friend bool operator==(const HexMapIterRadial &a,
-            const HexMapIterRadial &b) {
-        return a.axial_iter.cell == b.axial_iter.cell;
+    bool operator==(const HexMapIterRadial &other) {
+        return this->axial_iter.cell == other.axial_iter.cell;
     };
-    friend bool operator!=(const HexMapIterRadial &a,
-            const HexMapIterRadial &b) {
-        return a.axial_iter.cell != b.axial_iter.cell;
+    bool operator!=(const HexMapIterRadial &other) {
+        return this->axial_iter.cell != other.axial_iter.cell;
     };
 
     HexMapCellId operator*() const { return axial_iter.cell; }

@@ -357,9 +357,9 @@ void HexMap::set_cell_item(const HexMapCellId &cell_id,
     if (p_item >= 0) {
         // set the cell
         Cell cell = {
-            .item = static_cast<unsigned int>(p_item),
-            .rot = static_cast<unsigned int>(p_rot),
-            .visible = true,
+            /* .item = */ static_cast<unsigned int>(p_item),
+            /* .rot = */ static_cast<unsigned int>(p_rot),
+            /* .visible = */ true,
         };
         cell_map.insert(cell_key, cell);
         updated_cells.insert(cell_key);
