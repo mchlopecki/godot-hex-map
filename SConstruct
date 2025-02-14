@@ -49,7 +49,7 @@ Default(library)
 # This shitty workaround, just recompile the sources and link them directly into
 # the test binary.
 
-godot_cpp = File(f"godot-cpp/bin/libgodot-cpp{env["suffix"]}.a")
+godot_cpp = File(f"godot-cpp/bin/libgodot-cpp{env['suffix']}.a")
 tests = env.Program(
     target='tests/tests',
     source=Glob("tests/*cpp") + sources,
