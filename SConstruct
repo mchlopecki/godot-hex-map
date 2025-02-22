@@ -9,6 +9,11 @@ target_name = ARGUMENTS.pop("target_name", "libgdhexmap")
 
 env = SConscript("godot-cpp/SConstruct")
 
+# we use designated initializers, and MSVC requires c++20 to support them
+if env.get("is_msvc", False):
+    env["CXXFLAGS"].remove("/std:c++17")
+    env["CXXFLAGS"].append("/std:c++20")
+
 env.Append(CPPPATH=["src/"])
 sources = [
     Glob("src/*.cpp"),
