@@ -39,7 +39,6 @@ public:
     HexMapTileOrientation operator+(const HexMapTileOrientation &other) const;
 
     operator Basis() const;
-    operator int() const { return value; }
     operator Variant() const { return Variant(value); }
 
     // steps > 0 rotate counter clockwise, steps < 0 rotate clockwise
