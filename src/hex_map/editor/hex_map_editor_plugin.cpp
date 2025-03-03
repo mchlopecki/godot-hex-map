@@ -275,8 +275,9 @@ void HexMapEditorPlugin::selection_move() {
 
 void HexMapEditorPlugin::selection_move_cancel() {
     for (const CellChange &change : cells_changed) {
-        hex_map->set_cell_item(
-                change.cell_id, change.orig_tile, change.orig_orientation);
+        hex_map->set_cell_item(change.cell_id,
+                change.orig_tile,
+                static_cast<int>(change.orig_orientation));
     }
     cells_changed.clear();
 
@@ -467,7 +468,9 @@ int32_t HexMapEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                         .new_tile = cell.tile,
                         .new_orientation = cell.orientation,
                 });
-                hex_map->set_cell_item(cell_id, cell.tile, cell.orientation);
+                hex_map->set_cell_item(cell_id,
+                        cell.tile,
+                        static_cast<int>(cell.orientation));
             }
             if (mouse_left_released) {
                 commit_cell_changes("HexMap: paint cells");
