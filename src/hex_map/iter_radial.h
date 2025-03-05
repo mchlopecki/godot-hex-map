@@ -24,11 +24,11 @@ public:
 
     friend bool operator==(const HexMapIterRadial &a,
             const HexMapIterRadial &b) {
-        return a.axial_iter.cell == b.axial_iter.cell;
+        return a.axial_iter == b.axial_iter;
     };
     friend bool operator!=(const HexMapIterRadial &a,
             const HexMapIterRadial &b) {
-        return a.axial_iter.cell != b.axial_iter.cell;
+        return a.axial_iter != b.axial_iter;
     };
 
     HexMapCellId operator*() const { return axial_iter.cell; }

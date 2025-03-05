@@ -55,7 +55,7 @@ HexMapTileOrientation HexMapTileOrientation::operator+(
         const HexMapTileOrientation &other) const {
     HexMapTileOrientation out(value);
     // if we're flipped, flip, and then rotate however manu steps
-    if (other >= HexMapTileOrientation::Flipped0) {
+    if (other.value >= HexMapTileOrientation::Flipped0) {
         out.flip();
     }
     out.rotate(other.value % 6);
