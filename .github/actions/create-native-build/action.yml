@@ -1,0 +1,42 @@
+name: Create HexGrid native build
+description: Creates a HexGrid native build for a specific platform
+inputs:
+  platform:
+    description: The platform to build for.
+  target:
+    description: The target to build.
+  shell:
+    description: The shell used by the runner.
+  additional-python-packages:
+    description: Additional python packages to install.
+runs:
+  using: composite
+  steps:
+    # Use python 3.x release (works cross platform; best to keep self contained in it's own step)
+    - name: Set up Python 3.x
+      uses: actions/setup-python@v4
+      with:
+        # Semantic version range syntax or exact version of a Python version
+        python-version: "3.x"
+        # Optional - x64 or x86 architecture, defaults to x64
+        architecture: "x64"
+
+    # Setup scons, print python version and scons version info, so if anything is broken it won't run the build.
+    #TODO: remove hardcoded scons version when https://github.com/godotengine/godot-cpp/pull/1526 is released
+    - name: Configuring Python packages
+      shell: ${{ inputs.shell }}
+      run: |
+        python -c "import sys; print(sys.version)"
+        python -m pip install scons==4.7.0 requests ${{ inputs.additional-python-packages }}
+        python --version
+        scons --version
+
+    - name: Get number of CPU cores
+      id: cpu-cores
+      uses: SimenB/github-actions-cpu-cores@v1
+
+    - name: Compilation
+      shell: ${{ inputs.shell }}
+      run: |
+        cd ../fmod-gdextension
+        scons platform=${{ inputs.platform }} generate_bindings=yes target=${{ inputs.target }} -j${{ steps.cpu-cores.outputs.count }} ${{ inputs.flags }}
