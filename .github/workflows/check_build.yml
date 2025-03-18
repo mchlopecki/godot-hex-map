@@ -3,7 +3,7 @@ on: [pull_request, workflow_dispatch]
 
 jobs:
   build:
-    name: ${{ matrix.platform }} ${{ matrix.target }} Compilation
+    name: ${{ matrix.os }} ${{ matrix.target }} Compilation
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
