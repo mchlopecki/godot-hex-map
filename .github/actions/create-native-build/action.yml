@@ -38,5 +38,5 @@ runs:
     - name: Compilation
       shell: ${{ inputs.shell }}
       run: |
-        cd ../fmod-gdextension
+        cd ../godot-hex-map
         scons platform=${{ inputs.platform }} generate_bindings=yes target=${{ inputs.target }} -j${{ steps.cpu-cores.outputs.count }} ${{ inputs.flags }}
