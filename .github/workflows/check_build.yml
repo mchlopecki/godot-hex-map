@@ -1,4 +1,4 @@
-name: Check for Successful Builds on All Platforms
+name: Check for Successful Build
 on: [pull_request, workflow_dispatch]
 
 jobs:
