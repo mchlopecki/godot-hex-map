@@ -11,7 +11,7 @@ jobs:
         os: ["windows-2022",
             "ubuntu-24.04", # consider if best option (differs from FMOD's due to deprecation)
             "macos-14"] # consider if best option
-        target: ["editor", "temlate_debug", "template_release"]
+        target: ["editor", "template_debug", "template_release"]
         include:
           - os: "windows-2022"
             platform: windows
