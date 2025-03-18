@@ -3,36 +3,33 @@ on: [pull_request, workflow_dispatch]
 
 jobs:
   build:
-    name: ${{ matrix.name }}
+    name: ${{ matrix.platform }} ${{ matrix.target }} Compilation
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: ["windows-2022",
+            "ubuntu-24.04", # consider if best option (differs from FMOD's due to deprecation)
+            "macos-14"] # consider if best option
+        target: ["editor", "target_debug", "template_release"]
         include:
-          - name: Windows 10 Editor Compilation
-            os: "windows-2022"
+          - os: "windows-2022"
             platform: windows
-            target: editor
-            shell: pwsh
             additional-python-packages: pywin32
-          
-          - name: Ubuntu Editor Compliation 
-            os: "ubuntu-24.04" # consider if best option (differs from FMOD's due to deprecation)
-            platform: linux
-            target: editor
-            shell: bash
+            shell: pwsh
 
-          - name: MacOS Editor Compilation
-            os: "macos-14" # consider if best option
+          - os: "ubuntu-24.04"
+            platform: linux
+            shell: bash
+            
+          - os: "macos-14"
             platform: macos
-            target: editor
             shell: bash
       
     steps:
       - name: Checkout PR
         uses: actions/checkout@v4
         with:
-          # ref: ${{ github.ref }}
           submodules: recursive
 
       - name: Compile native plugin
