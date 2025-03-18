@@ -9,8 +9,8 @@ jobs:
       fail-fast: false
       matrix:
         os: ["windows-2022",
-            "ubuntu-24.04", # consider if best option (differs from FMOD's due to deprecation)
-            "macos-14"] # consider if best option
+            "ubuntu-latest",
+            "macos-14"]
         target: ["editor", "template_debug", "template_release"]
         include:
           - os: "windows-2022"
@@ -18,7 +18,7 @@ jobs:
             additional-python-packages: pywin32
             shell: pwsh
 
-          - os: "ubuntu-24.04"
+          - os: "ubuntu-latest"
             platform: linux
             shell: bash
             
@@ -27,7 +27,7 @@ jobs:
             shell: bash
       
     steps:
-      - name: Checkout PR
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
