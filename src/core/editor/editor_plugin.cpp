@@ -872,6 +872,91 @@ void HexMapNodeEditorPlugin::_bind_methods() {
     BIND_ENUM_CONSTANT(EditorCursor::AXIS_Y);
 }
 
+void HexMapNodeEditorPlugin::add_editor_shortcut(const String &path,
+        const String &name,
+        Key keycode) {
+    Ref<EditorSettings> editor_settings =
+            EditorInterface::get_singleton()->get_editor_settings();
+
+    Array events;
+    Ref<InputEventKey> input_event_key;
+    if (keycode != KEY_NONE) {
+        input_event_key.instantiate();
+        input_event_key->set_physical_keycode((Key)(keycode & KEY_CODE_MASK));
+        if ((keycode & KEY_MASK_SHIFT) != 0) {
+            input_event_key->set_shift_pressed(true);
+        }
+        if ((keycode & KEY_MASK_ALT) != 0) {
+            input_event_key->set_alt_pressed(true);
+        }
+        if ((keycode & KEY_MASK_CMD_OR_CTRL) != 0) {
+            input_event_key->set_command_or_control_autoremap(true);
+        } else if ((keycode & KEY_MASK_CTRL) != 0) {
+            input_event_key->set_ctrl_pressed(true);
+        } else if ((keycode & KEY_MASK_META) != 0) {
+            input_event_key->set_meta_pressed(true);
+        }
+        events.push_back(input_event_key);
+    }
+
+    Ref<Shortcut> shortcut = editor_settings->get_setting(path);
+    if (shortcut.is_valid()) {
+        shortcut->set_name(name);
+        shortcut->set_meta("original", events.duplicate(true));
+    } else {
+        shortcut.instantiate();
+        shortcut->set_name(name);
+        shortcut->set_events(events);
+        shortcut->set_meta("original", events.duplicate(true));
+        editor_settings->set_setting(path, shortcut);
+    }
+}
+
+HexMapNodeEditorPlugin::HexMapNodeEditorPlugin() {
+    // Define edit plane shortcuts
+    add_editor_shortcut("hex_map/edit_y_plane", "Edit Y Plane", Key::KEY_X);
+    add_editor_shortcut("hex_map/edit_q_plane", "Edit Q Plane", Key::KEY_NONE);
+    add_editor_shortcut("hex_map/edit_r_plane", "Edit R Plane", Key::KEY_NONE);
+    add_editor_shortcut("hex_map/edit_s_plane", "Edit S Plane", Key::KEY_NONE);
+    add_editor_shortcut("hex_map/edit_plane_rotate_cw",
+            "Rotate Edit Plane About Y-Axis Clockwise",
+            Key::KEY_C);
+    add_editor_shortcut("hex_map/edit_plane_rotate_ccw",
+            "Rotate Edit Plane About Y-Axis Counter-Clockwise",
+            Key::KEY_Z);
+    add_editor_shortcut("hex_map/edit_plane_increment",
+            "Increment Edit Plane",
+            Key::KEY_E);
+    add_editor_shortcut("hex_map/edit_plane_decrement",
+            "Decrement Edit Plane",
+            Key::KEY_Q);
+
+    // define editor cursor shortcuts
+    add_editor_shortcut("hex_map/cursor_rotate_cw",
+            "Rotate Editor Cursor Clockwise",
+            Key::KEY_D);
+    add_editor_shortcut("hex_map/cursor_rotate_ccw",
+            "Rotate Editor Cursor Counter Clockwise",
+            Key::KEY_A);
+    add_editor_shortcut("hex_map/cursor_clear_rotation",
+            "Clear Editor Cursor Rotation",
+            Key::KEY_S);
+    add_editor_shortcut(
+            "hex_map/cursor_flip", "Flip Editor Cursor", Key::KEY_W);
+
+    // selection shortcuts
+    add_editor_shortcut("hex_map/selection_clear",
+            "Clear Selected Cells",
+            Key::KEY_BACKSPACE);
+    add_editor_shortcut(
+            "hex_map/selection_fill", "Fill Selected Cells", Key::KEY_F);
+    add_editor_shortcut("hex_map/selection_clone",
+            "Clone Selected Cells",
+            Key(KEY_MASK_SHIFT + Key::KEY_D));
+    add_editor_shortcut(
+            "hex_map/selection_move", "Move Selected Cells", Key::KEY_G);
+}
+
 HexMapNodeEditorPlugin::~HexMapNodeEditorPlugin() {
     ERR_FAIL_NULL(RenderingServer::get_singleton());
 

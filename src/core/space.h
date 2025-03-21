@@ -102,11 +102,13 @@ public:
     }
 
     /// generate a PackedVector3Array for the vertices of a hex-shaped cell
-    PackedVector3Array build_cell_vertex_array(Vector3 scale) const;
+    PackedVector3Array get_cell_vertices(
+            Vector3 scale = Vector3(1, 1, 1)) const;
 
     /// generate an ArrayMesh that encompases the entire cell
-    Ref<ArrayMesh> build_cell_mesh(bool triangles = true,
-            bool lines = false) const;
+    ///
+    /// surface 0 contains the triangles, surface 1 contains the lines
+    Ref<ArrayMesh> build_cell_mesh() const;
 
     /// return the `HexMapCellId` of every cell within a quad in local space
     ///

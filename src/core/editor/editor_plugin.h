@@ -47,12 +47,15 @@ public:
     virtual int32_t _forward_3d_gui_input(Camera3D *viewport_camera,
             const Ref<InputEvent> &event) override;
 
-    HexMapNodeEditorPlugin() {};
+    HexMapNodeEditorPlugin();
     ~HexMapNodeEditorPlugin();
 
 protected:
     void _notification(int p_what);
     static void _bind_methods();
+
+    /// add setting entry for a keyboard shortcut
+    void add_editor_shortcut(const String &path, const String &name, Key);
 
     /// set cursor orientation
     void cursor_set_orientation(HexMapTileOrientation);

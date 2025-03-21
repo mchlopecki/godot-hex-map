@@ -34,8 +34,8 @@ class HexMapIterWrapper : public godot::RefCounted {
     GDCLASS(HexMapIter, RefCounted);
 
 public:
-    HexMapIterWrapper(){};
-    HexMapIterWrapper(const Inner &iter) : iter(iter.clone()){};
+    HexMapIterWrapper() {};
+    HexMapIterWrapper(const Inner &iter) : iter(iter.clone()) {};
     ~HexMapIterWrapper() {
         if (iter != nullptr) {
             delete iter;

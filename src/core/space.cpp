@@ -21,7 +21,7 @@ void HexMapSpace::set_cell_radius(real_t value) {
 
 void HexMapSpace::set_mesh_offset(Vector3 value) { mesh_offset = value; }
 
-PackedVector3Array HexMapSpace::build_cell_vertex_array(Vector3 scale) const {
+PackedVector3Array HexMapSpace::get_cell_vertices(Vector3 scale) const {
     // clang-format off
     /*
      *               (0)             Y
@@ -41,12 +41,14 @@ PackedVector3Array HexMapSpace::build_cell_vertex_array(Vector3 scale) const {
      *               (9)
      */
     return PackedVector3Array({
+        // top face
         Vector3(0.0, 0.5, -1.0) * scale,            // 0
         Vector3(-Math_SQRT3_2, 0.5, -0.5) * scale,  // 1
         Vector3(-Math_SQRT3_2, 0.5, 0.5) * scale,   // 2
         Vector3(0.0, 0.5, 1.0) * scale,             // 3
         Vector3(Math_SQRT3_2, 0.5, 0.5) * scale,    // 4
         Vector3(Math_SQRT3_2, 0.5, -0.5) * scale,   // 5
+        // bottom face
         Vector3(0.0, -0.5, -1.0) * scale,           // 6
         Vector3(-Math_SQRT3_2, -0.5, -0.5) * scale, // 7
         Vector3(-Math_SQRT3_2, -0.5, 0.5) * scale,  // 8
@@ -57,14 +59,73 @@ PackedVector3Array HexMapSpace::build_cell_vertex_array(Vector3 scale) const {
     // clang-format on
 }
 
-Ref<ArrayMesh> HexMapSpace::build_cell_mesh(bool triangles, bool lines) const {
-    Array surface;
-    surface.resize(RenderingServer::ARRAY_MAX);
+Ref<ArrayMesh> HexMapSpace::build_cell_mesh() const {
+    Array triangles, lines;
+    triangles.resize(RenderingServer::ARRAY_MAX);
+    lines.resize(RenderingServer::ARRAY_MAX);
 
-    surface[RenderingServer::ARRAY_VERTEX] =
-            build_cell_vertex_array(cell_scale);
+    PackedVector3Array v = get_cell_vertices(cell_scale);
+    // Use the points to construct each individual cell face.  This requires
+    // us to duplicate vertices so corners can have independent UVs to
+    // do flat-shading.
     // clang-format off
-    surface[RenderingServer::ARRAY_INDEX] =  PackedInt32Array({
+    triangles[RenderingServer::ARRAY_VERTEX] = PackedVector3Array({
+        v[0], v[1], v[2], v[3], v[4], v[5],     // top
+        v[6], v[7], v[8], v[9], v[10], v[11],   // bottom
+        v[4], v[5], v[11], v[10],               // east         (12..15)
+        v[5], v[0], v[6], v[11],                // northeast    (16..19)
+        v[0], v[1], v[7], v[6],                 // northwest    (20..23)
+        v[1], v[2], v[8], v[7],                 // west         (24..27)
+        v[2], v[3], v[9], v[8],                 // southwest    (28..31)
+        v[3], v[4], v[10], v[9],                // southwest    (32..35)
+    });
+    triangles[RenderingServer::ARRAY_NORMAL] = PackedVector3Array({
+        // top
+        Vector3(0, 1, 0),
+        Vector3(0, 1, 0),
+        Vector3(0, 1, 0),
+        Vector3(0, 1, 0),
+        Vector3(0, 1, 0),
+        Vector3(0, 1, 0),
+        // bottom
+        Vector3(0, -1, 0),
+        Vector3(0, -1, 0),
+        Vector3(0, -1, 0),
+        Vector3(0, -1, 0),
+        Vector3(0, -1, 0),
+        Vector3(0, -1, 0),
+        // east
+        Vector3(1, 0, 0),
+        Vector3(1, 0, 0),
+        Vector3(1, 0, 0),
+        Vector3(1, 0, 0),
+        // northeast
+        Vector3(0.5, 0, -Math_SQRT3_2),
+        Vector3(0.5, 0, -Math_SQRT3_2),
+        Vector3(0.5, 0, -Math_SQRT3_2),
+        Vector3(0.5, 0, -Math_SQRT3_2),
+        // northwest
+        Vector3(-0.5, 0, -Math_SQRT3_2),
+        Vector3(-0.5, 0, -Math_SQRT3_2),
+        Vector3(-0.5, 0, -Math_SQRT3_2),
+        Vector3(-0.5, 0, -Math_SQRT3_2),
+        // west
+        Vector3(-1, 0, 0),
+        Vector3(-1, 0, 0),
+        Vector3(-1, 0, 0),
+        Vector3(-1, 0, 0),
+        // southwest 
+        Vector3(-0.5, 0, Math_SQRT3_2),
+        Vector3(-0.5, 0, Math_SQRT3_2),
+        Vector3(-0.5, 0, Math_SQRT3_2),
+        Vector3(-0.5, 0, Math_SQRT3_2),
+        // southeast
+        Vector3(0.5, 0, Math_SQRT3_2),
+        Vector3(0.5, 0, Math_SQRT3_2),
+        Vector3(0.5, 0, Math_SQRT3_2),
+        Vector3(0.5, 0, Math_SQRT3_2),
+    });
+    triangles[RenderingServer::ARRAY_INDEX] =  PackedInt32Array({
 	// top
 	0, 5, 1,
 	1, 5, 2,
@@ -76,29 +137,41 @@ Ref<ArrayMesh> HexMapSpace::build_cell_mesh(bool triangles, bool lines) const {
 	8, 10, 11,
 	10, 8, 9,
 	// east
-	4,  5, 11,
-	11, 10, 4,
+        12 + 0, 12 + 1, 12 + 2,
+        12 + 2, 12 + 3, 12 + 0,
 	// northeast
-	5, 0,  6,
-	6, 11, 5,
+        16 + 0, 16 + 1, 16 + 2,
+        16 + 2, 16 + 3, 16 + 0,
 	// northwest
-	0, 1, 7,
-	7, 6, 0,
+        20 + 0, 20 + 1, 20 + 2,
+        20 + 2, 20 + 3, 20 + 0,
 	// west
-	1, 2, 8,
-	8, 7, 1,
+        24 + 0, 24 + 1, 24 + 2,
+        24 + 2, 24 + 3, 24 + 0,
 	// southwest
-	2, 3, 9,
-	9, 8, 2,
+        28 + 0, 28 + 1, 28 + 2,
+        28 + 2, 28 + 3, 28 + 0,
 	// southeast
-	3, 4, 10,
-	10, 9, 3,
+        32 + 0, 32 + 1, 32 + 2,
+        32 + 2, 32 + 3, 32 + 0,
+    });
+
+    // Also the lines surface
+    lines[RenderingServer::ARRAY_VERTEX] = v;
+    lines[RenderingServer::ARRAY_INDEX] = PackedInt32Array({
+        5, 4, 3, 2, 1, 0,       // top
+        11, 10, 9, 8, 7, 6,     // bottom
+        4, 5, 11, 10,           // east
+        0, 1, 7, 6,             // northwest
+        2, 3, 9, 8,             // southwest
     });
     // clang-format on
 
     Ref<ArrayMesh> mesh;
     mesh.instantiate();
-    mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, surface);
+    mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, triangles);
+    mesh->add_surface_from_arrays(Mesh::PRIMITIVE_LINES, lines);
+
     return mesh;
 }
 
@@ -165,7 +238,7 @@ Vector<HexMapCellId> HexMapSpace::get_cell_ids_in_local_quad(Vector3 a,
     // XXX pull these points in to make it easier to select SW/SE line
     float scale = 1.0 - padding;
     PackedVector3Array vertices =
-            build_cell_vertex_array(Vector3(scale, scale, scale));
+            get_cell_vertices(Vector3(scale, scale, scale));
 
     Geometry2D *geo = Geometry2D::get_singleton();
     Vector<HexMapCellId> out;

@@ -51,6 +51,9 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
         tile_node->set_center_y(true);
         update_mesh_library();
 
+        // XXX editor_cursor is getting hung up on center-y, when set to false
+        // on the IntNode editor_cursor doesn't line up with the real grid.
+
         // populate the tiled node with our cells
         for (const auto &iter : int_node->cell_map) {
             tile_node->set_cell(iter.key, iter.value);
@@ -95,12 +98,30 @@ void HexMapIntNodeEditorPlugin::update_mesh_library() {
         Ref<StandardMaterial3D> material;
         material.instantiate();
         material->set_albedo(iter.value.color);
-        material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-        material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
+        material->set_shading_mode(
+                StandardMaterial3D::SHADING_MODE_PER_VERTEX);
+        material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
+        // material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
+
+        Ref<StandardMaterial3D> line_material;
+        line_material.instantiate();
+        line_material->set_albedo(iter.value.color.inverted());
+        // outer_mat->set_on_top_of_alpha(); ->
+        line_material->set_transparency(
+                godot::BaseMaterial3D::TRANSPARENCY_DISABLED);
+        line_material->set_render_priority(
+                RenderingServer::MATERIAL_RENDER_PRIORITY_MAX);
+        line_material->set_flag(BaseMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
+
+        line_material->set_shading_mode(
+                StandardMaterial3D::SHADING_MODE_UNSHADED);
+        line_material->set_transparency(
+                StandardMaterial3D::TRANSPARENCY_ALPHA);
+        line_material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
 
         Ref<Mesh> mesh = space.build_cell_mesh();
         mesh->surface_set_material(0, material);
-
+        mesh->surface_set_material(1, line_material);
         mesh_library->create_item(iter.key);
         mesh_library->set_item_name(iter.key, iter.value.name);
         mesh_library->set_item_mesh(iter.key, mesh);
