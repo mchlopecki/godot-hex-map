@@ -1,5 +1,9 @@
 name: Check for Successful Build
-on: [pull_request, workflow_dispatch]
+on: pull_request
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   build:
