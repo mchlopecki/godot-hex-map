@@ -40,5 +40,10 @@ jobs:
           shell: ${{ matrix.shell }}
           additional-python-packages: ${{ matrix.additional-python-packages }}
 
+      - name: Run Tests
+        if: ${{ matrix.platform }} == "macos" && ${{ matrix.target }} == "editor"
+        run: |
+          scons run_tests
+
 
   

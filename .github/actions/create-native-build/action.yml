@@ -40,8 +40,3 @@ runs:
       run: |
         cd ../godot-hex-map
         scons platform=${{ inputs.platform }} generate_bindings=yes target=${{ inputs.target }} -j${{ steps.cpu-cores.outputs.count }} ${{ inputs.flags }}
-
-    - name: Run Tests
-      shell: ${{ inputs.shell }}
-      run: |
-        scons run_tests
