@@ -13,8 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["windows-2022",
-            # disabled pending fixes for `-Wchanges-meaning` errors
-            # "ubuntu-latest",
+            "ubuntu-latest",
             "macos-14"]
         target: ["editor", "template_debug", "template_release"]
         include:
