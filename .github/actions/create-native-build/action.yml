@@ -78,5 +78,5 @@ runs:
       id: cache-libgodot-save
       uses: actions/cache/save@v4
       with:
-        path: godot-cpp/bin/libgodot-cpp.macos.{{ inputs.target }}.dev.arm64.a
+        path: godot-cpp/bin/libgodot-cpp.macos.${{ inputs.target }}.dev.arm64.a
         key: ${{ steps.cache-libgodot-restore.outputs.cache-primary-key }}
