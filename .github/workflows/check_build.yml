@@ -36,6 +36,13 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Restore godot-cpp library
+        id: cache-libgodot-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: godot-cpp/bin
+          key: ${{ matrix.os }}-libgodot-${{ matrix.target }}-${{ hashFiles('.gitmodules') }}
+
       - name: Compile native plugin
         uses: ./.github/actions/create-native-build
         with:
@@ -43,6 +50,13 @@ jobs:
           target: ${{ matrix.target }}
           shell: ${{ matrix.shell }}
           additional-python-packages: ${{ matrix.additional-python-packages }}
+
+      - name: Save godot-cpp library
+        id: cache-libgodot-save
+        uses: actions/cache/save@v4
+        with:
+          path: godot-cpp/bin
+          key: ${{ steps.cache-libgodot-restore.outputs.cache-primary-key }}
 
       - name: Run Tests
         if: matrix.platform == 'macos' && matrix.target == 'editor'

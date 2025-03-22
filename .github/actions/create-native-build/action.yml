@@ -57,26 +57,9 @@ runs:
         python --version
         scons --version
 
-    - name: Get number of CPU cores
-      id: cpu-cores
-      uses: SimenB/github-actions-cpu-cores@v1
-
-    - name: Restore godot-cpp library
-      id: cache-libgodot-restore
-      uses: actions/cache/restore@v4
-      with:
-        path: godot-cpp/bin
-        key: ${{ runner.os }}-libgodot-${{ inputs.target }}-${{ hashFiles('.gitmodules') }}
-
     - name: Compilation
       shell: ${{ inputs.shell }}
       run: |
         cd ../godot-hex-map
-        scons platform=${{ inputs.platform }} generate_bindings=yes target=${{ inputs.target }} -j${{ steps.cpu-cores.outputs.count }} ${{ inputs.flags }}
+        scons platform=${{ inputs.platform }} generate_bindings=yes target=${{ inputs.target }} ${{ inputs.flags }}
 
-    - name: Save godot-cpp library
-      id: cache-libgodot-save
-      uses: actions/cache/save@v4
-      with:
-        path: godot-cpp/bin
-        key: ${{ steps.cache-libgodot-restore.outputs.cache-primary-key }}
