@@ -65,7 +65,7 @@ runs:
       id: cache-libgodot-restore
       uses: actions/cache/restore@v4
       with:
-        path: godot-cpp/bin/libgodot-cpp.macos.{{ inputs.target }}.dev.arm64.a
+        path: godot-cpp/bin/libgodot-cpp.macos.${{ inputs.target }}.dev.arm64.a
         key: ${{ runner.os }}-libgodot-${{ inputs.target }}-${{ hashFiles('.gitmodules') }}
 
     - name: Compilation
