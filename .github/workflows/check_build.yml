@@ -36,7 +36,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Restore godot-cpp library
+      - name: Restore godot-cpp build artifacts
         id: cache-libgodot-restore
         uses: actions/cache/restore@v4
         with:
@@ -51,17 +51,16 @@ jobs:
           shell: ${{ matrix.shell }}
           additional-python-packages: ${{ matrix.additional-python-packages }}
 
-      - name: Save godot-cpp library
-        id: cache-libgodot-save
-        uses: actions/cache/save@v4
-        with:
-          path: godot-cpp/bin
-          key: ${{ steps.cache-libgodot-restore.outputs.cache-primary-key }}
-
       - name: Run Tests
         if: matrix.platform == 'macos' && matrix.target == 'editor'
         run: |
           scons run_tests
 
+      - name: Save godot-cpp build artifacts
+        id: cache-libgodot-save
+        uses: actions/cache/save@v4
+        with:
+          path: godot-cpp/bin
+          key: ${{ steps.cache-libgodot-restore.outputs.cache-primary-key }}
 
   
