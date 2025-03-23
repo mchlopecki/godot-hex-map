@@ -27,11 +27,10 @@ jobs:
             # { platform: web, arch: wasm32, os: ubuntu-22.04 }
           ]
         target-type: [editor, template_debug, template_release]
-        float-precision: [single]
+        float-precision: [single, double]
 
     runs-on: ${{ matrix.target.os }}
     steps:
-      # Clone this repository
       - uses: actions/checkout@v4
         with:
           submodules: true
