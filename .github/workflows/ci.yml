@@ -75,7 +75,14 @@ jobs:
 
       - name: Run tests
         if: matrix.target.run_tests
-        run: scons verbose=1 run_tests
+        run: |
+          scons \
+            verbose=1 \
+            target=${{ matrix.target-type }} \
+            platform=${{ matrix.target.platform }} \
+            arch=${{ matrix.target.arch }} \
+            precision=${{ matrix.float-precision }} \
+            run_tests
 
       # Sign the binary (macOS only)
       # - name: Mac Sign
