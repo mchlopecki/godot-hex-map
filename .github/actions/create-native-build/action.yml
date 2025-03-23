@@ -54,12 +54,9 @@ runs:
         python --version
         scons --version
 
-    - name: Get number of CPU cores
-      id: cpu-cores
-      uses: SimenB/github-actions-cpu-cores@v1
-
     - name: Compilation
       shell: ${{ inputs.shell }}
       run: |
         cd ../godot-hex-map
-        scons platform=${{ inputs.platform }} generate_bindings=yes target=${{ inputs.target }} -j${{ steps.cpu-cores.outputs.count }} ${{ inputs.flags }}
+        scons platform=${{ inputs.platform }} generate_bindings=yes target=${{ inputs.target }} ${{ inputs.flags }}
+

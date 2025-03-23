@@ -5,6 +5,7 @@
 #include "hex_map/iter_axial.h"
 #include "hex_map/planes.h"
 #include <sys/signal.h>
+#include <algorithm>
 #include <climits>
 #include <csignal>
 

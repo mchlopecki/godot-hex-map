@@ -4,6 +4,7 @@
 #include "hex_map/hex_map.h"
 #include "hex_map/iter_cube.h"
 #include <sys/signal.h>
+#include <algorithm>
 #include <climits>
 #include <csignal>
 

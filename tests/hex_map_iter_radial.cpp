@@ -4,6 +4,7 @@
 #include "hex_map/hex_map.h"
 #include "hex_map/iter_radial.h"
 #include <sys/signal.h>
+#include <algorithm>
 #include <csignal>
 
 using CellId = HexMap::CellId;
