@@ -9,6 +9,11 @@ target_name = ARGUMENTS.pop("target_name", "libgdhexmap")
 
 env = SConscript("godot-cpp/SConstruct")
 
+# we use designated initializers, and MSVC requires c++20 to support them
+if env.get("is_msvc", False):
+    env["CXXFLAGS"].remove("/std:c++17")
+    env["CXXFLAGS"].append("/std:c++20")
+
 env.Append(CPPPATH=["src/"])
 sources = [
     Glob("src/*.cpp"),
@@ -50,10 +55,9 @@ Default(library)
 # but instead of erroring, it redirects those to an __abort_with_payload() call.
 # So the binary links, you execut it and it crashes.
 #
-# This shitty workaround, just recompile the sources and link them directly into
-# the test binary.
-
-godot_cpp = File(f"godot-cpp/bin/libgodot-cpp{env["suffix"]}.a")
+# This is a crappy workaround, just recompile the sources and link them
+# directly into the test binary.
+godot_cpp = File(f"godot-cpp/bin/libgodot-cpp{env['suffix']}.a")
 tests = env.Program(
     target='tests/tests',
     source=Glob("tests/*cpp") + sources,
