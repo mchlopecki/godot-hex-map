@@ -315,7 +315,7 @@ bool HexMapTiledNode::get_navigation_bake_only_navmesh_tiles() const {
 void HexMapTiledNode::set_cell(const HexMapCellId &cell_id,
         int tile,
         HexMapTileOrientation orientation) {
-    set_cell_item(cell_id, tile, orientation);
+    set_cell_item(cell_id, tile, static_cast<int>(orientation));
 }
 
 void HexMapTiledNode::set_cell_item(const HexMapCellId &cell_id,
@@ -385,7 +385,7 @@ void HexMapTiledNode::set_cell_item(const HexMapCellId &cell_id,
     return;
 }
 
-void HexMapTiledNode::_set_cell_item(const Ref<HexMapCellIdWrapper> cell_id,
+void HexMapTiledNode::_set_cell_item(const Ref<hex_bind::HexMapCellId> cell_id,
         int p_item,
         int p_rot) {
     ERR_FAIL_COND_MSG(!cell_id.is_valid(), "null cell id");
@@ -430,7 +430,7 @@ int HexMapTiledNode::get_cell_item(const HexMapCellId &cell_id) const {
 }
 
 int HexMapTiledNode::_get_cell_item(
-        const Ref<HexMapCellIdWrapper> p_cell_id) const {
+        const Ref<hex_bind::HexMapCellId> p_cell_id) const {
     ERR_FAIL_COND_V_MSG(!p_cell_id.is_valid(), -1, "null cell id");
     return get_cell_item(**p_cell_id);
 }
@@ -450,7 +450,7 @@ int HexMapTiledNode::get_cell_item_orientation(
 }
 
 int HexMapTiledNode::_get_cell_item_orientation(
-        const Ref<HexMapCellIdWrapper> p_cell_id) const {
+        const Ref<hex_bind::HexMapCellId> p_cell_id) const {
     ERR_FAIL_COND_V_MSG(!p_cell_id.is_valid(), 0, "null cell id");
     return get_cell_item_orientation(**p_cell_id);
 }
@@ -547,7 +547,7 @@ HexMapCellId HexMapTiledNode::local_to_cell_id(
     return space.get_cell_id(local_position);
 }
 
-Ref<HexMapCellIdWrapper> HexMapTiledNode::_local_to_cell_id(
+Ref<hex_bind::HexMapCellId> HexMapTiledNode::_local_to_cell_id(
         const Vector3 &p_local_position) const {
     return local_to_cell_id(p_local_position);
 }
@@ -557,7 +557,7 @@ Vector3 HexMapTiledNode::cell_id_to_local(const HexMapCellId &cell_id) const {
 }
 
 Vector3 HexMapTiledNode::_cell_id_to_local(
-        const Ref<HexMapCellIdWrapper> p_cell_id) const {
+        const Ref<hex_bind::HexMapCellId> p_cell_id) const {
     ERR_FAIL_COND_V_MSG(!p_cell_id.is_valid(), Vector3(), "null cell id");
     return cell_id_to_local(**p_cell_id);
 }
@@ -681,8 +681,8 @@ HexMapIterCube HexMapTiledNode::local_region_to_cell_ids(Vector3 p_a,
     return HexMapIterCube(p_a, p_b);
 }
 
-Ref<HexMapIterWrapper> HexMapTiledNode::_local_region_to_cell_ids(Vector3 p_a,
-        Vector3 p_b) const {
+Ref<hex_bind::HexMapIter>
+HexMapTiledNode::_local_region_to_cell_ids(Vector3 p_a, Vector3 p_b) const {
     return local_region_to_cell_ids(p_a, p_b);
 }
 
@@ -973,7 +973,7 @@ Array HexMapTiledNode::get_used_cells() const {
     int i = 0;
     for (const KeyValue<CellKey, Cell> &E : cell_map) {
         HexMapCellId cell_id(E.key);
-        a[i++] = static_cast<Ref<HexMapCellIdWrapper>>(cell_id);
+        a[i++] = static_cast<Ref<hex_bind::HexMapCellId>>(cell_id);
     }
 
     return a;
@@ -985,7 +985,7 @@ TypedArray<Vector3i> HexMapTiledNode::get_used_cells_by_item(
     for (const KeyValue<CellKey, Cell> &E : cell_map) {
         if ((int)E.value.item == p_item) {
             HexMapCellId cell_id(E.key);
-            a.push_back(static_cast<Ref<HexMapCellIdWrapper>>(cell_id));
+            a.push_back(static_cast<Ref<hex_bind::HexMapCellId>>(cell_id));
         }
     }
 

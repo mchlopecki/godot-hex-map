@@ -16,8 +16,8 @@ using namespace godot;
 
 void initialize_hexmap_module(ModuleInitializationLevel p_level) {
     if (p_level == godot::MODULE_INITIALIZATION_LEVEL_SCENE) {
-        ClassDB::register_class<HexMapCellIdWrapper>();
-        ClassDB::register_class<HexMapIterWrapper>();
+        ClassDB::register_class<hex_bind::HexMapCellId>();
+        ClassDB::register_class<hex_bind::HexMapIter>();
         ClassDB::register_abstract_class<HexMapNode>();
         ClassDB::register_class<HexMapTiledNode>();
         ClassDB::register_class<HexMapIntNode>();

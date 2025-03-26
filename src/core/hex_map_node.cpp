@@ -17,7 +17,7 @@ void HexMapNode::_bind_methods() {
 
     ClassDB::bind_method(D_METHOD("set_cell", "cell", "value", "orientation"),
             static_cast<void (HexMapNode::*)(
-                    const Ref<HexMapCellIdWrapper>, int, int)>(
+                    const Ref<hex_bind::HexMapCellId>, int, int)>(
                     &HexMapNode::set_cell));
     ClassDB::bind_method(D_METHOD("set_cells", "cells"),
             static_cast<void (HexMapNode::*)(const Array)>(
@@ -95,7 +95,7 @@ HexMapCellId HexMapNode::get_cell_id(Vector3 pos) const {
     return space.get_cell_id(pos);
 }
 
-void HexMapNode::set_cell(const Ref<HexMapCellIdWrapper> cell_id,
+void HexMapNode::set_cell(const Ref<hex_bind::HexMapCellId> cell_id,
         int p_item,
         int p_orientation) {
     set_cell(**cell_id, p_item, p_orientation);

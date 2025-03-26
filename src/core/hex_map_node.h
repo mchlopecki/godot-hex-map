@@ -76,7 +76,7 @@ public:
             HexMapTileOrientation orientation = 0) = 0;
 
     /// set a single cell
-    void set_cell(const Ref<HexMapCellIdWrapper> cell_id,
+    void set_cell(const Ref<hex_bind::HexMapCellId> cell_id,
             int p_item,
             int p_orientation = 0);
 

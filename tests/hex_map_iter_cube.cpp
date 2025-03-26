@@ -5,6 +5,7 @@
 #include "formatters.h"
 #include "godot_cpp/variant/vector3.hpp"
 #include <sys/signal.h>
+#include <algorithm>
 #include <climits>
 #include <csignal>
 
@@ -170,7 +171,7 @@ TEST_CASE("HexMapIterCube") {
 					CellId(-2,1,1),
 					CellId(2,-1,1),
 
-					// hex y = -1 
+					// hex y = -1
 					CellId(1,0,-1),
 					CellId(-1,0,-1),
 					CellId(0,1,-1),

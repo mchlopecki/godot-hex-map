@@ -28,7 +28,7 @@ public:
     constexpr HexMapTileOrientation(Value v) : value(v) {}
     constexpr HexMapTileOrientation(int v) : value(static_cast<Value>(v)) {}
     HexMapTileOrientation(Variant v) : value(static_cast<Value>((int)v)) {}
-    constexpr operator Value() const { return value; }
+    explicit inline operator int() const { return value; }
     constexpr bool operator==(HexMapTileOrientation other) const {
         return value == other.value;
     }
@@ -39,7 +39,6 @@ public:
     HexMapTileOrientation operator+(const HexMapTileOrientation &other) const;
 
     operator Basis() const;
-    operator int() const { return value; }
     operator Variant() const { return Variant(value); }
 
     /// rotate the orientation

@@ -164,16 +164,16 @@ public:
     Array get_cell_ids_v() const override;
 
     void set_cell_item(const HexMapCellId &cell_id, int p_item, int p_rot = 0);
-    void _set_cell_item(const Ref<HexMapCellIdWrapper> cell_id,
+    void _set_cell_item(const Ref<hex_bind::HexMapCellId> cell_id,
             int p_item,
             int p_rot = 0);
     void _set_cell_item_v(const Vector3i &cell_id, int p_item, int p_rot = 0);
     int get_cell_item(const HexMapCellId &cell_id) const;
-    int _get_cell_item(const Ref<HexMapCellIdWrapper> p_cell_id) const;
+    int _get_cell_item(const Ref<hex_bind::HexMapCellId> p_cell_id) const;
     int _get_cell_item_v(const Vector3i &) const;
     int get_cell_item_orientation(const HexMapCellId &cell_id) const;
     int _get_cell_item_orientation(
-            const Ref<HexMapCellIdWrapper> cell_id) const;
+            const Ref<hex_bind::HexMapCellId> cell_id) const;
 
     // used by the editor to conceal cells for the editor cursor
     // value is not saved
@@ -182,11 +182,11 @@ public:
     bool set_cells_visibility_callback(Array cells);
 
     HexMapCellId local_to_cell_id(const Vector3 &local_position) const;
-    Ref<HexMapCellIdWrapper> _local_to_cell_id(
+    Ref<hex_bind::HexMapCellId> _local_to_cell_id(
             const Vector3 &p_local_position) const;
     Vector3 cell_id_to_local(const HexMapCellId &cell_id) const;
     Vector3 _cell_id_to_local(
-            const Ref<HexMapCellIdWrapper> p_local_position) const;
+            const Ref<hex_bind::HexMapCellId> p_local_position) const;
 
     // given a quad defined by four points on one of the coordinate axis,
     // return the cellids that fall within that quad.
@@ -199,7 +199,8 @@ public:
     HexMapIterCube local_region_to_cell_ids(Vector3,
             Vector3,
             Planes = Planes::All) const;
-    Ref<HexMapIterWrapper> _local_region_to_cell_ids(Vector3 p_local_point_a,
+    Ref<hex_bind::HexMapIter> _local_region_to_cell_ids(
+            Vector3 p_local_point_a,
             Vector3 p_local_point_b) const;
 
     Array get_used_cells() const;

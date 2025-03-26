@@ -7,6 +7,7 @@ extension_api.json
 .scons-cache
 .DS_Store
 .nobackup*
+.scons_cache
 
 # build dlls
 demo/addons/hexmap/lib/*
@@ -36,4 +37,3 @@ export_presets.cfg
 # When configure fails, SCons outputs these
 config.log
 .sconf_temp
-

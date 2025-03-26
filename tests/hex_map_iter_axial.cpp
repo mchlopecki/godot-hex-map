@@ -4,6 +4,7 @@
 #include "doctest.h"
 #include "formatters.h"
 #include <sys/signal.h>
+#include <algorithm>
 #include <climits>
 #include <csignal>
 

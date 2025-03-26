@@ -6,7 +6,9 @@
 
 using namespace godot;
 
-class HexMapIterWrapper;
+namespace hex_bind {
+class HexMapIter;
+}
 
 // generic interface for an iterator to be wrapped for gdscript
 class HexMapIter {
@@ -23,20 +25,19 @@ public:
     virtual HexMapCellId _iter_get() const = 0;
 
     // clone necessary to wrap for gdscript
-    operator Ref<HexMapIterWrapper>() const;
+    operator Ref<hex_bind::HexMapIter>() const;
     virtual HexMapIter *clone() const = 0;
 };
 
-class HexMapIterWrapper : public godot::RefCounted {
-    using Inner = HexMapIter;
-    using HexMapIter = HexMapIterWrapper;
-
+namespace hex_bind {
+class HexMapIter : public godot::RefCounted {
     GDCLASS(HexMapIter, RefCounted);
+    using Inner = ::HexMapIter;
 
 public:
-    HexMapIterWrapper() {};
-    HexMapIterWrapper(const Inner &iter) : iter(iter.clone()) {};
-    ~HexMapIterWrapper() {
+    HexMapIter() {};
+    HexMapIter(const Inner &iter) : iter(iter.clone()) {};
+    ~HexMapIter() {
         if (iter != nullptr) {
             delete iter;
         }
@@ -48,7 +49,7 @@ public:
     // GDScript custom iterator functions
     bool _iter_init(Variant _arg);
     bool _iter_next(Variant _arg);
-    Ref<HexMapCellIdWrapper> _iter_get(Variant _arg);
+    Ref<hex_bind::HexMapCellId> _iter_get(Variant _arg);
 
 protected:
     static void _bind_methods();
@@ -56,3 +57,4 @@ protected:
 private:
     Inner *iter = nullptr;
 };
+} //namespace hex_bind
