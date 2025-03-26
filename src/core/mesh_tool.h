@@ -33,7 +33,7 @@ public:
     };
 
     HexMapMeshTool(RID scenario = RID(), uint64_t object_id = 0) :
-            scenario(scenario), object_id(object_id){};
+            scenario(scenario), object_id(object_id) {};
     ~HexMapMeshTool();
 
     /// Set the scenario to add meshes to

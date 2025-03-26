@@ -114,7 +114,7 @@ Ref<ArrayMesh> HexMapSpace::build_cell_mesh() const {
         Vector3(-1, 0, 0),
         Vector3(-1, 0, 0),
         Vector3(-1, 0, 0),
-        // southwest 
+        // southwest
         Vector3(-0.5, 0, Math_SQRT3_2),
         Vector3(-0.5, 0, Math_SQRT3_2),
         Vector3(-0.5, 0, Math_SQRT3_2),

@@ -45,7 +45,7 @@ func _ready():
 	var d := global * local * cell * mesh
 	print("global.inverse() * d = ", global.inverse() * d)
 	print("local.inverse() * global.inverse() * d = ", local.inverse() * global.inverse() * d)
-	
+
 
 	# print("HexMap baked meshes ", hex_map.get_bake_meshes())
 	pass
