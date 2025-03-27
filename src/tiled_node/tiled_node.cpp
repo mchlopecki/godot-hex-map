@@ -412,8 +412,8 @@ HexMapNode::CellInfo HexMapTiledNode::get_cell(
     if (current_cell == nullptr) {
         return CellInfo{ .value = INVALID_CELL_ITEM };
     }
-    return CellInfo{ .value = current_cell->item,
-        .orientation = current_cell->rot };
+    return CellInfo{ .value = static_cast<int>(current_cell->item),
+        .orientation = HexMapTileOrientation(current_cell->rot) };
 }
 
 int HexMapTiledNode::get_cell_item(const HexMapCellId &cell_id) const {
