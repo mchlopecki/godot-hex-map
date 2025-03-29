@@ -98,21 +98,15 @@ void HexMapIntNodeEditorPlugin::update_mesh_library() {
         Ref<StandardMaterial3D> material;
         material.instantiate();
         material->set_albedo(iter.value.color);
-        material->set_shading_mode(
-                StandardMaterial3D::SHADING_MODE_PER_VERTEX);
-        material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
+        if (iter.value.color.a < 1.0) {
+            material->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
+        }
+        //material->set_shading_mode(
+        //        StandardMaterial3D::SHADING_MODE_PER_VERTEX);
         // material->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
-
         Ref<StandardMaterial3D> line_material;
         line_material.instantiate();
         line_material->set_albedo(iter.value.color.inverted());
-        // outer_mat->set_on_top_of_alpha(); ->
-        line_material->set_transparency(
-                godot::BaseMaterial3D::TRANSPARENCY_DISABLED);
-        line_material->set_render_priority(
-                RenderingServer::MATERIAL_RENDER_PRIORITY_MAX);
-        line_material->set_flag(BaseMaterial3D::FLAG_DISABLE_DEPTH_TEST, true);
-
         line_material->set_shading_mode(
                 StandardMaterial3D::SHADING_MODE_UNSHADED);
         line_material->set_transparency(

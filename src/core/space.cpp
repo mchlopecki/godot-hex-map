@@ -159,18 +159,18 @@ Ref<ArrayMesh> HexMapSpace::build_cell_mesh() const {
     // Also the lines surface
     lines[RenderingServer::ARRAY_VERTEX] = v;
     lines[RenderingServer::ARRAY_INDEX] = PackedInt32Array({
-        5, 4, 3, 2, 1, 0,       // top
-        11, 10, 9, 8, 7, 6,     // bottom
-        4, 5, 11, 10,           // east
-        0, 1, 7, 6,             // northwest
-        2, 3, 9, 8,             // southwest
+        5, 4, 3, 2, 1, 0, 5,    // top
+        11, 10, 9, 8, 7, 6, 11, // bottom
+        11, 5, 4, 10,           // east
+        9, 3, 2, 8,             // southwest
+        7, 1, 0, 6,             // northwest
     });
     // clang-format on
 
     Ref<ArrayMesh> mesh;
     mesh.instantiate();
     mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, triangles);
-    mesh->add_surface_from_arrays(Mesh::PRIMITIVE_LINES, lines);
+    mesh->add_surface_from_arrays(Mesh::PRIMITIVE_LINE_STRIP, lines);
 
     return mesh;
 }
