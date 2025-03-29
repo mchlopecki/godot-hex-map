@@ -111,17 +111,23 @@ protected:
     /// node being edited
     HexMapNode *hex_map = nullptr;
 
+    /// gui bottom panel holding all user controls for this plugin
+    Control *bottom_panel = nullptr;
+
+    /// cursor mesh & grid
     EditorCursor *editor_cursor = nullptr;
 
     /// selection manager, contains & controls the list of currently selected
     /// tiles
     SelectionManager *selection_manager = nullptr;
 
-    /// begining poing of an ongoing selection
+    /// start point of an ongoing selection
     Vector3 selection_anchor;
+
     /// Array of Vector3i encoded HexMapCellIds representing last active
     /// selection
     Array last_selection;
+
     /// Array of previous cell contents; used during move selection
     Array move_source_cells;
 

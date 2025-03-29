@@ -38,9 +38,6 @@ private:
     /// colors defined by `int_node->get_cell_types()`.
     Ref<MeshLibrary> mesh_library;
 
-    /// gui bottom panel holding all user controls for this plugin
-    Control *bottom_panel = nullptr;
-
     /// gui cell type selector widget
     Node *type_selector = nullptr;
 

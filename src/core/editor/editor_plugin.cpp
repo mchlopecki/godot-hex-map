@@ -353,6 +353,11 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
     // it.
     if (key_event.is_valid() && key_event->is_pressed() && !escape_pressed &&
             handle_keypress(key_event) == EditorPlugin::AFTER_GUI_INPUT_STOP) {
+        assert(bottom_panel != nullptr &&
+                "EditorPlugin::bottom_panel not set");
+        // must accept the event here, otherwise another control in the
+        // viewport tree may attempt to act on it
+        bottom_panel->accept_event();
         return EditorPlugin::AFTER_GUI_INPUT_STOP;
     }
 
@@ -731,6 +736,7 @@ void HexMapNodeEditorPlugin::edit_plane_set_axis(EditorCursor::EditAxis axis) {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
     edit_axis = axis;
     editor_cursor->set_axis(axis);
+    editor_cursor->set_depth(edit_axis_depth[axis]);
     emit_signal("edit_plane_changed", axis, edit_axis_depth[axis]);
 }
 
@@ -801,6 +807,40 @@ EditorPlugin::AfterGUIInput HexMapNodeEditorPlugin::handle_keypress(
         edit_plane_set_axis(EditorCursor::AXIS_S);
         return EditorPlugin::AFTER_GUI_INPUT_STOP;
     }
+    if (ED_IS_SHORTCUT("hex_map/edit_plane_rotate_cw", event)) {
+        switch (edit_axis) {
+            case EditAxis::AXIS_Y:
+                edit_plane_set_axis(EditAxis::AXIS_R);
+                break;
+            case EditAxis::AXIS_Q:
+                edit_plane_set_axis(EditAxis::AXIS_S);
+                break;
+            case EditAxis::AXIS_R:
+                edit_plane_set_axis(EditAxis::AXIS_Q);
+                break;
+            case EditAxis::AXIS_S:
+                edit_plane_set_axis(EditAxis::AXIS_R);
+                break;
+        }
+        return EditorPlugin::AFTER_GUI_INPUT_STOP;
+    }
+    if (ED_IS_SHORTCUT("hex_map/edit_plane_rotate_ccw", event)) {
+        switch (edit_axis) {
+            case EditAxis::AXIS_Y:
+                edit_plane_set_axis(EditAxis::AXIS_S);
+                break;
+            case EditAxis::AXIS_Q:
+                edit_plane_set_axis(EditAxis::AXIS_R);
+                break;
+            case EditAxis::AXIS_R:
+                edit_plane_set_axis(EditAxis::AXIS_S);
+                break;
+            case EditAxis::AXIS_S:
+                edit_plane_set_axis(EditAxis::AXIS_Q);
+                break;
+        }
+        return EditorPlugin::AFTER_GUI_INPUT_STOP;
+    }
     if (ED_IS_SHORTCUT("hex_map/edit_plane_increment", event)) {
         int depth = (int)edit_axis_depth[editor_cursor->get_axis()] + 1;
         edit_plane_set_depth(depth);
@@ -838,6 +878,12 @@ EditorPlugin::AfterGUIInput HexMapNodeEditorPlugin::handle_keypress(
     if (ED_IS_SHORTCUT("hex_map/selection_clone", event)) {
         selection_clone();
         return EditorPlugin::AFTER_GUI_INPUT_STOP;
+    }
+    if (ED_IS_SHORTCUT("hex_map/focus", event)) {
+        // XXX move camera to focus selection, or without selection, focus
+        // cursor position
+        // support double press event to center cursor even with selection
+        // See CanvasItemEditor::_focus_selection()
     }
 
     return EditorPlugin::AFTER_GUI_INPUT_PASS;

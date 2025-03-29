@@ -276,7 +276,7 @@ void EditorCursor::set_axis(EditAxis axis) {
             grid_mesh_instance, grid_mesh_transform);
 
     edit_axis = axis;
-    update();
+    update(true);
 }
 
 void EditorCursor::set_depth(int depth) {
@@ -298,7 +298,7 @@ void EditorCursor::set_depth(int depth) {
             edit_plane.d = depth * cell_scale.x * 1.5;
             break;
     }
-    update();
+    update(true);
 }
 
 // create a mesh and draw a grid of hexagonal cells on it
