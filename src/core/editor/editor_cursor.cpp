@@ -212,8 +212,8 @@ bool EditorCursor::update(const Camera3D *camera,
         return false;
     }
     pointer_cell = cell;
-    UtilityFunctions::print("editor cursor " + pointer_pos + " in cell " +
-            cell + " with center " + parent_space.get_cell_center(cell));
+    // UtilityFunctions::print("editor cursor " + pointer_pos + " in cell " +
+    //         cell + " with center " + parent_space.get_cell_center(cell));
 
     transform_meshes();
 

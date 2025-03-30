@@ -24,7 +24,6 @@ public:
     ~HexMapIntNodeEditorPlugin() {};
 
 protected:
-    // void _notification(int p_what);
     static void _bind_methods() {};
 
 private:
@@ -38,9 +37,6 @@ private:
     /// colors defined by `int_node->get_cell_types()`.
     Ref<MeshLibrary> mesh_library;
 
-    /// gui cell type selector widget
-    Node *type_selector = nullptr;
-
     /// update the `MeshLibrary` used in the `HexMapTiledNode` editor display
     void update_mesh_library();
 
@@ -52,6 +48,9 @@ private:
 
     /// rebuild the cursor using the specific selected tile type
     void rebuild_cursor(int type);
+    // bottom panel signal handlers
+    void set_cell_type(int id, String name, Color color);
+    void delete_cell_type(int id);
 };
 
 #endif

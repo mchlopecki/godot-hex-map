@@ -635,10 +635,6 @@ void HexMapNodeEditorPlugin::_edit(Object *p_object) {
         return;
     }
 
-    Ref<PackedScene> panel_scene = ResourceLoader::get_singleton()->load(
-            "res://addons/hexmap/gui/"
-            "hex_map_editor_bottom_panel.tscn");
-
     RID scenario = hex_map->get_world_3d()->get_scenario();
 
     selection_manager = new SelectionManager(scenario);

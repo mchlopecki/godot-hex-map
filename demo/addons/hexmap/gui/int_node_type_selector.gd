@@ -5,27 +5,30 @@ extends VBoxContainer
 const cell_type_button: PackedScene = preload("int_node_cell_type_button.tscn")
 const cell_type_form: PackedScene = preload("int_node_cell_type_form.tscn")
 
-signal types_changed
-signal selection_changed(value)
+# top-level node of the bottom panel Control, used to emit signals without 
+# bubbling nightmares
+@export var event_bus : Node
 
-@export var int_map: HexMapInt :
+@export var cell_types : Array :
 	set(value):
-		if int_map != value:
-			int_map = value
-			rebuild_type_list()
+		cell_types = value
+		rebuild_type_list()
+
 @export var selected_type: int = -1 :
 	set(value):
 		if value != selected_type:
 			selected_type = value
-			emit_signal("selection_changed", value)
+			event_bus.type_changed.emit()
+
 var context_menu_node: Node
 
 func rebuild_type_list() -> void:
 	for child in %CellTypes.get_children():
 		child.queue_free()
-	var types = int_map.get_cell_types()
-	types.sort_custom(func(a, b): return a.name.naturalnocasecmp_to(b.name) < 0)
-	for type in types:
+
+	cell_types.sort_custom(func(a, b):
+		return a.name.naturalnocasecmp_to(b.name) < 0)
+	for type in cell_types:
 		var cell = cell_type_button.instantiate()
 		cell.value = type.value
 		cell.type = type.name
@@ -62,18 +65,13 @@ func context_menu_index_pressed(index: int) -> void:
 		0:
 			edit_type(context_menu_node)
 		1:
-			int_map.remove_cell_type(context_menu_node.value)
+			event_bus.delete_type.emit(context_menu_node.value)
 			rebuild_type_list()
 		_:
 			push_error("Unknown context menu index ", index)
 
 func cell_type_form_submitted(value: int, name: String, color: Color) -> void:
-	if value < 0:
-		int_map.add_cell_type(name, color)
-	else:
-		int_map.update_cell_type(value, name, color)
-	types_changed.emit()
-	rebuild_type_list()
+	event_bus.update_type.emit(value, name, color)
 
 func append_new_type_form() -> void:
 	var form := cell_type_form.instantiate()

@@ -55,18 +55,11 @@ bool HexMapIntNode::_set(const StringName &p_name, const Variant &p_value) {
     if (name == "cell_types") {
         const Array types = p_value;
         cell_types.clear();
-        max_type = 0;
+        type_id_max = 0;
         int count = types.size();
         for (int i = 0; i < count; i++) {
             const Dictionary &type = types[i];
-            unsigned value = type["value"];
-            cell_types[value] = CellType{
-                .name = type["name"],
-                .color = type["color"],
-            };
-            if (value >= max_type) {
-                max_type = value + 1;
-            }
+            set_cell_type(type["value"], type["name"], type["color"]);
         }
         return true;
     } else if (name == "cells") {
@@ -94,24 +87,35 @@ bool HexMapIntNode::_set(const StringName &p_name, const Variant &p_value) {
     return false;
 }
 
-unsigned HexMapIntNode::_add_cell_type(const String name, const Color color) {
-    unsigned id = max_type++;
-    cell_types.insert(id, CellType{ .name = name, .color = color });
-    return id;
+void HexMapIntNode::remove_cell_type(unsigned id) {
+    cell_types.erase(id);
+#ifdef TOOLS_ENABLED
+    emit_signal("editor_plugin_types_changed");
+#endif // TOOLS_ENABLED
 }
 
-void HexMapIntNode::remove_cell_type(unsigned id) { cell_types.erase(id); }
-
-bool HexMapIntNode::update_cell_type(unsigned id,
+unsigned HexMapIntNode::set_cell_type(unsigned id,
         const String name,
         const Color color) {
-    struct CellType *entry = cell_types.getptr(id);
-    ERR_FAIL_NULL_V_MSG(
-            entry, false, "HexMapIntNode: unknown cell type " + itos(id));
+    if (id == TypeIdNext) {
+        id = type_id_max + 1;
+    }
+    if (id > type_id_max) {
+        type_id_max = id;
+    }
 
-    entry->name = name;
-    entry->color = color;
-    return true;
+    struct CellType *entry = cell_types.getptr(id);
+    if (entry != nullptr) {
+        entry->name = name;
+        entry->color = color;
+    } else {
+        cell_types.insert(id, CellType{ .name = name, .color = color });
+    }
+
+#ifdef TOOLS_ENABLED
+    emit_signal("editor_plugin_types_changed");
+#endif // TOOLS_ENABLED
+    return id;
 }
 
 Array HexMapIntNode::_get_cell_types() const {
@@ -129,17 +133,17 @@ Array HexMapIntNode::_get_cell_types() const {
 void HexMapIntNode::_bind_methods() {
     ClassDB::bind_method(
             D_METHOD("get_cell_types"), &HexMapIntNode::_get_cell_types);
-    ClassDB::bind_method(D_METHOD("add_cell_type", "name", "color"),
-            &HexMapIntNode::_add_cell_type);
     ClassDB::bind_method(D_METHOD("remove_cell_type", "id"),
             &HexMapIntNode::remove_cell_type);
-    ClassDB::bind_method(
-            D_METHOD("update_cell_type", "value", "name", "color"),
-            &HexMapIntNode::update_cell_type);
+    ClassDB::bind_method(D_METHOD("set_cell_type", "id", "name", "color"),
+            &HexMapIntNode::set_cell_type);
+    BIND_CONSTANT(TypeIdNext);
+
 #ifdef TOOLS_ENABLED
     ADD_SIGNAL(MethodInfo("editor_plugin_cell_changed",
             PropertyInfo(Variant::VECTOR3I, "cell"),
             PropertyInfo(Variant::INT, "type")));
+    ADD_SIGNAL(MethodInfo("editor_plugin_types_changed"));
 #endif // TOOLS_ENABLED
 }
 

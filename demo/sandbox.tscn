@@ -91,7 +91,7 @@ cells = PackedByteArray("+/8AAAAAAAD6/wEAAAAAAPn/AgAAAAAA+f8DAAAAAAD5/wQAAAAAAPj
 metadata/_editor_state_ = {
 "__version": 1,
 "edit_axis": 0,
-"edit_axis_depth": [1, 0, 0, 0]
+"edit_axis_depth": [0, 0, 0, 0]
 }
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]

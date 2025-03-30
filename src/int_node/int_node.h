@@ -25,14 +25,15 @@ public:
     };
     using TypeMap = HashMap<unsigned, CellType>;
 
-    /// define a new cell type to be used in the map
-    unsigned _add_cell_type(const String, const Color);
+    /// Argument to set_cell_type to have the cell type id assigned
+    /// automatically
+    static const int TypeIdNext = -1;
+
+    /// insert or update a cell type
+    unsigned set_cell_type(unsigned id, const String, const Color);
 
     /// remove a tile type
     void remove_cell_type(unsigned id);
-
-    /// update an existing cell type
-    bool update_cell_type(unsigned id, const String, const Color);
 
     /// get a const reference to the types set for this hexmap node
     inline const TypeMap &get_cell_types() const { return cell_types; };
@@ -58,7 +59,7 @@ protected:
     bool _set(const StringName &p_name, const Variant &p_value);
 
 private:
-    unsigned max_type;
+    unsigned type_id_max;
     TypeMap cell_types;
     HashMap<HexMapCellId::Key, uint16_t> cell_map;
 };

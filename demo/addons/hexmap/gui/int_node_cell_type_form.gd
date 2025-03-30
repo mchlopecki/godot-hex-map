@@ -7,7 +7,7 @@ extends HBoxContainer
 signal submitted(value:int, type: String, color: Color)
 signal cancelled
 
-@export var value := -1
+@export var value := HexMapInt.TypeIdNext
 @export var type : String :
 	set(value):
 		type = value

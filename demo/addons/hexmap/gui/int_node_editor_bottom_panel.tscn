@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://bigls27b0vip1"]
+[gd_scene load_steps=17 format=3 uid="uid://bigls27b0vip1"]
 
 [ext_resource type="Texture2D" uid="uid://dew2xbw2uvpy2" path="res://addons/hexmap/icons/Paint.svg" id="1_62m1a"]
 [ext_resource type="Script" path="res://addons/hexmap/gui/int_node_editor_bottom_panel.gd" id="1_h3koj"]
@@ -10,6 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://dwstkvj1mrmt3" path="res://addons/hexmap/icons/RotateRight.svg" id="7_2aq7k"]
 [ext_resource type="Texture2D" uid="uid://vrx8uwcvnqhs" path="res://addons/hexmap/icons/Search.svg" id="8_w81nb"]
 [ext_resource type="Texture2D" uid="uid://dbrg57lmmg1vq" path="res://addons/hexmap/icons/FileThumbnail.svg" id="9_dwaqi"]
+[ext_resource type="PackedScene" uid="uid://dqqtbvcoumwmo" path="res://addons/hexmap/gui/axis_selection_dropdown.tscn" id="9_ns57a"]
 [ext_resource type="Texture2D" uid="uid://douar0i3bcce3" path="res://addons/hexmap/icons/FileList.svg" id="10_dw6ox"]
 [ext_resource type="PackedScene" uid="uid://7do5qk8fxmuy" path="res://addons/hexmap/gui/zoom_widget.tscn" id="11_6xxn2"]
 [ext_resource type="PackedScene" uid="uid://bxi5mdivmmoos" path="res://addons/hexmap/gui/int_node_type_selector.tscn" id="12_ijmfj"]
@@ -91,11 +92,9 @@ flat = true
 [node name="VSeparator3" type="VSeparator" parent="ToolbarHBox/HBoxContainer3"]
 layout_mode = 2
 
-[node name="OptionButton" type="OptionButton" parent="ToolbarHBox/HBoxContainer3"]
+[node name="AxisDropdown" parent="ToolbarHBox/HBoxContainer3" instance=ExtResource("9_ns57a")]
+unique_name_in_owner = true
 layout_mode = 2
-item_count = 1
-popup/item_0/text = "Y-Axis"
-popup/item_0/id = 0
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="ToolbarHBox"]
 visible = false
@@ -127,7 +126,7 @@ theme_override_constants/separation = 10
 unique_name_in_owner = true
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
-placeholder_text = "Filter Meshes"
+placeholder_text = "Filter Types"
 clear_button_enabled = true
 right_icon = ExtResource("8_w81nb")
 
