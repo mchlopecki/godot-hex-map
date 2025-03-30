@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=4 uid="uid://bt0soj2wvavie"]
+[gd_scene load_steps=12 format=4 uid="uid://bt0soj2wvavie"]
 
 [ext_resource type="Script" path="res://sandbox.gd" id="1_yje1l"]
 [ext_resource type="PackedScene" uid="uid://wcaukixhlbo2" path="res://RayPickerCamera/ray_picker_camera.tscn" id="2_1one6"]
@@ -17,7 +17,8 @@ polygons = [PackedInt32Array(4, 3, 0), PackedInt32Array(0, 3, 2), PackedInt32Arr
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_rjhbt"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_k812w"]
-albedo_color = Color(1, 0, 1, 1)
+transparency = 1
+albedo_color = Color(1, 0, 1, 0.521569)
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_vqplx"]
 material = SubResource("StandardMaterial3D_k812w")
@@ -26,6 +27,13 @@ bottom_radius = 1.0
 height = 1.0
 radial_segments = 6
 rings = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_grwnq"]
+albedo_color = Color(0.68, 0.570973, 0.4284, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_xq5cy"]
+material = SubResource("StandardMaterial3D_grwnq")
+size = Vector3(10, 0.2, 10)
 
 [node name="Sandbox" type="Node3D"]
 script = ExtResource("1_yje1l")
@@ -62,9 +70,34 @@ visible = false
 mesh = SubResource("CapsuleMesh_rjhbt")
 
 [node name="HexMapInt" type="HexMapInt" parent="."]
-cell_radius = 1.154
-cell_center_y = false
+cell_types = [{
+"color": Color(0.450791, 0.714603, 0.9108, 1),
+"name": "terrain_water",
+"value": 0
+}, {
+"color": Color(0.767992, 0.906769, 0.504399, 1),
+"name": "terrain_land",
+"value": 1
+}, {
+"color": Color(0.929412, 0.654902, 0.670588, 0.52549),
+"name": "spawn_ship",
+"value": 2
+}, {
+"color": Color(0.972549, 0.870588, 0.278431, 0.741176),
+"name": "spawn_reward",
+"value": 3
+}]
+cells = PackedByteArray("+/8AAAAAAAD6/wEAAAAAAPn/AgAAAAAA+f8DAAAAAAD5/wQAAAAAAPj/BQAAAAAA+f8FAAAAAAD5/wYAAAAAAPr/BgAAAAAA+/8GAAAAAAD8/wYAAAAAAP3/BQAAAAAA/v8FAAAAAAD+/wQAAAAAAP7/AwAAAAEA/v8CAAAAAQD9/wIAAAABAPz/AgAAAAEA/P8BAAAAAQD7/wIAAAABAPr/AwAAAAEA+v8EAAAAAQD6/wUAAAAAAPv/BQAAAAAA/P8FAAAAAAD9/wQAAAAAAP3/AwAAAAEA+/8DAAAAAQD7/wQAAAABAPz/AwAAAAEA/P8EAAAAAQD//wQAAAAAAAAAAwAAAAAAAAACAAAAAQD//wIAAAABAP//BQAAAAAAAAAEAAAAAAABAAMAAAAAAP//AwAAAAEA/f8GAAAAAAD8/wcAAAAAAPv/BwAAAAAA+v8HAAAAAAD+/wYAAAAAAP//BgAAAAAA//8BAAAAAQD+/wEAAAABAAAAAQAAAAEA/v8AAAAAAQD9/wEAAAABAP3/AAAAAAEA/P8AAAAAAQD7/wEAAAABAPz/AgABAAEA/P8DAAEAAQD9/wIAAQABAP7/AgABAAEA//8BAAEAAQD+/wEAAQABAP7/AAABAAEA/f8AAAEAAQD8/wAAAQABAP3///8BAAEA/f8BAAEAAQD+////AgABAP7/AAACAAEA/v8BAAIAAQD//wAAAgABAP//AQACAAEAAAAAAAIAAQD9/wAAAgABAAAAAQABAAEAAAAAAAEAAQABAAAAAQABAAEA//8BAAEAAQD+/wEAAQAAAP//AQABAAAA/v8BAAEA/////wEAAQD///7/AQABAP////8CAAEAAAD//wIAAQAAAP7/AgABAP///v8CAAEA/v/+/wIAAQABAP//AgABAAEA/v8CAAEA+P8HAAEAAgD4/wYAAAAAAPf/BwAAAAAA9v8IAAAAAAD2/wkAAAAAAPf/CQAAAAAA+P8IAAAAAAD5/wgAAAAAAPn/BwAAAAAA+P8HAAAAAAD3/wgAAAAAAPj/CQAAAAAA+f8JAAAAAAD6/wkAAAAAAPv/CAAAAAAA+v8IAAAAAAD8/wgAAAAAAP3/CAAAAAAA/v8HAAAAAAD9/wkAAAAAAP7/CQAAAAAA//8IAAAAAAAAAAgAAAAAAAEABwAAAAAAAQAGAAAAAAAAAAYAAAAAAAAABQAAAAAAAQAEAAAAAAACAAYAAAAAAP//BwAAAAAA/v8IAAAAAAD8/wkAAAAAAPv/CQAAAAAAAAAHAAAAAAD/////AwADAP3/BwAAAAAA//8GAAEAAgD7/wkAAQACAA==")
+metadata/_editor_state_ = {
+"__version": 1,
+"edit_axis": 0,
+"edit_axis_depth": [1, 0, 0, 0]
+}
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.6362, 0, 0)
 mesh = SubResource("CylinderMesh_vqplx")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
+mesh = SubResource("BoxMesh_xq5cy")

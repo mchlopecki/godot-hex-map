@@ -1,6 +1,7 @@
 #pragma once
 
 #include <godot_cpp/classes/wrapped.hpp>
+#include <godot_cpp/core/property_info.hpp>
 #include <godot_cpp/templates/hash_map.hpp>
 #include <godot_cpp/variant/color.hpp>
 
@@ -52,9 +53,12 @@ public:
 protected:
     // void _notification(int p_what);
     static void _bind_methods();
+    void _get_property_list(List<PropertyInfo> *p_list) const;
+    bool _get(const StringName &p_name, Variant &r_ret) const;
+    bool _set(const StringName &p_name, const Variant &p_value);
 
 private:
     unsigned max_type;
     TypeMap cell_types;
-    HashMap<HexMapCellId::Key, int> cell_map;
+    HashMap<HexMapCellId::Key, uint16_t> cell_map;
 };

@@ -879,12 +879,6 @@ EditorPlugin::AfterGUIInput HexMapNodeEditorPlugin::handle_keypress(
         selection_clone();
         return EditorPlugin::AFTER_GUI_INPUT_STOP;
     }
-    if (ED_IS_SHORTCUT("hex_map/focus", event)) {
-        // XXX move camera to focus selection, or without selection, focus
-        // cursor position
-        // support double press event to center cursor even with selection
-        // See CanvasItemEditor::_focus_selection()
-    }
 
     return EditorPlugin::AFTER_GUI_INPUT_PASS;
 }
