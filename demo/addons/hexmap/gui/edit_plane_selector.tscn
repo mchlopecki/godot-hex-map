@@ -1,0 +1,38 @@
+[gd_scene load_steps=2 format=3 uid="uid://c4a26oqnkwm02"]
+
+[ext_resource type="Script" path="res://addons/hexmap/gui/edit_plane_selector.gd" id="1_gmjvk"]
+
+[node name="EditPlaneSelector" type="HBoxContainer"]
+script = ExtResource("1_gmjvk")
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 2
+text = "Edit
+"
+
+[node name="AxisDropdown" type="OptionButton" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+selected = 0
+item_count = 4
+popup/item_0/text = "Y-Plane"
+popup/item_0/id = 0
+popup/item_1/text = "Q-Plane"
+popup/item_1/id = 1
+popup/item_2/text = "R-Plane"
+popup/item_2/id = 2
+popup/item_3/text = "S-Plane"
+popup/item_3/id = 3
+
+[node name="DepthLabelButton" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Depth
+"
+flat = true
+
+[node name="DepthSpinBox" type="SpinBox" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = -32768.0
+max_value = 32767.0

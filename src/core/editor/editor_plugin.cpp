@@ -730,17 +730,20 @@ void HexMapNodeEditorPlugin::read_editor_state(const HexMapNode *node) {
 
 void HexMapNodeEditorPlugin::edit_plane_set_axis(EditorCursor::EditAxis axis) {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
+    ERR_FAIL_COND(bottom_panel == nullptr);
     edit_axis = axis;
     editor_cursor->set_axis(axis);
     editor_cursor->set_depth(edit_axis_depth[axis]);
-    emit_signal("edit_plane_changed", axis, edit_axis_depth[axis]);
+    bottom_panel->set("edit_plane_axis", axis);
+    bottom_panel->set("edit_plane_depth", edit_axis_depth[axis]);
 }
 
 void HexMapNodeEditorPlugin::edit_plane_set_depth(int depth) {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
+    ERR_FAIL_COND(bottom_panel == nullptr);
     edit_axis_depth[edit_axis] = depth;
     editor_cursor->set_depth(depth);
-    emit_signal("edit_plane_changed", edit_axis, depth);
+    bottom_panel->set("edit_plane_depth", depth);
 }
 
 void HexMapNodeEditorPlugin::hex_space_changed() {

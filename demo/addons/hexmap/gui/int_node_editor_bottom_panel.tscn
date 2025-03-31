@@ -10,7 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://dwstkvj1mrmt3" path="res://addons/hexmap/icons/RotateRight.svg" id="7_2aq7k"]
 [ext_resource type="Texture2D" uid="uid://vrx8uwcvnqhs" path="res://addons/hexmap/icons/Search.svg" id="8_w81nb"]
 [ext_resource type="Texture2D" uid="uid://dbrg57lmmg1vq" path="res://addons/hexmap/icons/FileThumbnail.svg" id="9_dwaqi"]
-[ext_resource type="PackedScene" uid="uid://dqqtbvcoumwmo" path="res://addons/hexmap/gui/axis_selection_dropdown.tscn" id="9_ns57a"]
+[ext_resource type="PackedScene" uid="uid://c4a26oqnkwm02" path="res://addons/hexmap/gui/edit_plane_selector.tscn" id="9_nu8or"]
 [ext_resource type="Texture2D" uid="uid://douar0i3bcce3" path="res://addons/hexmap/icons/FileList.svg" id="10_dw6ox"]
 [ext_resource type="PackedScene" uid="uid://7do5qk8fxmuy" path="res://addons/hexmap/gui/zoom_widget.tscn" id="11_6xxn2"]
 [ext_resource type="PackedScene" uid="uid://bxi5mdivmmoos" path="res://addons/hexmap/gui/int_node_type_selector.tscn" id="12_ijmfj"]
@@ -24,11 +24,14 @@ unicode = 120
 events = [SubResource("InputEventKey_hms7k")]
 
 [node name="IntNodeEditorBottomPanel" type="VBoxContainer"]
-offset_right = 901.0
-offset_bottom = 535.0
+offset_right = 1152.0
+offset_bottom = 631.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_h3koj")
+selected_type = -1
+edit_plane_axis = null
+edit_plane_depth = null
 
 [node name="ToolbarHBox" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -92,7 +95,7 @@ flat = true
 [node name="VSeparator3" type="VSeparator" parent="ToolbarHBox/HBoxContainer3"]
 layout_mode = 2
 
-[node name="AxisDropdown" parent="ToolbarHBox/HBoxContainer3" instance=ExtResource("9_ns57a")]
+[node name="EditPlaneSelector" parent="ToolbarHBox" instance=ExtResource("9_nu8or")]
 unique_name_in_owner = true
 layout_mode = 2
 
@@ -160,6 +163,7 @@ size_flags_vertical = 3
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TypeSelector" parent="HBoxContainer/VBoxContainer" instance=ExtResource("12_ijmfj")]
+[node name="TypeSelector" parent="HBoxContainer/VBoxContainer" node_paths=PackedStringArray("event_bus") instance=ExtResource("12_ijmfj")]
 unique_name_in_owner = true
 layout_mode = 2
+event_bus = NodePath("../../..")

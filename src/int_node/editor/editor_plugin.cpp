@@ -38,9 +38,13 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
         bottom_panel->connect("delete_type",
                 callable_mp(
                         this, &HexMapIntNodeEditorPlugin::delete_cell_type));
+        bottom_panel->connect("edit_plane_changed",
+                callable_mp(this, &HexMapIntNodeEditorPlugin::set_edit_plane));
 
         // set known state
         bottom_panel->set("cell_types", int_node->_get_cell_types());
+        bottom_panel->set("edit_plane_axis", (int)edit_axis);
+        bottom_panel->set("edit_plane_depth", edit_axis_depth[edit_axis]);
 
         // add & show the panel
         add_control_to_bottom_panel(bottom_panel, "HexMapInt");
@@ -225,5 +229,13 @@ void HexMapIntNodeEditorPlugin::delete_cell_type(int id) {
             cell_type->value.color);
     undo_redo->add_undo_method(int_node, "set_cells", undo_list);
     undo_redo->commit_action();
+}
+
+void HexMapIntNodeEditorPlugin::set_edit_plane(int axis, int depth) {
+    if (edit_axis != axis) {
+        edit_plane_set_axis((EditorCursor::EditAxis)axis);
+    } else {
+        edit_plane_set_depth(depth);
+    }
 }
 #endif // TOOLS_ENABLED

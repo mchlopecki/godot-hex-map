@@ -46,11 +46,10 @@ private:
     /// rebuild the cursor based on the gui state
     void rebuild_cursor() override;
 
-    /// rebuild the cursor using the specific selected tile type
-    void rebuild_cursor(int type);
     // bottom panel signal handlers
     void set_cell_type(int id, String name, Color color);
     void delete_cell_type(int id);
+    void set_edit_plane(int axis, int depth);
 };
 
 #endif

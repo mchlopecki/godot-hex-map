@@ -131,6 +131,13 @@ protected:
     /// Array of previous cell contents; used during move selection
     Array move_source_cells;
 
+    /// active edit axis
+    EditorCursor::EditAxis edit_axis = EditorCursor::EditAxis::AXIS_Y;
+
+    /// saved edit axis depths so the axis can change but return to the same
+    /// depth when switched back
+    Array edit_axis_depth;
+
 private:
     // Tried using UndoRedo with MERGE_ALL to maintain the list of cells
     // painted/erased while the mouse moved.  This does not work properly
@@ -162,13 +169,6 @@ private:
 
     /// current input handling state
     InputState input_state = INPUT_STATE_DEFAULT;
-
-    /// active edit axis
-    EditorCursor::EditAxis edit_axis = EditorCursor::EditAxis::AXIS_Y;
-
-    /// saved edit axis depths so the axis can change but return to the same
-    /// depth when switched back
-    Array edit_axis_depth;
 
     /// GDScript set_orientation handler; calls true cursor_set_orientation
     void cursor_set_orientation(int);
