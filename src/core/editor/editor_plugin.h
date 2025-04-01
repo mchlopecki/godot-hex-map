@@ -85,6 +85,9 @@ protected:
     /// function.
     virtual EditorPlugin::AfterGUIInput handle_keypress(Ref<InputEventKey>);
 
+    /// rebuild the cursor from the UI state
+    virtual void rebuild_cursor();
+
     // callbacks for HexMap signals
     void hex_space_changed();
 
@@ -184,9 +187,6 @@ private:
     /// If no state is found in the node, the state will be initialized to sane
     /// values.
     void read_editor_state(const HexMapNode *);
-
-    /// rebuild the cursor from the UI state
-    virtual void rebuild_cursor();
 };
 
 #endif

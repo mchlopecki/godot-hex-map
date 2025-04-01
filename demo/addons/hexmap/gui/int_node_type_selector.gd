@@ -17,6 +17,8 @@ const cell_type_form: PackedScene = preload("int_node_cell_type_form.tscn")
 @export var selected_type: int = -1 :
 	set(value):
 		if value != selected_type:
+			for child in %CellTypes.get_children():
+				child.selected = child.value == value
 			selected_type = value
 			event_bus.type_changed.emit()
 
@@ -37,9 +39,6 @@ func rebuild_type_list() -> void:
 		%CellTypes.add_child(cell)
 
 func select(value: int) -> void:
-	for child in %CellTypes.get_children():
-		if child.value != value:
-			child.selected = false
 	selected_type = value
 
 func open_context_menu(pos: Vector2) -> void:

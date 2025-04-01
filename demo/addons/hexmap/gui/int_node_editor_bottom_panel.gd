@@ -20,7 +20,7 @@ signal edit_plane_changed(axis: int, depth: int)
 			await ready
 		%TypeSelector.cell_types = value
 
-@export var selected_type: int :
+@export var selected_tile: int :
 	set(value):
 		if not is_node_ready():
 			await ready

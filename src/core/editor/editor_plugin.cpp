@@ -315,7 +315,13 @@ void HexMapNodeEditorPlugin::selection_move_apply() {
 }
 
 void HexMapNodeEditorPlugin::rebuild_cursor() {
+    ERR_FAIL_COND(bottom_panel == nullptr);
     editor_cursor->clear_tiles();
+    int tile = bottom_panel->get("selected_tile");
+    if (tile != HexMapNode::INVALID_CELL_ITEM) {
+        editor_cursor->set_tile(HexMapCellId(), tile);
+    }
+
     cursor_set_orientation(HexMapTileOrientation());
     emit_signal("cursor_restore");
     editor_cursor->update(true);
@@ -419,9 +425,11 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                 if (!selection_manager->is_empty()) {
                     deselect_cells();
                     return AFTER_GUI_INPUT_STOP;
+                } else {
+                    bottom_panel->set(
+                            "selected_tile", HexMapNode::INVALID_CELL_ITEM);
                 }
-                // allow keypress handler to PASS or STOP the escape key
-                return handle_keypress(key_event);
+                return AFTER_GUI_INPUT_STOP;
             }
             break;
 

@@ -155,12 +155,8 @@ void HexMapIntNodeEditorPlugin::update_tiled_node(Vector3i cell_id_v,
 }
 
 void HexMapIntNodeEditorPlugin::rebuild_cursor() {
-    ERR_FAIL_COND(bottom_panel == nullptr);
-    int type = bottom_panel->get("selected_type");
-    editor_cursor->clear_tiles();
-    if (type >= 0) {
-        editor_cursor->set_tile(HexMapCellId(), type);
-    }
+    // can't bind a virtual function to a Callable.
+    HexMapNodeEditorPlugin::rebuild_cursor();
 }
 
 void HexMapIntNodeEditorPlugin::set_cell_type(int id,
