@@ -40,6 +40,21 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
                         this, &HexMapIntNodeEditorPlugin::delete_cell_type));
         bottom_panel->connect("edit_plane_changed",
                 callable_mp(this, &HexMapIntNodeEditorPlugin::set_edit_plane));
+        bottom_panel->connect("rotate_cursor",
+                callable_mp((HexMapNodeEditorPlugin *)this,
+                        &HexMapNodeEditorPlugin::cursor_rotate));
+        bottom_panel->connect("move_selection",
+                callable_mp((HexMapNodeEditorPlugin *)this,
+                        &HexMapNodeEditorPlugin::selection_move));
+        bottom_panel->connect("clone_selection",
+                callable_mp((HexMapNodeEditorPlugin *)this,
+                        &HexMapNodeEditorPlugin::selection_clone));
+        bottom_panel->connect("fill_selection",
+                callable_mp((HexMapNodeEditorPlugin *)this,
+                        &HexMapNodeEditorPlugin::selection_fill));
+        bottom_panel->connect("clear_selection",
+                callable_mp((HexMapNodeEditorPlugin *)this,
+                        &HexMapNodeEditorPlugin::selection_clear));
 
         // set known state
         bottom_panel->set("cell_types", int_node->_get_cell_types());

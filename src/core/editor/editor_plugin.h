@@ -50,6 +50,25 @@ public:
     HexMapNodeEditorPlugin();
     ~HexMapNodeEditorPlugin();
 
+    /// rotate the cursor in 60 degree steps around the y-axis
+    /// @param steps negative values rotate clockwise, positive
+    /// counter-clockwise
+    ///
+    /// this function will call cursor_set_orientation() for any change
+    void cursor_rotate(int steps);
+
+    /// set edit axis
+    void edit_plane_set_axis(EditorCursor::EditAxis);
+
+    /// set edit axis depth
+    void edit_plane_set_depth(int);
+
+    // perform actions on selected cells
+    void selection_move();
+    void selection_clone();
+    void selection_fill();
+    void selection_clear();
+
 protected:
     void _notification(int p_what);
     static void _bind_methods();
@@ -60,23 +79,10 @@ protected:
     /// set cursor orientation
     void cursor_set_orientation(HexMapTileOrientation);
 
-    /// rotate the cursor in 60 degree steps around the y-axis
-    /// @param steps negative values rotate clockwise, positive
-    /// counter-clockwise
-    ///
-    /// this function will call cursor_set_orientation() for any change
-    void cursor_rotate(int steps);
-
     /// flip the cursor 180 degrees around the x-axis
     ///
     /// this function will call cursor_set_orientation() for any change
     void cursor_flip();
-
-    /// set edit axis
-    void edit_plane_set_axis(EditorCursor::EditAxis);
-
-    /// set edit axis depth
-    void edit_plane_set_depth(int);
 
     /// Handle common keypress shortcuts for navigating the spatial editor
     ///
@@ -99,17 +105,6 @@ protected:
     void _deselect_cells();
     void _select_cell(Vector3i);
     void _set_selection_v(Array);
-
-    // perform actions on selected cells
-    void selection_fill();
-    void selection_clear();
-    void copy_selection_to_cursor();
-    void selection_move();
-    void selection_move_cancel();
-    void selection_move_apply();
-    void selection_clone();
-    void selection_clone_cancel();
-    void selection_clone_apply();
 
     /// node being edited
     HexMapNode *hex_map = nullptr;
@@ -187,6 +182,13 @@ private:
     /// If no state is found in the node, the state will be initialized to sane
     /// values.
     void read_editor_state(const HexMapNode *);
+
+    // perform actions on selected cells
+    void copy_selection_to_cursor();
+    void selection_move_cancel();
+    void selection_move_apply();
+    void selection_clone_cancel();
+    void selection_clone_apply();
 };
 
 #endif

@@ -98,14 +98,14 @@ void HexMapNodeEditorPlugin::_deselect_cells() {
     ERR_FAIL_COND_MSG(selection_manager == nullptr,
             "HexMap: SelectionManager not present");
     selection_manager->clear();
-    emit_signal("selection_changed", false);
+    bottom_panel->set("selection_active", false);
 }
 
 void HexMapNodeEditorPlugin::_select_cell(Vector3i cell) {
     ERR_FAIL_COND_MSG(selection_manager == nullptr,
             "HexMap: SelectionManager not present");
     selection_manager->add_cell(cell);
-    emit_signal("selection_changed", true);
+    bottom_panel->set("selection_active", true);
 }
 
 void HexMapNodeEditorPlugin::_set_selection_v(Array cells) {
@@ -113,7 +113,7 @@ void HexMapNodeEditorPlugin::_set_selection_v(Array cells) {
             "HexMap: SelectionManager not present");
 
     selection_manager->set_cells(cells);
-    emit_signal("selection_changed", !cells.is_empty());
+    bottom_panel->set("selection_active", !cells.is_empty());
 }
 
 void HexMapNodeEditorPlugin::selection_clear() {
@@ -199,6 +199,7 @@ void HexMapNodeEditorPlugin::copy_selection_to_cursor() {
         editor_cursor->set_tile(cell_id - center, value, orientation);
     }
     editor_cursor->update(true);
+    bottom_panel->set("cursor_active", true);
     input_state = INPUT_STATE_MOVING;
 }
 
@@ -323,8 +324,8 @@ void HexMapNodeEditorPlugin::rebuild_cursor() {
     }
 
     cursor_set_orientation(HexMapTileOrientation());
-    emit_signal("cursor_restore");
     editor_cursor->update(true);
+    bottom_panel->set("cursor_active", editor_cursor->size() > 0);
 }
 
 void HexMapNodeEditorPlugin::_make_visible(bool p_visible) {
@@ -424,7 +425,6 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
             } else if (escape_pressed) {
                 if (!selection_manager->is_empty()) {
                     deselect_cells();
-                    return AFTER_GUI_INPUT_STOP;
                 } else {
                     bottom_panel->set(
                             "selected_tile", HexMapNode::INVALID_CELL_ITEM);
@@ -523,7 +523,7 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
 
                 selection_manager->clear();
                 selection_manager->set_cells(cells);
-                emit_signal("selection_changed", true);
+                bottom_panel->set("selection_active", true);
             }
             if (mouse_left_released) {
                 auto profile = profiling_begin("complete selection");
@@ -891,16 +891,6 @@ EditorPlugin::AfterGUIInput HexMapNodeEditorPlugin::handle_keypress(
 }
 
 void HexMapNodeEditorPlugin::_bind_methods() {
-    ADD_SIGNAL(MethodInfo(
-            "selection_changed", PropertyInfo(Variant::BOOL, "active")));
-    ADD_SIGNAL(MethodInfo("edit_plane_changed",
-            PropertyInfo(Variant::INT,
-                    "orientation",
-                    PROPERTY_HINT_ENUM,
-                    "AxisQ,AxisR,AxisS,AxisY"),
-            PropertyInfo(Variant::INT, "depth")));
-    ADD_SIGNAL(MethodInfo("cursor_restore"));
-
     ClassDB::bind_method(D_METHOD("deselect_cells"),
             &HexMapNodeEditorPlugin::_deselect_cells);
     ClassDB::bind_method(D_METHOD("select_cell", "cell"),

@@ -8,11 +8,18 @@ signal update_type(value: int, name: String, color: Color)
 signal delete_type(value: int)
 # emitted when user selects a cell type
 signal type_changed()
-# emitted when an edit axis is set from the dropdown
-signal set_axis(axis: int)
-
-# emitted when the edit plane depth is changed
+# emitted when the edit plane axis or depth is changed
 signal edit_plane_changed(axis: int, depth: int)
+# emitted to rotate cursor (-1 clockwise, 1 counter-clockwise)
+signal rotate_cursor(step: int)
+# emitted to move selection
+signal move_selection
+# emitted to clone selection
+signal clone_selection
+# emitted to clear selected tiles
+signal clear_selection
+# emitted to fill the selected tiles
+signal fill_selection
 
 @export var cell_types: Array:
 	set(value):
@@ -40,10 +47,38 @@ signal edit_plane_changed(axis: int, depth: int)
 			await ready
 		%EditPlaneSelector.depth = value
 
+@export var cursor_active: bool = false :
+	set(value):
+		print("cursor_active ", value)
+		if cursor_active == value:
+			return
+		%CCWButton.disabled = !value
+		%CWButton.disabled = !value
+		cursor_active = value
+		%FillButton.disabled = !(cursor_active && selection_active)
+
+@export var selection_active: bool = false :
+	set(value):
+		print("selection_active ", value)
+		if selection_active == value:
+			return
+		%CopyButton.disabled = !value
+		%MoveButton.disabled = !value
+		%ClearButton.disabled = !value
+		selection_active = value
+		%FillButton.disabled = !(cursor_active && selection_active)
+
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	%TypeSelector.event_bus = self
-	%EditPlaneSelector.changed.connect(func(axis: int, depth: int): print("edit plane changed ", axis, ", ", depth); edit_plane_changed.emit(axis, depth))
+	%EditPlaneSelector.changed.connect(func(axis: int, depth: int): edit_plane_changed.emit(axis, depth))
+	%CCWButton.pressed.connect(rotate_cursor.emit.bind(1))
+	%CWButton.pressed.connect(rotate_cursor.emit.bind(-1))
+	%MoveButton.pressed.connect(move_selection.emit)
+	%CopyButton.pressed.connect(clone_selection.emit)
+	%FillButton.pressed.connect(fill_selection.emit)
+	%ClearButton.pressed.connect(clear_selection.emit)
+
 	# %AxisDropdown.item_selected.connect(func(v: int): set_axis.emit(v); %AxisDropdown.release_focus())
 	pass # Replace with function body.
 
