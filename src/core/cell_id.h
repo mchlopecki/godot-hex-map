@@ -112,7 +112,8 @@ public:
 
     // get all cells within radius of this cell, along the provided planes
     HexMapIterRadial get_neighbors(unsigned int radius = 1,
-            const HexMapPlanes &planes = HexMapPlanes::All) const;
+            const HexMapPlanes &planes = HexMapPlanes::All,
+            bool include_center = false) const;
 
     // get the pixel center of this cell assuming the cell is a unit cell with
     // height = 1, radius = 1.  Use HexMap.map_to_local() for center scaled
@@ -186,7 +187,8 @@ public:
     String _to_string() const;
     bool _equals(const Ref<hex_bind::HexMapCellId> other) const;
     Vector3 _unit_center() const;
-    Ref<hex_bind::HexMapIter> _get_neighbors(unsigned int radius = 1) const;
+    Ref<hex_bind::HexMapIter> _get_neighbors(unsigned int radius = 1,
+            bool include_self = false) const;
 
 protected:
     static void _bind_methods();

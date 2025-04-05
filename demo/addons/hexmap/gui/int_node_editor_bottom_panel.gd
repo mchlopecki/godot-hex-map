@@ -20,6 +20,8 @@ signal clone_selection
 signal clear_selection
 # emitted to fill the selected tiles
 signal fill_selection
+# emitted when we want to set visibility of tile value visualization
+signal set_tiled_map_visibility(visible: bool)
 
 @export var cell_types: Array:
 	set(value):
@@ -49,7 +51,6 @@ signal fill_selection
 
 @export var cursor_active: bool = false :
 	set(value):
-		print("cursor_active ", value)
 		if cursor_active == value:
 			return
 		%CCWButton.disabled = !value
@@ -59,7 +60,6 @@ signal fill_selection
 
 @export var selection_active: bool = false :
 	set(value):
-		print("selection_active ", value)
 		if selection_active == value:
 			return
 		%CopyButton.disabled = !value
@@ -67,6 +67,10 @@ signal fill_selection
 		%ClearButton.disabled = !value
 		selection_active = value
 		%FillButton.disabled = !(cursor_active && selection_active)
+
+@export var show_cells: bool = true :
+	set(value):
+		%ShowCellsButton.button_pressed = value
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -78,6 +82,7 @@ func _ready() -> void:
 	%CopyButton.pressed.connect(clone_selection.emit)
 	%FillButton.pressed.connect(fill_selection.emit)
 	%ClearButton.pressed.connect(clear_selection.emit)
+	%ShowCellsButton.toggled.connect(func(v): set_tiled_map_visibility.emit(v))
 
 	# %AxisDropdown.item_selected.connect(func(v: int): set_axis.emit(v); %AxisDropdown.release_focus())
 	pass # Replace with function body.

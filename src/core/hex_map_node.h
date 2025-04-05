@@ -66,6 +66,7 @@ public:
 
     /// given a cell id, return the local position of the cell
     Vector3 get_cell_center(const HexMapCellId &) const;
+    Vector3 get_cell_center(const Ref<hex_bind::HexMapCellId>) const;
 
     /// given a local position, return the cell id that contains that point
     HexMapCellId get_cell_id(Vector3) const;
@@ -117,4 +118,12 @@ public:
     /// @param cells flattened Array of [Vector3, bool] where bool is the
     /// visibility state of the cell with id Vector3.
     void set_cells_visibility(const Array cells);
+
+    /// return the `HexMapCellId` of every cell within a quad in local space
+    /// @see HexSpace.get_cell_ids_in_local_quad()
+    Array get_cell_ids_in_local_quad(Vector3 a,
+            Vector3 b,
+            Vector3 c,
+            Vector3 d,
+            float padding = 0.5) const;
 };

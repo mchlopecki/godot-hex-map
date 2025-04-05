@@ -9,7 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://hlskhr8entje" path="res://addons/hexmap/icons/RotateLeft.svg" id="6_06kxs"]
 [ext_resource type="Texture2D" uid="uid://dwstkvj1mrmt3" path="res://addons/hexmap/icons/RotateRight.svg" id="7_2aq7k"]
 [ext_resource type="Texture2D" uid="uid://d1p1fc1hcb6s8" path="res://addons/hexmap/icons/Bucket.svg" id="7_uy3m2"]
-[ext_resource type="Texture2D" uid="uid://dtec31lagury0" path="res://addons/hexmap/icons/Clear.svg" id="8_jalxn"]
+[ext_resource type="Texture2D" uid="uid://br3s3i4gu05x4" path="res://addons/hexmap/icons/Clear.svg" id="8_jalxn"]
 [ext_resource type="Texture2D" uid="uid://vrx8uwcvnqhs" path="res://addons/hexmap/icons/Search.svg" id="8_w81nb"]
 [ext_resource type="PackedScene" uid="uid://c4a26oqnkwm02" path="res://addons/hexmap/gui/edit_plane_selector.tscn" id="9_nu8or"]
 [ext_resource type="PackedScene" uid="uid://bxi5mdivmmoos" path="res://addons/hexmap/gui/int_node_type_selector.tscn" id="12_ijmfj"]
@@ -114,6 +114,16 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="VSeparator" type="VSeparator" parent="ToolbarHBox"]
+layout_mode = 2
+
+[node name="ShowCellsButton" type="CheckButton" parent="ToolbarHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Show Cells"
+flat = true
+
 [node name="HBoxContainer2" type="HBoxContainer" parent="ToolbarHBox"]
 visible = false
 layout_mode = 2
@@ -155,6 +165,9 @@ size_flags_vertical = 3
 [node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="HSeparator" type="HSeparator" parent="HBoxContainer/VBoxContainer"]
+layout_mode = 2
 
 [node name="TypeSelector" parent="HBoxContainer/VBoxContainer" node_paths=PackedStringArray("event_bus") instance=ExtResource("12_ijmfj")]
 unique_name_in_owner = true

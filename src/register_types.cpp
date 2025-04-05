@@ -4,6 +4,8 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
+#include "auto_tiled_node/auto_tiled_node.h"
+#include "auto_tiled_node/editor/editor_plugin.h"
 #include "core/cell_id.h"
 #include "core/hex_map_node.h"
 #include "core/iter.h"
@@ -21,6 +23,7 @@ void initialize_hexmap_module(ModuleInitializationLevel p_level) {
         ClassDB::register_abstract_class<HexMapNode>();
         ClassDB::register_class<HexMapTiledNode>();
         ClassDB::register_class<HexMapIntNode>();
+        ClassDB::register_class<HexMapAutoTiledNode>();
     }
 
 #ifdef TOOLS_ENABLED
@@ -31,6 +34,8 @@ void initialize_hexmap_module(ModuleInitializationLevel p_level) {
         ClassDB::register_abstract_class<HexMapNodeEditorPlugin>();
         ClassDB::register_internal_class<HexMapIntNodeEditorPlugin>();
         EditorPlugins::add_by_type<HexMapIntNodeEditorPlugin>();
+        ClassDB::register_internal_class<HexMapAutoTiledNodeEditorPlugin>();
+        EditorPlugins::add_by_type<HexMapAutoTiledNodeEditorPlugin>();
     }
 #endif
 }

@@ -59,8 +59,9 @@ unsigned HexMapCellId::distance(const HexMapCellId &other) const {
 }
 
 HexMapIterRadial HexMapCellId::get_neighbors(unsigned int radius,
-        const HexMapPlanes &planes) const {
-    return HexMapIterRadial(*this, radius, true, planes);
+        const HexMapPlanes &planes,
+        bool include_center) const {
+    return HexMapIterRadial(*this, radius, !include_center, planes);
 }
 
 HexMapCellId::operator String() const {
@@ -112,9 +113,10 @@ void hex_bind::HexMapCellId::_bind_methods() {
             D_METHOD("equals", "other"), &hex_bind::HexMapCellId::_equals);
     ClassDB::bind_method(
             D_METHOD("unit_center"), &hex_bind::HexMapCellId::_unit_center);
-    ClassDB::bind_method(D_METHOD("get_neighbors", "radius"),
+    ClassDB::bind_method(D_METHOD("get_neighbors", "radius", "include_self"),
             &hex_bind::HexMapCellId::_get_neighbors,
-            1);
+            1,
+            false);
 }
 
 int hex_bind::HexMapCellId::_get_q() { return cell_id.q; }
@@ -191,6 +193,7 @@ bool hex_bind::HexMapCellId::_equals(
 }
 
 Ref<hex_bind::HexMapIter> hex_bind::HexMapCellId::_get_neighbors(
-        unsigned int radius) const {
-    return cell_id.get_neighbors(radius);
+        unsigned int radius,
+        bool include_center) const {
+    return cell_id.get_neighbors(radius, HexMapPlanes::All, include_center);
 }

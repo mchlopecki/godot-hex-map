@@ -31,7 +31,7 @@ private:
     HexMapIntNode *int_node = nullptr;
 
     /// HexMapTiledNode used to render the contents of `int_node`
-    HexMapTiledNode *tile_node = nullptr;
+    HexMapTiledNode *tiled_node = nullptr;
 
     /// Generated MeshLibrary used in `tile_node`, contains hex cells with
     /// colors defined by `int_node->get_cell_types()`.
@@ -46,10 +46,12 @@ private:
     /// rebuild the cursor based on the gui state
     void rebuild_cursor() override;
 
-    // bottom panel signal handlers
+    // signal handlers
+    void cell_scale_changed();
     void set_cell_type(int id, String name, Color color);
     void delete_cell_type(int id);
     void set_edit_plane(int axis, int depth);
+    void set_tiled_map_visibility(bool visible);
 };
 
 #endif

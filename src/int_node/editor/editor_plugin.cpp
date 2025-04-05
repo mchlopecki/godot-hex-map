@@ -55,22 +55,28 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
         bottom_panel->connect("clear_selection",
                 callable_mp((HexMapNodeEditorPlugin *)this,
                         &HexMapNodeEditorPlugin::selection_clear));
+        bottom_panel->connect("set_tiled_map_visibility",
+                callable_mp(this,
+                        &HexMapIntNodeEditorPlugin::set_tiled_map_visibility));
 
         // set known state
         bottom_panel->set("cell_types", int_node->_get_cell_types());
         bottom_panel->set("edit_plane_axis", (int)edit_axis);
         bottom_panel->set("edit_plane_depth", edit_axis_depth[edit_axis]);
+        bool show_cells = int_node->get_meta("_show_cells_", true);
+        bottom_panel->set("show_cells", show_cells);
 
         // add & show the panel
         add_control_to_bottom_panel(bottom_panel, "HexMapInt");
         make_bottom_panel_item_visible(bottom_panel);
 
         // create a TiledNode to visualize the contents of the IntNode
-        tile_node = memnew(HexMapTiledNode);
-        tile_node->set_space(int_node->get_space());
+        tiled_node = memnew(HexMapTiledNode);
+        tiled_node->set_space(int_node->get_space());
         // the cell meshes we create in update_mesh_library() are centered on
         // origin, so set the TileNode to center the mesh in the cell.
-        tile_node->set_center_y(true);
+        tiled_node->set_center_y(true);
+        tiled_node->set_visible(show_cells);
         update_mesh_library();
 
         // XXX editor_cursor is getting hung up on center-y, when set to false
@@ -78,13 +84,19 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
 
         // populate the tiled node with our cells
         for (const auto &iter : int_node->cell_map) {
-            tile_node->set_cell(iter.key, iter.value);
+            tiled_node->set_cell(iter.key, iter.value);
         }
-        add_child(tile_node);
+
+        // add the tiled node to the int_node to inherit the visibility of the
+        // int node.
+        int_node->add_child(tiled_node);
 
         editor_cursor->set_cells_visibility_callback(callable_mp(
-                tile_node, &HexMapTiledNode::set_cells_visibility_callback));
+                tiled_node, &HexMapTiledNode::set_cells_visibility_callback));
 
+        int_node->connect("cell_scale_changed",
+                callable_mp(
+                        this, &HexMapIntNodeEditorPlugin::cell_scale_changed));
         int_node->connect("editor_plugin_cell_changed",
                 callable_mp(
                         this, &HexMapIntNodeEditorPlugin::update_tiled_node));
@@ -93,6 +105,15 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
                         &HexMapIntNodeEditorPlugin::update_mesh_library));
 
     } else {
+        if (tiled_node != nullptr) {
+            int_node->set_meta("_show_cells_", tiled_node->is_visible());
+            int_node->remove_child(tiled_node);
+            memfree(tiled_node);
+            tiled_node = nullptr;
+        }
+        int_node->disconnect("cell_scale_changed",
+                callable_mp(
+                        this, &HexMapIntNodeEditorPlugin::cell_scale_changed));
         int_node->disconnect("editor_plugin_cell_changed",
                 callable_mp(
                         this, &HexMapIntNodeEditorPlugin::update_tiled_node));
@@ -100,12 +121,6 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
                 callable_mp(this,
                         &HexMapIntNodeEditorPlugin::update_mesh_library));
         int_node = nullptr;
-
-        if (tile_node != nullptr) {
-            remove_child(tile_node);
-            memfree(tile_node);
-            tile_node = nullptr;
-        }
 
         if (bottom_panel != nullptr) {
             remove_control_from_bottom_panel(bottom_panel);
@@ -149,8 +164,8 @@ void HexMapIntNodeEditorPlugin::update_mesh_library() {
         mesh_library->set_item_mesh(iter.key, mesh);
     }
 
-    if (tile_node) {
-        tile_node->set_mesh_library(mesh_library);
+    if (tiled_node) {
+        tiled_node->set_mesh_library(mesh_library);
     }
 
     if (editor_cursor) {
@@ -165,13 +180,19 @@ void HexMapIntNodeEditorPlugin::update_mesh_library() {
 
 void HexMapIntNodeEditorPlugin::update_tiled_node(Vector3i cell_id_v,
         int type) {
-    ERR_FAIL_COND_MSG(tile_node == nullptr, "tiled node not allocated");
-    tile_node->set_cell(cell_id_v, type);
+    ERR_FAIL_COND_MSG(tiled_node == nullptr, "tiled node not allocated");
+    tiled_node->set_cell(cell_id_v, type);
 }
 
 void HexMapIntNodeEditorPlugin::rebuild_cursor() {
     // can't bind a virtual function to a Callable.
+    // XXX yes we can, cast `this` in the callable_mp() call
     HexMapNodeEditorPlugin::rebuild_cursor();
+}
+
+void HexMapIntNodeEditorPlugin::cell_scale_changed() {
+    tiled_node->set_space(int_node->get_space());
+    update_mesh_library();
 }
 
 void HexMapIntNodeEditorPlugin::set_cell_type(int id,
@@ -248,5 +269,10 @@ void HexMapIntNodeEditorPlugin::set_edit_plane(int axis, int depth) {
     } else {
         edit_plane_set_depth(depth);
     }
+}
+
+void HexMapIntNodeEditorPlugin::set_tiled_map_visibility(bool visible) {
+    ERR_FAIL_NULL(tiled_node);
+    tiled_node->set_visible(visible);
 }
 #endif // TOOLS_ENABLED

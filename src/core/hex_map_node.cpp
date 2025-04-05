@@ -25,6 +25,17 @@ void HexMapNode::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_cells", "cells"),
             static_cast<Array (HexMapNode::*)(const Array)>(
                     &HexMapNode::get_cells));
+    ClassDB::bind_method(D_METHOD("get_cell_center", "cell_id"),
+            static_cast<Vector3 (HexMapNode::*)(
+                    const Ref<hex_bind::HexMapCellId>) const>(
+                    &HexMapNode::get_cell_center));
+    ClassDB::bind_method(D_METHOD("get_cell_ids_in_local_quad",
+                                 "a",
+                                 "b",
+                                 "c",
+                                 "d",
+                                 "padding"),
+            &HexMapNode::get_cell_ids_in_local_quad);
 
     ADD_GROUP("Cell", "cell_");
     ADD_PROPERTY(PropertyInfo(Variant::FLOAT,
@@ -45,7 +56,6 @@ void HexMapNode::_bind_methods() {
 
     ADD_SIGNAL(MethodInfo("cell_scale_changed"));
     ADD_SIGNAL(MethodInfo("mesh_offset_changed"));
-    ADD_SIGNAL(MethodInfo("mesh_library_changed"));
 }
 
 void HexMapNode::set_space(const HexMapSpace &space) {
@@ -91,6 +101,11 @@ Vector3 HexMapNode::get_cell_center(const HexMapCellId &cell_id) const {
     return space.get_cell_center(cell_id);
 }
 
+Vector3 HexMapNode::get_cell_center(
+        const Ref<hex_bind::HexMapCellId> cell_id) const {
+    return space.get_cell_center(**cell_id);
+}
+
 HexMapCellId HexMapNode::get_cell_id(Vector3 pos) const {
     return space.get_cell_id(pos);
 }
@@ -131,4 +146,20 @@ void HexMapNode::set_cells_visibility(const Array cells) {
     for (int i = 0; i < len; i += 2) {
         set_cell_visibility((Vector3i)cells[i], cells[i + 1]);
     }
+}
+
+Array HexMapNode::get_cell_ids_in_local_quad(Vector3 a,
+        Vector3 b,
+        Vector3 c,
+        Vector3 d,
+        float padding) const {
+    Vector<HexMapCellId> cell_ids =
+            space.get_cell_ids_in_local_quad(a, b, c, d, padding);
+    size_t count = cell_ids.size();
+    Array out;
+    out.resize(count);
+    for (int i = 0; i < count; i++) {
+        out[i] = Ref<hex_bind::HexMapCellId>(cell_ids[i]);
+    }
+    return out;
 }
