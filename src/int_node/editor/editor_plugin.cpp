@@ -32,7 +32,8 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
 
         // connect the signals
         bottom_panel->connect("type_changed",
-                callable_mp(this, &HexMapIntNodeEditorPlugin::rebuild_cursor));
+                callable_mp((HexMapNodeEditorPlugin *)this,
+                        &HexMapNodeEditorPlugin::rebuild_cursor));
         bottom_panel->connect("update_type",
                 callable_mp(this, &HexMapIntNodeEditorPlugin::set_cell_type));
         bottom_panel->connect("delete_type",
@@ -184,12 +185,6 @@ void HexMapIntNodeEditorPlugin::update_tiled_node(Vector3i cell_id_v,
     tiled_node->set_cell(cell_id_v, type);
 }
 
-void HexMapIntNodeEditorPlugin::rebuild_cursor() {
-    // can't bind a virtual function to a Callable.
-    // XXX yes we can, cast `this` in the callable_mp() call
-    HexMapNodeEditorPlugin::rebuild_cursor();
-}
-
 void HexMapIntNodeEditorPlugin::cell_scale_changed() {
     tiled_node->set_space(int_node->get_space());
     update_mesh_library();
@@ -200,20 +195,36 @@ void HexMapIntNodeEditorPlugin::set_cell_type(int id,
         Color color) {
     ERR_FAIL_COND(int_node == nullptr);
     ERR_FAIL_COND(bottom_panel == nullptr);
-
-    // work-around for dynamic assignment; if they didn't provide an id,
-    // make the change directly now to get the id.  The do_method will just
-    // repeat the same action with the fixed id we get here.
-    //
-    // We need a valid id here to be able to add the undo method.
-    if (id == HexMapIntNode::TypeIdNext) {
-        id = int_node->set_cell_type(id, name, color);
-    }
+    bool is_adding = id == HexMapIntNode::TypeIdNext;
 
     EditorUndoRedoManager *undo_redo = get_undo_redo();
-    undo_redo->create_action("HexMapInt: set cell type");
+
+    if (id == HexMapIntNode::TypeIdNext) {
+        // This is a request to add a new type.
+        //
+        // work-around for dynamic assignment; if they didn't provide an id,
+        // make the change directly now to get the id.  The do_method will just
+        // repeat the same action with the fixed id we get here.
+        //
+        // We need a valid id here to be able to add the undo method.
+        id = int_node->set_cell_type(id, name, color);
+        undo_redo->create_action("HexMapInt: add cell type");
+        undo_redo->add_undo_method(int_node, "remove_cell_type", id);
+    } else {
+        // To update an existing type, we need to get the current values for
+        // undo
+        const auto cell_type = int_node->cell_types.find(id);
+        ERR_FAIL_COND_MSG(cell_type == int_node->cell_types.end(),
+                "cell type id not found");
+        undo_redo->create_action("HexMapInt: update cell type");
+        undo_redo->add_undo_method(int_node,
+                "set_cell_type",
+                cell_type->key,
+                cell_type->value.name,
+                cell_type->value.color);
+    }
+
     undo_redo->add_do_method(int_node, "set_cell_type", id, name, color);
-    undo_redo->add_undo_method(int_node, "remove_cell_type", id); // no ID
     undo_redo->commit_action();
 }
 

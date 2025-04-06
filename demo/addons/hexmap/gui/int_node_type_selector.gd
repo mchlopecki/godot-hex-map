@@ -2,12 +2,12 @@
 
 extends VBoxContainer
 
-const cell_type_button: PackedScene = preload("int_node_cell_type_button.tscn")
-const cell_type_form: PackedScene = preload("int_node_cell_type_form.tscn")
-
-# top-level node of the bottom panel Control, used to emit signals without 
-# bubbling nightmares
-@export var event_bus : Node
+# emitted when a type is selected
+signal selected(value: int)
+# emitted for both add & update type; value will be -1 for add
+signal updated(value: int, name: String, color: Color)
+# emitted when a type is deleted
+signal deleted(value: int)
 
 @export var cell_types : Array :
 	set(value):
@@ -18,11 +18,22 @@ const cell_type_form: PackedScene = preload("int_node_cell_type_form.tscn")
 	set(value):
 		if value != selected_type:
 			for child in %CellTypes.get_children():
-				child.selected = child.value == value
+				if child.value == value:
+					child.selected = true
+					selected_color = child.color
+				else:
+					child.selected = false
 			selected_type = value
-			event_bus.type_changed.emit()
+			selected.emit(value)
+
+@export var selected_color: Color
+
+@export var read_only := false
 
 var context_menu_node: Node
+
+const cell_type_button: PackedScene = preload("int_node_cell_type_button.tscn")
+const cell_type_form: PackedScene = preload("int_node_cell_type_form.tscn")
 
 func rebuild_type_list() -> void:
 	for child in %CellTypes.get_children():
@@ -35,11 +46,8 @@ func rebuild_type_list() -> void:
 		cell.value = type.value
 		cell.type = type.name
 		cell.color = type.color
-		cell.pressed.connect(select.bind(type.value))
+		cell.pressed.connect(func(): selected_type = type.value)
 		%CellTypes.add_child(cell)
-
-func select(value: int) -> void:
-	selected_type = value
 
 func open_context_menu(pos: Vector2) -> void:
 	var type_node
@@ -64,13 +72,13 @@ func context_menu_index_pressed(index: int) -> void:
 		0:
 			edit_type(context_menu_node)
 		1:
-			event_bus.delete_type.emit(context_menu_node.value)
+			deleted.emit(context_menu_node.value)
 			rebuild_type_list()
 		_:
 			push_error("Unknown context menu index ", index)
 
 func cell_type_form_submitted(value: int, name: String, color: Color) -> void:
-	event_bus.update_type.emit(value, name, color)
+	updated.emit(value, name, color)
 
 func append_new_type_form() -> void:
 	var form := cell_type_form.instantiate()
@@ -97,7 +105,11 @@ func edit_type(type_node: Node) -> void:
 func _ready() -> void:
 	%ContextMenu.visibility_changed.connect(context_menu_visibility_changed)
 	%ContextMenu.id_pressed.connect(context_menu_index_pressed)
-	%AddTypeFormButton.pressed.connect(append_new_type_form)
+	if read_only:
+		%AddTypeFormButton.visible = false
+	else:
+		%AddTypeFormButton.visible = true
+		%AddTypeFormButton.pressed.connect(append_new_type_form)
 	pass # Replace with function body.
 
 
@@ -107,5 +119,5 @@ func _process(delta: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
-		if event.is_pressed() && event.button_index == MOUSE_BUTTON_RIGHT:
+		if event.is_pressed() && event.button_index == MOUSE_BUTTON_RIGHT && !read_only:
 			open_context_menu(event.position)

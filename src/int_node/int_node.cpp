@@ -138,6 +138,7 @@ void HexMapIntNode::_bind_methods() {
     BIND_CONSTANT(TypeIdNext);
 
 #ifdef TOOLS_ENABLED
+    // XXX remove these, use non-editor specific signals
     ADD_SIGNAL(MethodInfo("editor_plugin_cell_changed",
             PropertyInfo(Variant::VECTOR3I, "cell"),
             PropertyInfo(Variant::INT, "type")));

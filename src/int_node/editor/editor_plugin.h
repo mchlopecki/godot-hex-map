@@ -43,9 +43,6 @@ private:
     /// update the `HexMapTiledNode` based on a cell change
     void update_tiled_node(Vector3i cell_id_v, int type);
 
-    /// rebuild the cursor based on the gui state
-    void rebuild_cursor() override;
-
     // signal handlers
     void cell_scale_changed();
     void set_cell_type(int id, String name, Color color);

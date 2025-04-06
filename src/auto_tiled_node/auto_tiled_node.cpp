@@ -10,6 +10,7 @@ using namespace godot;
 void HexMapAutoTiledNode::set_mesh_library(const Ref<MeshLibrary> &value) {
     mesh_library = value;
     tiled_node->set_mesh_library(value);
+    emit_signal("mesh_library_changed");
 }
 
 void HexMapAutoTiledNode::cell_scale_changed() {
@@ -29,6 +30,7 @@ void HexMapAutoTiledNode::_bind_methods() {
                          "MeshLibrary"),
             "set_mesh_library",
             "get_mesh_library");
+    ADD_SIGNAL(MethodInfo("mesh_library_changed"));
 }
 
 void HexMapAutoTiledNode::_notification(int p_what) {

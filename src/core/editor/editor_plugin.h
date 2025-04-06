@@ -69,6 +69,9 @@ public:
     void selection_fill();
     void selection_clear();
 
+    /// rebuild the cursor from the UI state
+    virtual void rebuild_cursor();
+
 protected:
     void _notification(int p_what);
     static void _bind_methods();
@@ -90,9 +93,6 @@ protected:
     /// escape keypress.  All following escape keypresses will be sent to this
     /// function.
     virtual EditorPlugin::AfterGUIInput handle_keypress(Ref<InputEventKey>);
-
-    /// rebuild the cursor from the UI state
-    virtual void rebuild_cursor();
 
     // callbacks for HexMap signals
     void hex_space_changed();

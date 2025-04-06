@@ -26,6 +26,9 @@ protected:
     static void _bind_methods() {};
 
 private:
+    // signal handler callbacks
+    void on_mesh_library_changed();
+
     /// HexMapAutoTiledNode being edited
     HexMapAutoTiledNode *auto_tiled_node = nullptr;
 

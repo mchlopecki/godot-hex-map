@@ -74,7 +74,10 @@ signal set_tiled_map_visibility(visible: bool)
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	%TypeSelector.event_bus = self
+	%TypeSelector.selected.connect(func(_v): type_changed.emit())
+	%TypeSelector.updated.connect(func(v,n,c): update_type.emit(v, n, c))
+	%TypeSelector.deleted.connect(func(v): delete_type.emit(v))
+
 	%EditPlaneSelector.changed.connect(func(axis: int, depth: int): edit_plane_changed.emit(axis, depth))
 	%CCWButton.pressed.connect(rotate_cursor.emit.bind(1))
 	%CWButton.pressed.connect(rotate_cursor.emit.bind(-1))
