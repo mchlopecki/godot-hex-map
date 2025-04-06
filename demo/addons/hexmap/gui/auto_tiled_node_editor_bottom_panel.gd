@@ -1,6 +1,10 @@
 @tool
 extends VBoxContainer
 
+@export var hex_space: HexMapSpace :
+	set(value):
+		print("set hex_space ", value.cell_scale)
+		hex_space = value
 @export var cell_types: Array
 @export var mesh_library: MeshLibrary
 @export var cell_radius: float = 1.0 :

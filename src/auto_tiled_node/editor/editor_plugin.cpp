@@ -40,6 +40,9 @@ void HexMapAutoTiledNodeEditorPlugin::_edit(Object *p_object) {
             "res://addons/hexmap/gui/"
             "auto_tiled_node_editor_bottom_panel.tscn");
     bottom_panel = (Control *)panel_scene->instantiate();
+    bottom_panel->set("hex_space",
+            (Ref<hex_bind::HexMapSpace>)
+                    auto_tiled_node->int_node->get_space());
     bottom_panel->set(
             "cell_types", auto_tiled_node->int_node->_get_cell_types());
     bottom_panel->set("mesh_library", auto_tiled_node->get("mesh_library"));
