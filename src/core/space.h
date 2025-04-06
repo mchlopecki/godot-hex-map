@@ -2,17 +2,12 @@
 
 #include "cell_id.h"
 #include "godot_cpp/classes/array_mesh.hpp"
-#include "godot_cpp/classes/ref_counted.hpp"
 #include "godot_cpp/variant/packed_int32_array.hpp"
 #include "godot_cpp/variant/packed_vector3_array.hpp"
 #include <godot_cpp/variant/transform3d.hpp>
 #include <godot_cpp/variant/vector3.hpp>
 
 using namespace godot;
-
-namespace hex_bind {
-class HexMapSpace;
-}
 
 /// Helper class for mapping `HexMapCellId` to `Vector3` coordinates
 class HexMapSpace {
@@ -106,8 +101,6 @@ public:
                 transform != other.transform;
     }
 
-    inline operator Ref<hex_bind::HexMapSpace>() const;
-
     /// generate a PackedVector3Array for the vertices of a hex-shaped cell
     PackedVector3Array get_cell_vertices(
             Vector3 scale = Vector3(1, 1, 1)) const;
@@ -131,33 +124,3 @@ public:
             Vector3 d,
             float padding = 0.5) const;
 };
-
-// create a Ref<> type for HexMapSpace
-namespace hex_bind {
-
-class HexMapSpace : public RefCounted {
-    GDCLASS(HexMapSpace, RefCounted)
-
-public:
-    HexMapSpace(const ::HexMapSpace &space) : space(space) {};
-    HexMapSpace() {};
-
-protected:
-    static void _bind_methods();
-
-private:
-    real_t get_cell_height() const;
-    void set_cell_height(real_t);
-    real_t get_cell_radius() const;
-    void set_cell_radius(real_t);
-    Vector3 get_cell_scale() const;
-    void set_cell_scale(Vector3);
-
-    ::HexMapSpace space;
-};
-
-} // namespace hex_bind
-
-inline HexMapSpace::operator Ref<hex_bind::HexMapSpace>() const {
-    return Ref<hex_bind::HexMapCellId>(memnew(hex_bind::HexMapSpace(*this)));
-}

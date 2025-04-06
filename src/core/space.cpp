@@ -1,7 +1,6 @@
 
 #include "space.h"
 #include "cell_id.h"
-#include "godot_cpp/classes/global_constants.hpp"
 #include "iter_cube.h"
 #include "math.h"
 #include "profiling.h"
@@ -276,64 +275,4 @@ Vector<HexMapCellId> HexMapSpace::get_cell_ids_in_local_quad(Vector3 a,
     }
 
     return out;
-}
-
-void hex_bind::HexMapSpace::_bind_methods() {
-    // field accessors
-    ClassDB::bind_method(D_METHOD("get_cell_height"),
-            &hex_bind::HexMapSpace::get_cell_height);
-    ClassDB::bind_method(D_METHOD("set_cell_height", "height"),
-            &hex_bind::HexMapSpace::set_cell_height);
-    ADD_PROPERTY(PropertyInfo(Variant::FLOAT,
-                         "cell_height",
-                         godot::PROPERTY_HINT_NONE,
-                         ""),
-            "set_cell_height",
-            "get_cell_height");
-
-    ClassDB::bind_method(D_METHOD("get_cell_radius"),
-            &hex_bind::HexMapSpace::get_cell_radius);
-    ClassDB::bind_method(D_METHOD("set_cell_radius", "radius"),
-            &hex_bind::HexMapSpace::set_cell_radius);
-    ADD_PROPERTY(PropertyInfo(Variant::FLOAT,
-                         "cell_radius",
-                         godot::PROPERTY_HINT_NONE,
-                         ""),
-            "set_cell_radius",
-            "get_cell_radius");
-
-    ClassDB::bind_method(D_METHOD("get_cell_scale"),
-            &hex_bind::HexMapSpace::get_cell_scale);
-    ClassDB::bind_method(D_METHOD("set_cell_scale", "scale"),
-            &hex_bind::HexMapSpace::set_cell_scale);
-    ADD_PROPERTY(PropertyInfo(Variant::VECTOR3,
-                         "cell_scale",
-                         godot::PROPERTY_HINT_NONE,
-                         ""),
-            "set_cell_scale",
-            "get_cell_scale");
-}
-
-real_t hex_bind::HexMapSpace::get_cell_height() const {
-    return space.get_cell_height();
-}
-
-void hex_bind::HexMapSpace::set_cell_height(real_t value) {
-    space.set_cell_height(value);
-}
-
-real_t hex_bind::HexMapSpace::get_cell_radius() const {
-    return space.get_cell_radius();
-}
-
-void hex_bind::HexMapSpace::set_cell_radius(real_t value) {
-    space.set_cell_radius(value);
-}
-
-Vector3 hex_bind::HexMapSpace::get_cell_scale() const {
-    return space.get_cell_scale();
-}
-
-void hex_bind::HexMapSpace::set_cell_scale(Vector3 value) {
-    space.set_cell_scale(value);
 }
