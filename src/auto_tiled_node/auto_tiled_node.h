@@ -39,6 +39,34 @@ public:
         static const unsigned PatternCells = 19;
 
         // clang-format off
+
+        /// offset of each cell in the rule pattern from the origin cell
+        static constexpr HexMapCellId CellOffsets[PatternCells] = {
+            HexMapCellId(),
+
+            // radius = 1, starting at southwest corner, counter-clockwise
+            HexMapCellId(-1,  1, 0),
+            HexMapCellId( 0,  1, 0),
+            HexMapCellId( 1,  0, 0),
+            HexMapCellId( 1, -1, 0),
+            HexMapCellId( 0, -1, 0),
+            HexMapCellId(-1,  0, 0),
+
+            // radius = 2, starting at southwest corner, counter-clockwise
+            HexMapCellId(-2,  2, 0),
+            HexMapCellId(-1,  2, 0),
+            HexMapCellId( 0,  2, 0),
+            HexMapCellId( 1,  1, 0),
+            HexMapCellId( 2,  0, 0),
+            HexMapCellId( 2, -1, 0),
+            HexMapCellId( 2, -2, 0),
+            HexMapCellId( 1, -2, 0),
+            HexMapCellId( 0, -2, 0),
+            HexMapCellId(-1, -1, 0),
+            HexMapCellId(-2,  0, 0),
+            HexMapCellId(-2,  1, 0),
+        };
+
         /// Used to rotate the cell pattern based on TileOrientation, each
         /// array is a specific tile orientation, and the values within the
         /// array are the pattern index for each cell we're matching against.
@@ -76,38 +104,19 @@ public:
               6, 1, 2, 3, 4, 5,
               17, 18, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 },
         };
-        static constexpr HexMapCellId CellOffsets[PatternCells] = {
-            HexMapCellId(),
-
-            // radius = 1
-            HexMapCellId(-1,  1, 0),
-            HexMapCellId( 0,  1, 0),
-            HexMapCellId( 1,  0, 0),
-            HexMapCellId( 1, -1, 0),
-            HexMapCellId( 0, -1, 0),
-            HexMapCellId(-1,  0, 0),
-
-            // radius = 2
-            HexMapCellId(-2,  2, 0),
-            HexMapCellId(-1,  2, 0),
-            HexMapCellId( 0,  2, 0),
-            HexMapCellId( 1,  1, 0),
-            HexMapCellId( 2,  0, 0),
-            HexMapCellId( 2, -1, 0),
-            HexMapCellId( 2, -2, 0),
-            HexMapCellId( 1, -2, 0),
-            HexMapCellId( 0, -2, 0),
-            HexMapCellId(-1, -1, 0),
-            HexMapCellId(-2,  0, 0),
-            HexMapCellId(-2,  1, 0),
-        };
         // clang-format on
 
     public:
         inline operator Ref<HexMapTileRule>() const;
 
+        /// clear a cell in the pattern so that it is ignored when matching
         void clear_cell(HexMapCellId offset);
+
+        /// require a cell to be a specific type when matching
         void set_cell_type(HexMapCellId offset, unsigned type);
+
+        /// require a cell be empty when matching
+        void set_cell_empty(HexMapCellId offset);
 
         /// check if the rule matches the provided cell data with the given
         /// rotation
@@ -115,47 +124,36 @@ public:
         /// @param orientation
         /// @return -1 if matches, >= 0 for the index of mismatch
         inline int match(int32_t cell_type[PatternCells],
-                HexMapTileOrientation orientation) {
-            int o = static_cast<int>(orientation);
-            assert(o >= 0 && o < 6 && "orientation must be in 0..5 inclusive");
-            auto *pattern_index = PatternIndex[static_cast<int>(orientation)];
-
-            for (int i = 0; i < PatternCells; i++) {
-                const auto &cell = pattern[pattern_index[i]];
-                if (!cell.set) {
-                    continue;
-                }
-                if (cell_type[i] != pattern[pattern_index[i]].type) {
-                    return i;
-                }
-            }
-
-            return -1;
-        }
+                HexMapTileOrientation orientation);
 
     private:
+        /// rule cell states
+        enum {
+            /// cell is ignored when matching pattern
+            RULE_CELL_STATE_DISABLED = 0,
+            /// cell must be empty when matcheng
+            RULE_CELL_STATE_EMPTY = 1,
+            /// cell must have type specified in type field
+            RULE_CELL_STATE_TYPE = 2,
+            /// cell must not have type specified in type field
+            RULE_CELL_STATE_NOT_TYPE = 3,
+        };
+
         /// internal rule id, used for ordering
         uint16_t id = RuleIdNotSet;
 
-        struct {
-            // 00 - disabled
-            // 01 - no type -- specific type == -1
-            // 10 - specific type
-            // 11 - not specific type
-            // enabled/disabled
-            // no type
-            // specific type
-            // not specific type
-            int16_t type;
-            /// set to 1 when this cell has been set
-            unsigned set : 1;
-            /// used to invert the state of this cell
-            /// nt = 1, set = 1, tile = 5, means not tile 5
-            /// nt = 1, set = 0 means tile not set
-            /// nt = 0, set = 1, tile = N, means tile N
-            unsigned nt : 1;
-        } pattern[PatternCells];
+        /// tile to set when rule matches
         int16_t tile = 0;
+
+        /// cell pattern to match against
+        struct {
+            /// state for this cell in the pattern
+            /// @see RULE_CELL_STATE_*
+            unsigned state : 2;
+
+            /// type for this cell
+            uint16_t type;
+        } pattern[PatternCells];
     };
 
     /// GDScript wrapper for Rule class
@@ -172,12 +170,15 @@ public:
 
         void clear_cell(const Ref<hex_bind::HexMapCellId> &);
         void set_cell_type(const Ref<hex_bind::HexMapCellId> &, unsigned type);
+        void set_cell_empty(const Ref<hex_bind::HexMapCellId> &);
 
         HexMapTileRule() {};
         HexMapTileRule(const Rule &rule) : inner(rule) {};
 
         /// actual Rule value
         Rule inner;
+
+        String _to_string() const;
 
     protected:
         static void _bind_methods();
@@ -204,6 +205,12 @@ public:
     void update_rule(const Ref<HexMapTileRule> &);
     /// delete a rule by id
     void delete_rule(uint16_t);
+
+    /// get the state of a given cell
+    /// @param cell_id [HexMapCellId] cell id
+    /// @return HexMapNode::CellInfo
+    HexMapNode::CellInfo get_cell(const HexMapCellId &) const;
+    Dictionary _get_cell(const Ref<hex_bind::HexMapCellId> &) const;
 
     // signal callbacks
     void cell_scale_changed();

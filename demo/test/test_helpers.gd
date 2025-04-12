@@ -33,3 +33,18 @@ func assert_cells_eq(found, expect) -> void:
 			extra.push_back(HexMapCellId.from_int(id))
 
 	fail_test(str("cells do not match; missing: ", missing, ", extra: ", extra))
+
+func assert_cell_eq(found, expect) -> void:
+	if found.as_int() == expect.as_int():
+		pass_test(str("expected cell to equal ", expect))
+		return
+
+	fail_test(str("cells are not equal; expected: ", expect, ", got: ", found))
+
+func assert_node_cell_value_eq(node, cell_id: HexMapCellId, type: int) -> void:
+	var found = node.get_cell(cell_id)
+	if found["value"] == type:
+		pass_test(str("expected cell ", cell_id, " type to equal ", type))
+	else:
+		fail_test(str("cell ", cell_id, " type incorrect; expected ", type,
+			", found: ", found["value"]))

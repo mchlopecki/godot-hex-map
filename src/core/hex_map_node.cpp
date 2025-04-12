@@ -26,7 +26,8 @@ void HexMapNode::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_cell", "cell", "value", "orientation"),
             static_cast<void (HexMapNode::*)(
                     const Ref<hex_bind::HexMapCellId>, int, int)>(
-                    &HexMapNode::set_cell));
+                    &HexMapNode::set_cell),
+            DEFVAL(0));
     ClassDB::bind_method(D_METHOD("set_cells", "cells"),
             static_cast<void (HexMapNode::*)(const Array)>(
                     &HexMapNode::set_cells));

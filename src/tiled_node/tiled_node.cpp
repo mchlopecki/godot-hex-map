@@ -599,18 +599,18 @@ Vector<HexMapCellId> HexMapTiledNode::local_quad_to_cell_ids(Vector3 a,
     // are most perpendicular to the plane normal.
     int axis[2];
     switch (plane.normal.abs().max_axis_index()) {
-        case godot::Vector3::AXIS_X:
-            axis[0] = Vector3::AXIS_Y;
-            axis[1] = Vector3::AXIS_Z;
-            break;
-        case godot::Vector3::AXIS_Y:
-            axis[0] = Vector3::AXIS_X;
-            axis[1] = Vector3::AXIS_Z;
-            break;
-        case godot::Vector3::AXIS_Z:
-            axis[0] = Vector3::AXIS_X;
-            axis[1] = Vector3::AXIS_Y;
-            break;
+    case godot::Vector3::AXIS_X:
+        axis[0] = Vector3::AXIS_Y;
+        axis[1] = Vector3::AXIS_Z;
+        break;
+    case godot::Vector3::AXIS_Y:
+        axis[0] = Vector3::AXIS_X;
+        axis[1] = Vector3::AXIS_Z;
+        break;
+    case godot::Vector3::AXIS_Z:
+        axis[0] = Vector3::AXIS_X;
+        axis[1] = Vector3::AXIS_Y;
+        break;
     }
 
     // break the 3D quad down into two 2D triangles
@@ -690,39 +690,39 @@ void HexMapTiledNode::_notification(int p_what) {
     static Transform3D last_transform;
 
     switch (p_what) {
-        case NOTIFICATION_POSTINITIALIZE:
-            // XXX workaround for connect during initialize
-            break;
+    case NOTIFICATION_POSTINITIALIZE:
+        // XXX workaround for connect during initialize
+        break;
 
-        case NOTIFICATION_ENTER_WORLD:
-            for (auto &pair : octants) {
-                pair.value->enter_world();
-            }
-            last_transform = get_global_transform();
-            break;
-
-        case NOTIFICATION_ENTER_TREE:
-            _update_visibility();
-            break;
-
-        case NOTIFICATION_TRANSFORM_CHANGED: {
-            Transform3D transform = get_global_transform();
-            if (transform != last_transform) {
-                space.set_transform(transform);
-                update_octant_meshes();
-                last_transform = transform;
-            }
-            break;
+    case NOTIFICATION_ENTER_WORLD:
+        for (auto &pair : octants) {
+            pair.value->enter_world();
         }
-        case NOTIFICATION_EXIT_WORLD:
-            for (auto &pair : octants) {
-                pair.value->exit_world();
-            }
-            break;
+        last_transform = get_global_transform();
+        break;
 
-        case NOTIFICATION_VISIBILITY_CHANGED:
-            _update_visibility();
-            break;
+    case NOTIFICATION_ENTER_TREE:
+        _update_visibility();
+        break;
+
+    case NOTIFICATION_TRANSFORM_CHANGED: {
+        Transform3D transform = get_global_transform();
+        if (transform != last_transform) {
+            space.set_transform(transform);
+            update_octant_meshes();
+            last_transform = transform;
+        }
+        break;
+    }
+    case NOTIFICATION_EXIT_WORLD:
+        for (auto &pair : octants) {
+            pair.value->exit_world();
+        }
+        break;
+
+    case NOTIFICATION_VISIBILITY_CHANGED:
+        _update_visibility();
+        break;
     }
 }
 
@@ -1090,6 +1090,7 @@ HexMapTiledNode::HexMapTiledNode() {
 }
 
 HexMapTiledNode::~HexMapTiledNode() {
+    UtilityFunctions::print("HexMapTiledNode::~HexMapTiledNode()");
     clear();
     NavigationServer3D::get_singleton()->free_rid(
             navigation_source_geometry_parser);

@@ -76,124 +76,145 @@ void hex_bind::HexMapCellId::_bind_methods() {
     // static constructors
     ClassDB::bind_static_method("HexMapCellId",
             D_METHOD("from_coordinates", "q", "r", "y"),
-            &hex_bind::HexMapCellId::_from_coordinates);
+            &hex_bind::HexMapCellId::from_coordinates);
     ClassDB::bind_static_method("HexMapCellId",
             D_METHOD("from_vector", "vector"),
-            &hex_bind::HexMapCellId::_from_vector);
+            &hex_bind::HexMapCellId::from_vector);
     ClassDB::bind_static_method("HexMapCellId",
             D_METHOD("from_int", "int"),
-            &hex_bind::HexMapCellId::_from_int);
+            &hex_bind::HexMapCellId::from_int);
 
     // type conversions
-    ClassDB::bind_method(D_METHOD("as_int"), &hex_bind::HexMapCellId::_as_int);
+    ClassDB::bind_method(D_METHOD("as_int"), &hex_bind::HexMapCellId::as_int);
     ClassDB::bind_method(
-            D_METHOD("as_vector"), &hex_bind::HexMapCellId::_as_vector);
+            D_METHOD("as_vector"), &hex_bind::HexMapCellId::as_vector);
 
     // field accessors
-    ClassDB::bind_method(D_METHOD("get_q"), &hex_bind::HexMapCellId::_get_q);
-    ClassDB::bind_method(D_METHOD("get_r"), &hex_bind::HexMapCellId::_get_r);
-    ClassDB::bind_method(D_METHOD("get_s"), &hex_bind::HexMapCellId::_get_s);
-    ClassDB::bind_method(D_METHOD("get_y"), &hex_bind::HexMapCellId::_get_y);
+    ClassDB::bind_method(D_METHOD("get_q"), &hex_bind::HexMapCellId::get_q);
+    ClassDB::bind_method(D_METHOD("get_r"), &hex_bind::HexMapCellId::get_r);
+    ClassDB::bind_method(D_METHOD("get_s"), &hex_bind::HexMapCellId::get_s);
+    ClassDB::bind_method(D_METHOD("get_y"), &hex_bind::HexMapCellId::get_y);
 
     // directional helpers
-    ClassDB::bind_method(D_METHOD("east"), &hex_bind::HexMapCellId::_east);
+    ClassDB::bind_method(D_METHOD("east"), &hex_bind::HexMapCellId::east);
     ClassDB::bind_method(
-            D_METHOD("northeast"), &hex_bind::HexMapCellId::_northeast);
+            D_METHOD("northeast"), &hex_bind::HexMapCellId::northeast);
     ClassDB::bind_method(
-            D_METHOD("northwest"), &hex_bind::HexMapCellId::_northwest);
-    ClassDB::bind_method(D_METHOD("west"), &hex_bind::HexMapCellId::_west);
+            D_METHOD("northwest"), &hex_bind::HexMapCellId::northwest);
+    ClassDB::bind_method(D_METHOD("west"), &hex_bind::HexMapCellId::west);
     ClassDB::bind_method(
-            D_METHOD("southwest"), &hex_bind::HexMapCellId::_southwest);
+            D_METHOD("southwest"), &hex_bind::HexMapCellId::southwest);
     ClassDB::bind_method(
-            D_METHOD("southeast"), &hex_bind::HexMapCellId::_southeast);
-    ClassDB::bind_method(D_METHOD("up"), &hex_bind::HexMapCellId::_up);
-    ClassDB::bind_method(D_METHOD("down"), &hex_bind::HexMapCellId::_down);
+            D_METHOD("southeast"), &hex_bind::HexMapCellId::southeast);
+    ClassDB::bind_method(D_METHOD("up"), &hex_bind::HexMapCellId::up);
+    ClassDB::bind_method(D_METHOD("down"), &hex_bind::HexMapCellId::down);
 
     ClassDB::bind_method(
-            D_METHOD("equals", "other"), &hex_bind::HexMapCellId::_equals);
+            D_METHOD("equals", "other"), &hex_bind::HexMapCellId::equals);
     ClassDB::bind_method(
-            D_METHOD("unit_center"), &hex_bind::HexMapCellId::_unit_center);
+            D_METHOD("unit_center"), &hex_bind::HexMapCellId::unit_center);
     ClassDB::bind_method(D_METHOD("get_neighbors", "radius", "include_self"),
-            &hex_bind::HexMapCellId::_get_neighbors,
+            &hex_bind::HexMapCellId::get_neighbors,
             1,
             false);
+
+    ClassDB::bind_method(
+            D_METHOD("add", "other"), &hex_bind::HexMapCellId::add);
+    ClassDB::bind_method(
+            D_METHOD("subtract", "other"), &hex_bind::HexMapCellId::subtract);
+    ClassDB::bind_method(
+            D_METHOD("reverse"), &hex_bind::HexMapCellId::reverse);
 }
 
-int hex_bind::HexMapCellId::_get_q() { return cell_id.q; }
+int hex_bind::HexMapCellId::get_q() { return inner.q; }
 
-int hex_bind::HexMapCellId::_get_r() { return cell_id.r; }
+int hex_bind::HexMapCellId::get_r() { return inner.r; }
 
-int hex_bind::HexMapCellId::_get_s() { return cell_id.s(); }
+int hex_bind::HexMapCellId::get_s() { return inner.s(); }
 
-int hex_bind::HexMapCellId::_get_y() { return cell_id.y; }
+int hex_bind::HexMapCellId::get_y() { return inner.y; }
 
 Ref<hex_bind::HexMapCellId>
-hex_bind::HexMapCellId::_from_coordinates(int p_q, int p_r, int p_y) {
+hex_bind::HexMapCellId::from_coordinates(int p_q, int p_r, int p_y) {
     return CellId(p_q, p_r, p_y);
 }
 
-Vector3i hex_bind::HexMapCellId::_as_vector() { return (Vector3i)cell_id; }
+Vector3i hex_bind::HexMapCellId::as_vector() { return (Vector3i)inner; }
 
-Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::_from_vector(
+Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::from_vector(
         Vector3i p_vector) {
     return CellId(p_vector);
 }
 
-uint64_t hex_bind::HexMapCellId::_as_int() {
-    CellId::Key key(cell_id);
+uint64_t hex_bind::HexMapCellId::as_int() {
+    CellId::Key key(inner);
     return key.key;
 }
 
-Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::_from_int(uint64_t p_int) {
+Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::from_int(uint64_t p_int) {
     CellId::Key key(p_int);
     return CellId(key);
 }
 
-Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::_east() const {
-    return *this + CellId(1, 0, 0);
+Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::east() const {
+    return inner + CellId(1, 0, 0);
 }
 
-Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::_northeast() const {
-    return *this + CellId(1, -1, 0);
+Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::northeast() const {
+    return inner + CellId(1, -1, 0);
 }
 
-Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::_northwest() const {
-    return *this + CellId(0, -1, 0);
+Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::northwest() const {
+    return inner + CellId(0, -1, 0);
 }
 
-Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::_west() const {
-    return *this + CellId(-1, 0, 0);
+Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::west() const {
+    return inner + CellId(-1, 0, 0);
 }
 
-Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::_southwest() const {
-    return *this + CellId(-1, 1, 0);
+Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::southwest() const {
+    return inner + CellId(-1, 1, 0);
 }
 
-Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::_southeast() const {
-    return *this + CellId(0, 1, 0);
+Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::southeast() const {
+    return inner + CellId(0, 1, 0);
 }
 
-Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::_down() const {
-    return *this + CellId(0, 0, -1);
+Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::down() const {
+    return inner + CellId(0, 0, -1);
 }
 
-Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::_up() const {
-    return *this + CellId(0, 0, 1);
+Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::up() const {
+    return inner + CellId(0, 0, 1);
 }
 
-String hex_bind::HexMapCellId::_to_string() const { return (String)cell_id; };
+String hex_bind::HexMapCellId::_to_string() const { return (String)inner; };
 
-Vector3 hex_bind::HexMapCellId::_unit_center() const {
-    return cell_id.unit_center();
+Vector3 hex_bind::HexMapCellId::unit_center() const {
+    return inner.unit_center();
 };
 
-bool hex_bind::HexMapCellId::_equals(
+bool hex_bind::HexMapCellId::equals(
         const Ref<hex_bind::HexMapCellId> other) const {
-    return cell_id == other->cell_id;
+    return inner == other->inner;
 }
 
-Ref<hex_bind::HexMapIter> hex_bind::HexMapCellId::_get_neighbors(
+Ref<hex_bind::HexMapIter> hex_bind::HexMapCellId::get_neighbors(
         unsigned int radius,
         bool include_center) const {
-    return cell_id.get_neighbors(radius, HexMapPlanes::All, include_center);
+    return inner.get_neighbors(radius, HexMapPlanes::All, include_center);
+}
+
+Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::add(
+        Ref<hex_bind::HexMapCellId> other) const {
+    return inner + other->inner;
+}
+
+Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::subtract(
+        Ref<hex_bind::HexMapCellId> other) const {
+    return inner - other->inner;
+}
+
+Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::reverse() const {
+    return inner * -1;
 }

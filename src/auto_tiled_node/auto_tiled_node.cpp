@@ -5,6 +5,7 @@
 #include "godot_cpp/core/error_macros.hpp"
 #include "godot_cpp/core/object.hpp"
 #include "godot_cpp/core/property_info.hpp"
+#include "godot_cpp/variant/utility_functions.hpp"
 #include "godot_cpp/variant/variant.hpp"
 
 using namespace godot;
@@ -45,10 +46,13 @@ unsigned HexMapAutoTiledNode::add_rule(const Rule &rule) {
     }
 
     auto iter = rules.insert(id, rule);
+    assert(iter && "iter must return non-null");
     iter->value.id = id;
     rules_order.push_back(id);
 
-    apply_rules();
+    if (int_node) {
+        apply_rules();
+    }
     emit_signal("rules_changed");
     return id;
 }
@@ -77,6 +81,8 @@ void HexMapAutoTiledNode::cell_scale_changed() {
 }
 
 void HexMapAutoTiledNode::apply_rules() {
+    ERR_FAIL_NULL(int_node);
+    ERR_FAIL_NULL(tiled_node);
     int max_range = 0;
 
     // get an iterator that gives me some ordered sample of the cell values
@@ -117,6 +123,20 @@ void HexMapAutoTiledNode::apply_rules() {
     }
 }
 
+HexMapNode::CellInfo HexMapAutoTiledNode::get_cell(
+        const HexMapCellId &cell_id) const {
+    return tiled_node->get_cell(cell_id);
+}
+
+Dictionary HexMapAutoTiledNode::_get_cell(
+        const Ref<hex_bind::HexMapCellId> &ref) const {
+    auto info = get_cell(ref->inner);
+    Dictionary out;
+    out["value"] = info.value;
+    out["orientation"] = info.orientation;
+    return out;
+}
+
 void HexMapAutoTiledNode::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_mesh_library", "mesh_library"),
             &HexMapAutoTiledNode::set_mesh_library);
@@ -145,6 +165,8 @@ void HexMapAutoTiledNode::_bind_methods() {
     ClassDB::bind_method(
             D_METHOD("delete_rule", "id"), &HexMapAutoTiledNode::delete_rule);
 
+    ClassDB::bind_method(
+            D_METHOD("get_cell", "cell_id"), &HexMapAutoTiledNode::_get_cell);
     ADD_SIGNAL(MethodInfo("rules_changed"));
 }
 
@@ -152,40 +174,44 @@ void HexMapAutoTiledNode::_notification(int p_what) {
     static Transform3D last_transform;
 
     switch (p_what) {
-        case NOTIFICATION_ENTER_TREE: {
-            int_node = Object::cast_to<HexMapIntNode>(get_parent());
-            ERR_FAIL_NULL_MSG(int_node,
-                    "Parent of HexMapAutoTiled node must be HexMapInt node");
-            int_node->connect("cell_scale_changed",
-                    callable_mp(
-                            this, &HexMapAutoTiledNode::cell_scale_changed));
-            tiled_node->set_space(int_node->get_space());
-            tiled_node->set_mesh_library(mesh_library);
-            add_child(tiled_node);
-            break;
-        }
-        case NOTIFICATION_EXIT_TREE: {
-            int_node->disconnect("cell_scale_changed",
-                    callable_mp(
-                            this, &HexMapAutoTiledNode::cell_scale_changed));
-            int_node = nullptr;
-            remove_child(tiled_node);
-            break;
-        }
+    case NOTIFICATION_PARENTED:
+        int_node = Object::cast_to<HexMapIntNode>(get_parent());
+        ERR_FAIL_NULL_MSG(int_node,
+                "Parent of HexMapAutoTiled node must be HexMapInt node");
+        int_node->connect("cell_scale_changed",
+                callable_mp(this, &HexMapAutoTiledNode::cell_scale_changed));
+        cell_scale_changed();
+        apply_rules();
+        break;
+    case NOTIFICATION_UNPARENTED:
+        int_node->disconnect("cell_scale_changed",
+                callable_mp(this, &HexMapAutoTiledNode::cell_scale_changed));
+        int_node = nullptr;
+        UtilityFunctions::print("before clear tiled ", tiled_node);
+        tiled_node->clear();
+        UtilityFunctions::print("clear tiled ", tiled_node);
+        break;
     }
 }
 
 HexMapAutoTiledNode::HexMapAutoTiledNode() {
-    tiled_node = memnew(HexMapTiledNode);
     int_node = nullptr;
+    tiled_node = memnew(HexMapTiledNode);
+    tiled_node->set_mesh_library(mesh_library);
+    add_child(tiled_node);
+    UtilityFunctions::print("tiled node = ", tiled_node);
 }
 
-HexMapAutoTiledNode::~HexMapAutoTiledNode() { memfree(tiled_node); }
+HexMapAutoTiledNode::~HexMapAutoTiledNode() {
+    UtilityFunctions::print(
+            "remove child tiled ", vformat("0x%08x", (uint64_t)tiled_node));
+    tiled_node = nullptr;
+}
 
 void HexMapAutoTiledNode::Rule::clear_cell(HexMapCellId offset) {
     for (int i = 0; i < PatternCells; i++) {
         if (offset == CellOffsets[i]) {
-            pattern[i].set = false;
+            pattern[i].state = RULE_CELL_STATE_DISABLED;
             return;
         }
     }
@@ -196,7 +222,7 @@ void HexMapAutoTiledNode::Rule::set_cell_type(HexMapCellId offset,
         unsigned type) {
     for (int i = 0; i < PatternCells; i++) {
         if (offset == CellOffsets[i]) {
-            pattern[i].set = true;
+            pattern[i].state = RULE_CELL_STATE_TYPE;
             pattern[i].type = type;
             return;
         }
@@ -204,6 +230,51 @@ void HexMapAutoTiledNode::Rule::set_cell_type(HexMapCellId offset,
     ERR_FAIL_MSG("Rule::set_cell_type(): invalid cell offset");
 }
 
+void HexMapAutoTiledNode::Rule::set_cell_empty(HexMapCellId offset) {
+    for (int i = 0; i < PatternCells; i++) {
+        if (offset == CellOffsets[i]) {
+            pattern[i].state = RULE_CELL_STATE_EMPTY;
+            return;
+        }
+    }
+    ERR_FAIL_MSG("Rule::set_cell_type(): invalid cell offset");
+}
+
+inline int HexMapAutoTiledNode::Rule::match(int32_t cell_type[PatternCells],
+        HexMapTileOrientation orientation) {
+    int o = static_cast<int>(orientation);
+    assert(o >= 0 && o < 6 && "orientation must be in 0..5 inclusive");
+    auto *pattern_index = PatternIndex[static_cast<int>(orientation)];
+
+    for (int i = 0; i < PatternCells; i++) {
+        const auto &cell = pattern[pattern_index[i]];
+
+        // match the cell state
+        switch (cell.state) {
+        case RULE_CELL_STATE_DISABLED:
+            continue;
+        case RULE_CELL_STATE_EMPTY:
+            if (cell_type[i] == -1) {
+                continue;
+            }
+            break;
+        case RULE_CELL_STATE_TYPE:
+            if (cell_type[i] == pattern[pattern_index[i]].type) {
+                continue;
+            }
+            break;
+        case RULE_CELL_STATE_NOT_TYPE:
+            if (cell_type[i] != pattern[pattern_index[i]].type) {
+                continue;
+            }
+            break;
+        }
+        /// cell state did not match, return our index
+        return i;
+    }
+
+    return -1;
+}
 // GDSCRIPT Rule BINDINGS
 void HexMapAutoTiledNode::HexMapTileRule::_bind_methods() {
     ClassDB::bind_method(
@@ -222,6 +293,8 @@ void HexMapAutoTiledNode::HexMapTileRule::_bind_methods() {
             D_METHOD("clear_cell", "offset"), &HexMapTileRule::clear_cell);
     ClassDB::bind_method(D_METHOD("set_cell_type", "offset", "type"),
             &HexMapTileRule::set_cell_type);
+    ClassDB::bind_method(D_METHOD("set_cell_empty", "offset"),
+            &HexMapTileRule::set_cell_empty);
 }
 
 int HexMapAutoTiledNode::HexMapTileRule::get_tile() const {
@@ -244,4 +317,49 @@ void HexMapAutoTiledNode::HexMapTileRule::set_cell_type(
         const Ref<hex_bind::HexMapCellId> &offset,
         unsigned type) {
     inner.set_cell_type(**offset, type);
+}
+void HexMapAutoTiledNode::HexMapTileRule::set_cell_empty(
+        const Ref<hex_bind::HexMapCellId> &ref) {
+    inner.set_cell_empty(ref->inner);
+}
+
+String HexMapAutoTiledNode::HexMapTileRule::_to_string() const {
+    // clang-format off
+    String fmt = "Rule {id}: tile {tile}\n"
+        "        v---^---v---^---v---^---v\n"
+        "        | {15} | {14} | {13} |\n"
+        "    v---^---v---^---v---^---v---^---v\n"
+        "    | {16} | {5} | {4} | {12} |\n"
+        "v---^---v---^---v---^---v---^---v---^---v\n"
+        "| {17} | {6} | {0} | {3} | {11} |\n"
+        "^---v---^---v---^---v---^---v---^---v---^\n"
+        "    | {18} | {1} | {2} | {10} |\n"
+        "    ^---v---^---v---^---v---^---v---^\n"
+        "        | {7} | {8} | {9} |\n"
+        "        ^---v---^---v---^---v---^\n";
+
+    Dictionary fields;
+    fields["id"] = inner.id;
+    fields["tile"] = inner.tile;
+
+    for (int i = 0; i < Rule::PatternCells; i++) {
+        auto cell = inner.pattern[i];
+        switch (cell.state) {
+            case HexMapAutoTiledNode::Rule::RULE_CELL_STATE_DISABLED:
+                fields[itos(i)] = "     ";
+                break;
+            case HexMapAutoTiledNode::Rule::RULE_CELL_STATE_EMPTY:
+                fields[itos(i)] = " !!! ";
+                break;
+            case HexMapAutoTiledNode::Rule::RULE_CELL_STATE_TYPE:
+                fields[itos(i)] = vformat("%5s", inner.pattern[i].type);
+                break;
+            case HexMapAutoTiledNode::Rule::RULE_CELL_STATE_NOT_TYPE:
+                fields[itos(i)] = vformat("! %3s", inner.pattern[i].type);
+                break;
+        }
+    }
+
+    return fmt.format(fields);
+    // clang-format on
 }

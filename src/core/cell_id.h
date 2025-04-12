@@ -86,6 +86,9 @@ public:
     HexMapCellId operator-(const HexMapCellId &other) const {
         return HexMapCellId(q - other.q, r - other.r, y - other.y);
     }
+    HexMapCellId operator*(int m) const {
+        return HexMapCellId(q * m, r * m, y * m);
+    }
     bool operator<(const HexMapCellId &other) const {
         return Key(*this) < Key(other);
     }
@@ -144,50 +147,53 @@ class HexMapCellId : public RefCounted {
     GDCLASS(HexMapCellId, RefCounted)
 
     using CellId = ::HexMapCellId;
-    CellId cell_id;
 
 public:
-    HexMapCellId(const CellId &cell_id) : cell_id(cell_id) {};
+    CellId inner;
+
+    HexMapCellId(const CellId &cell_id) : inner(cell_id) {};
     HexMapCellId() {};
 
     // c++ helpers
-    inline operator const CellId &() const { return cell_id; }
-    inline Ref<hex_bind::HexMapCellId> operator+(const CellId &delta) const {
-        return cell_id + delta;
-    };
+    inline operator const CellId &() const { return inner; }
 
     // GDScript field accessors
-    int _get_q();
-    int _get_r();
-    int _get_s();
-    int _get_y();
+    int get_q();
+    int get_r();
+    int get_s();
+    int get_y();
 
     // GDScript static constructors
     static Ref<hex_bind::HexMapCellId>
-    _from_coordinates(int p_q, int p_r, int p_y);
-    static Ref<hex_bind::HexMapCellId> _from_vector(Vector3i p_vector);
-    static Ref<hex_bind::HexMapCellId> _from_int(uint64_t p_hash);
+    from_coordinates(int p_q, int p_r, int p_y);
+    static Ref<hex_bind::HexMapCellId> from_vector(Vector3i p_vector);
+    static Ref<hex_bind::HexMapCellId> from_int(uint64_t p_hash);
 
     // gdscript does not support equality for RefCounted objects.  We need some
     // way to use cell ids in arrays, hashes, etc.  We provide the hash method
     // for generating a type that gdscript can handle for equality.
-    uint64_t _as_int();
-    Vector3i _as_vector();
+    uint64_t as_int();
+    Vector3i as_vector();
+
+    // maths
+    Ref<hex_bind::HexMapCellId> add(Ref<hex_bind::HexMapCellId>) const;
+    Ref<hex_bind::HexMapCellId> subtract(Ref<hex_bind::HexMapCellId>) const;
+    Ref<hex_bind::HexMapCellId> reverse() const;
 
     // directional helpers
-    Ref<hex_bind::HexMapCellId> _east() const;
-    Ref<hex_bind::HexMapCellId> _northeast() const;
-    Ref<hex_bind::HexMapCellId> _northwest() const;
-    Ref<hex_bind::HexMapCellId> _west() const;
-    Ref<hex_bind::HexMapCellId> _southwest() const;
-    Ref<hex_bind::HexMapCellId> _southeast() const;
-    Ref<hex_bind::HexMapCellId> _down() const;
-    Ref<hex_bind::HexMapCellId> _up() const;
+    Ref<hex_bind::HexMapCellId> east() const;
+    Ref<hex_bind::HexMapCellId> northeast() const;
+    Ref<hex_bind::HexMapCellId> northwest() const;
+    Ref<hex_bind::HexMapCellId> west() const;
+    Ref<hex_bind::HexMapCellId> southwest() const;
+    Ref<hex_bind::HexMapCellId> southeast() const;
+    Ref<hex_bind::HexMapCellId> down() const;
+    Ref<hex_bind::HexMapCellId> up() const;
 
     String _to_string() const;
-    bool _equals(const Ref<hex_bind::HexMapCellId> other) const;
-    Vector3 _unit_center() const;
-    Ref<hex_bind::HexMapIter> _get_neighbors(unsigned int radius = 1,
+    bool equals(const Ref<hex_bind::HexMapCellId> other) const;
+    Vector3 unit_center() const;
+    Ref<hex_bind::HexMapIter> get_neighbors(unsigned int radius = 1,
             bool include_self = false) const;
 
 protected:
