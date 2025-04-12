@@ -64,8 +64,8 @@ public:
     // y coordinate
     int32_t y;
 
-    HexMapCellId() : q(0), r(0), y(0) {};
-    HexMapCellId(int q, int r, int y) : q(q), r(r), y(y) {};
+    constexpr HexMapCellId() : q(0), r(0), y(0) {};
+    constexpr HexMapCellId(int q, int r, int y) : q(q), r(r), y(y) {};
     _FORCE_INLINE_ HexMapCellId(const Vector3i v) : q(v.x), r(v.z), y(v.y) {};
 
     static HexMapCellId from_oddr(Vector3i oddr) {

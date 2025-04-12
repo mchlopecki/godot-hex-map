@@ -11,12 +11,14 @@
 using namespace godot;
 
 class HexMapIntNodeEditorPlugin;
+class HexMapAutoTiledNode;
 
 class HexMapIntNode : public HexMapNode {
     using HexMapInt = HexMapIntNode;
     GDCLASS(HexMapInt, HexMapNode);
 
     friend HexMapIntNodeEditorPlugin;
+    friend HexMapAutoTiledNode;
 
 public:
     struct CellType {

@@ -20,10 +20,12 @@ void initialize_hexmap_module(ModuleInitializationLevel p_level) {
     if (p_level == godot::MODULE_INITIALIZATION_LEVEL_SCENE) {
         ClassDB::register_class<hex_bind::HexMapCellId>();
         ClassDB::register_class<hex_bind::HexMapIter>();
+        ClassDB::register_class<hex_bind::HexMapSpace>();
         ClassDB::register_abstract_class<HexMapNode>();
         ClassDB::register_class<HexMapTiledNode>();
         ClassDB::register_class<HexMapIntNode>();
         ClassDB::register_class<HexMapAutoTiledNode>();
+        ClassDB::register_class<HexMapAutoTiledNode::HexMapTileRule>();
     }
 
 #ifdef TOOLS_ENABLED

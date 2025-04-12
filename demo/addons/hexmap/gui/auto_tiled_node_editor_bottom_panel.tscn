@@ -5,8 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://27nqiq38njor" path="res://addons/hexmap/icons/Add.svg" id="12_x2iba"]
 
 [node name="AutoTiledNodeEditorBottomPanel" type="VBoxContainer"]
-offset_right = 1152.0
-offset_bottom = 631.0
+offset_right = 350.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_2bs26")

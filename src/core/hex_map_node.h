@@ -51,9 +51,11 @@ public:
 
     /// set the HexMapSpace
     void set_space(const HexMapSpace &space);
+    void set_space(const Ref<hex_bind::HexMapSpace> &);
 
     /// get the HexMapSpace
     inline const HexMapSpace &get_space() { return space; }
+    Ref<hex_bind::HexMapSpace> _get_space();
 
     /// Return the cell scale factor for cells in this hexmap.
     ///

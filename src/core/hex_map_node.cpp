@@ -1,7 +1,15 @@
 #include "hex_map_node.h"
 #include "cell_id.h"
+#include "godot_cpp/core/object.hpp"
+#include "godot_cpp/variant/utility_functions.hpp"
 
 void HexMapNode::_bind_methods() {
+    ClassDB::bind_method(D_METHOD("get_space"), &HexMapNode::_get_space);
+    ClassDB::bind_method(D_METHOD("set_space", "space"),
+            static_cast<void (HexMapNode::*)(
+                    const Ref<hex_bind::HexMapSpace> &)>(
+                    &HexMapNode::set_space));
+
     ClassDB::bind_method(D_METHOD("set_cell_height", "height"),
             &HexMapNode::set_cell_height);
     ClassDB::bind_method(
@@ -61,6 +69,16 @@ void HexMapNode::_bind_methods() {
 void HexMapNode::set_space(const HexMapSpace &space) {
     this->space = space;
     cell_scale_changed();
+}
+
+void HexMapNode::set_space(const Ref<hex_bind::HexMapSpace> &ref) {
+    space = ref->inner;
+    cell_scale_changed();
+}
+
+Ref<hex_bind::HexMapSpace> HexMapNode::_get_space() {
+    Ref<hex_bind::HexMapSpace> ref(memnew(hex_bind::HexMapSpace(space)));
+    return ref;
 }
 
 void HexMapNode::set_cell_height(real_t p_height) {

@@ -2,6 +2,7 @@
 
 #include "cell_id.h"
 #include "godot_cpp/classes/array_mesh.hpp"
+#include "godot_cpp/classes/ref_counted.hpp"
 #include "godot_cpp/variant/packed_int32_array.hpp"
 #include "godot_cpp/variant/packed_vector3_array.hpp"
 #include <godot_cpp/variant/transform3d.hpp>
@@ -124,3 +125,28 @@ public:
             Vector3 d,
             float padding = 0.5) const;
 };
+
+// create a Ref<> type for HexMapSpace
+namespace hex_bind {
+
+class HexMapSpace : public RefCounted {
+    GDCLASS(HexMapSpace, RefCounted)
+
+public:
+    HexMapSpace(const ::HexMapSpace &space) : inner(space) {};
+    HexMapSpace() {};
+
+    real_t get_cell_height() const;
+    void set_cell_height(real_t);
+    real_t get_cell_radius() const;
+    void set_cell_radius(real_t);
+    Vector3 get_cell_scale() const;
+    void set_cell_scale(Vector3);
+
+    ::HexMapSpace inner;
+
+protected:
+    static void _bind_methods();
+};
+
+} // namespace hex_bind

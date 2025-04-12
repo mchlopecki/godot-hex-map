@@ -6,15 +6,12 @@
 [ext_resource type="PackedScene" uid="uid://domdgn3qbay7r" path="res://addons/hexmap/gui/int_node_cell_type_button.tscn" id="4_sgs0c"]
 
 [node name="IntNodeTypeSelector" type="VBoxContainer"]
-custom_minimum_size = Vector2(0, 200)
-offset_right = 526.0
-offset_bottom = 200.0
+offset_right = 528.0
 size_flags_horizontal = 3
-size_flags_vertical = 3
 script = ExtResource("1_ykviw")
 
 [node name="ScrollContainer" type="ScrollContainer" parent="."]
-custom_minimum_size = Vector2(256, 0)
+custom_minimum_size = Vector2(256, 100)
 layout_mode = 2
 size_flags_vertical = 3
 theme = ExtResource("3_mvouq")

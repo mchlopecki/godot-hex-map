@@ -12,7 +12,7 @@ radial_segments = 6
 
 [node name="AutoTiledRuleEditor" type="VBoxContainer"]
 offset_right = 1048.0
-offset_bottom = 804.0
+offset_bottom = 839.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_hjusd")
@@ -20,10 +20,10 @@ script = ExtResource("1_hjusd")
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="TypeSelector" parent="HBoxContainer" instance=ExtResource("1_v0udd")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 size_flags_horizontal = 0
 read_only = true
@@ -34,17 +34,20 @@ layout_mode = 2
 [node name="GridPainter" type="Control" parent="HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 4
 size_flags_vertical = 0
 script = ExtResource("2_x2pvy")
 
 [node name="GridPreview" type="SubViewportContainer" parent="HBoxContainer/VBoxContainer"]
+custom_minimum_size = Vector2(256, 256)
 layout_mode = 2
+size_flags_vertical = 3
+stretch = true
 
 [node name="SubViewport" type="SubViewport" parent="HBoxContainer/VBoxContainer/GridPreview"]
 own_world_3d = true
 handle_input_locally = false
 canvas_cull_mask = 4294967294
+size = Vector2i(311, 512)
 render_target_update_mode = 4
 
 [node name="TileMeshInstance3D" type="MeshInstance3D" parent="HBoxContainer/VBoxContainer/GridPreview/SubViewport"]
@@ -64,13 +67,13 @@ size = 8.0
 
 [node name="MeshItemList" type="ItemList" parent="HBoxContainer"]
 unique_name_in_owner = true
-clip_contents = false
 layout_mode = 2
 size_flags_horizontal = 3
 same_column_width = true
 
 [node name="ToolbarHBox" type="HBoxContainer" parent="."]
 layout_mode = 2
+size_flags_vertical = 8
 
 [node name="HBoxContainer" type="HBoxContainer" parent="ToolbarHBox"]
 layout_mode = 2
