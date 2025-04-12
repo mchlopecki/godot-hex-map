@@ -366,4 +366,3 @@ func test_auto_tiled_rules(params=use_parameters(rules_params)):
     int_node.free()
 
     pass
-

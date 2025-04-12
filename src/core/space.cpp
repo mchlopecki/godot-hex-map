@@ -213,18 +213,18 @@ Vector<HexMapCellId> HexMapSpace::get_cell_ids_in_local_quad(Vector3 a,
     // are most perpendicular to the plane normal.
     int axis[2];
     switch (plane.normal.abs().max_axis_index()) {
-        case godot::Vector3::AXIS_X:
-            axis[0] = Vector3::AXIS_Y;
-            axis[1] = Vector3::AXIS_Z;
-            break;
-        case godot::Vector3::AXIS_Y:
-            axis[0] = Vector3::AXIS_X;
-            axis[1] = Vector3::AXIS_Z;
-            break;
-        case godot::Vector3::AXIS_Z:
-            axis[0] = Vector3::AXIS_X;
-            axis[1] = Vector3::AXIS_Y;
-            break;
+    case godot::Vector3::AXIS_X:
+        axis[0] = Vector3::AXIS_Y;
+        axis[1] = Vector3::AXIS_Z;
+        break;
+    case godot::Vector3::AXIS_Y:
+        axis[0] = Vector3::AXIS_X;
+        axis[1] = Vector3::AXIS_Z;
+        break;
+    case godot::Vector3::AXIS_Z:
+        axis[0] = Vector3::AXIS_X;
+        axis[1] = Vector3::AXIS_Y;
+        break;
     }
 
     // break the 3D quad down into two 2D triangles

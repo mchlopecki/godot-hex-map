@@ -251,24 +251,24 @@ void EditorCursor::set_axis(EditAxis axis) {
     rs->mesh_clear(grid_mesh);
 
     switch (axis) {
-        case EditAxis::AXIS_Y:
-            build_y_grid();
-            edit_plane.normal = Vector3(0, 1, 0);
-            break;
-        case EditAxis::AXIS_Q:
-            build_r_grid();
-            grid_mesh_transform.rotate(Vector3(0, 1, 0), -Math_PI / 3.0);
-            edit_plane.normal = Vector3(Math_SQRT3_2, 0, -0.5).normalized();
-            break;
-        case EditAxis::AXIS_R:
-            build_r_grid();
-            edit_plane.normal = Vector3(0, 0, 1);
-            break;
-        case EditAxis::AXIS_S:
-            build_r_grid();
-            grid_mesh_transform.rotate(Vector3(0, 1, 0), Math_PI / 3.0);
-            edit_plane.normal = Vector3(Math_SQRT3_2, 0, 0.5).normalized();
-            break;
+    case EditAxis::AXIS_Y:
+        build_y_grid();
+        edit_plane.normal = Vector3(0, 1, 0);
+        break;
+    case EditAxis::AXIS_Q:
+        build_r_grid();
+        grid_mesh_transform.rotate(Vector3(0, 1, 0), -Math_PI / 3.0);
+        edit_plane.normal = Vector3(Math_SQRT3_2, 0, -0.5).normalized();
+        break;
+    case EditAxis::AXIS_R:
+        build_r_grid();
+        edit_plane.normal = Vector3(0, 0, 1);
+        break;
+    case EditAxis::AXIS_S:
+        build_r_grid();
+        grid_mesh_transform.rotate(Vector3(0, 1, 0), Math_PI / 3.0);
+        edit_plane.normal = Vector3(Math_SQRT3_2, 0, 0.5).normalized();
+        break;
     }
 
     grid_mesh_transform.scale(parent_space.get_cell_scale());
@@ -284,19 +284,19 @@ void EditorCursor::set_depth(int depth) {
     real_t cell_depth;
 
     switch (edit_axis) {
-        case EditAxis::AXIS_Y:
-            // the y plane is at the bottom of the cell, but to avoid floating
-            // point errors during raycast, we pull it slightly higher into the
-            // cell.
-            edit_plane.d = depth * cell_scale.y + (cell_scale.y * 0.1);
-            break;
-        case EditAxis::AXIS_Q:
-        case EditAxis::AXIS_R:
-        case EditAxis::AXIS_S:
-            // Q/R/S plane goes through the center of the cell, so no floating
-            // point concerns here.
-            edit_plane.d = depth * cell_scale.x * 1.5;
-            break;
+    case EditAxis::AXIS_Y:
+        // the y plane is at the bottom of the cell, but to avoid floating
+        // point errors during raycast, we pull it slightly higher into the
+        // cell.
+        edit_plane.d = depth * cell_scale.y + (cell_scale.y * 0.1);
+        break;
+    case EditAxis::AXIS_Q:
+    case EditAxis::AXIS_R:
+    case EditAxis::AXIS_S:
+        // Q/R/S plane goes through the center of the cell, so no floating
+        // point concerns here.
+        edit_plane.d = depth * cell_scale.x * 1.5;
+        break;
     }
     update(true);
 }

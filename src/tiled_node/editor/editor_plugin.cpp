@@ -436,201 +436,196 @@ int32_t HexMapTiledNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
             mouse_button_event->is_shift_pressed();
 
     switch (input_state) {
-        // transitions:
-        // - SELECTING (shift + left button down)
-        // - PAINTING (left button down)
-        // - ERASING (right button down)
-        // actions:
-        // - clear selection (escape && have selection)
-        // - clear cursor (escape)
-        case INPUT_STATE_DEFAULT:
-            if (mouse_left_pressed && shift_pressed) {
-                editor_cursor->set_visibility(false);
-                input_state = INPUT_STATE_SELECTING;
-                last_selection = selection_manager->get_cells();
-                selection_anchor = editor_cursor->get_pos();
-                selection_manager->clear();
-                selection_manager->add_cell(editor_cursor->get_cell());
-                return AFTER_GUI_INPUT_STOP;
-            } else if (mouse_left_pressed && !editor_cursor->is_empty()) {
-                input_state = INPUT_STATE_PAINTING;
-                return AFTER_GUI_INPUT_STOP;
-            } else if (mouse_right_pressed) {
-                editor_cursor->set_visibility(false);
-                input_state = INPUT_STATE_ERASING;
-                return AFTER_GUI_INPUT_STOP;
-            } else if (escape_pressed) {
-                if (!selection_manager->is_empty()) {
-                    deselect_cells();
-                } else {
-                    bottom_panel->call("clear_selection");
-                }
-                return AFTER_GUI_INPUT_STOP;
+    // transitions:
+    // - SELECTING (shift + left button down)
+    // - PAINTING (left button down)
+    // - ERASING (right button down)
+    // actions:
+    // - clear selection (escape && have selection)
+    // - clear cursor (escape)
+    case INPUT_STATE_DEFAULT:
+        if (mouse_left_pressed && shift_pressed) {
+            editor_cursor->set_visibility(false);
+            input_state = INPUT_STATE_SELECTING;
+            last_selection = selection_manager->get_cells();
+            selection_anchor = editor_cursor->get_pos();
+            selection_manager->clear();
+            selection_manager->add_cell(editor_cursor->get_cell());
+            return AFTER_GUI_INPUT_STOP;
+        } else if (mouse_left_pressed && !editor_cursor->is_empty()) {
+            input_state = INPUT_STATE_PAINTING;
+            return AFTER_GUI_INPUT_STOP;
+        } else if (mouse_right_pressed) {
+            editor_cursor->set_visibility(false);
+            input_state = INPUT_STATE_ERASING;
+            return AFTER_GUI_INPUT_STOP;
+        } else if (escape_pressed) {
+            if (!selection_manager->is_empty()) {
+                deselect_cells();
+            } else {
+                bottom_panel->call("clear_selection");
             }
-            break;
-
-        // transitions:
-        // - DEFAULT (left button up)
-        // actions:
-        // - change cells, and add them to the cells_changed list
-        // - commit changes on mouse up
-        case INPUT_STATE_PAINTING: {
-            HexMapCellId cell_id = editor_cursor->get_cell();
-            int tile = hex_map->get_cell_item(cell_id);
-            int orientation = hex_map->get_cell_item_orientation(cell_id);
-
-            EditorCursor::CellState cell =
-                    editor_cursor->get_only_cell_state();
-            if (cell.index != tile || cell.orientation != orientation) {
-                cells_changed.push_back(CellChange{
-                        .cell_id = cell_id,
-                        .orig_tile = tile,
-                        .orig_orientation = orientation,
-                        .new_tile = cell.index,
-                        .new_orientation = cell.orientation,
-                });
-                hex_map->set_cell_item(cell_id,
-                        cell.index,
-                        static_cast<int>(cell.orientation));
-            }
-            if (mouse_left_released) {
-                commit_cell_changes("HexMap: paint cells");
-                input_state = INPUT_STATE_DEFAULT;
-            }
-            break;
+            return AFTER_GUI_INPUT_STOP;
         }
-        // transitions:
-        // - DEFAULT (left button up)
-        // actions:
-        // - change cells, and add them to the cells_changed list
-        // - commit changes on mouse up
-        case INPUT_STATE_ERASING: {
-            HexMapCellId cell_id = editor_cursor->get_cell();
-            int tile = hex_map->get_cell_item(cell_id);
-            if (tile != -1) {
-                cells_changed.push_back(CellChange{
-                        .cell_id = cell_id,
-                        .orig_tile = tile,
-                        .orig_orientation =
-                                hex_map->get_cell_item_orientation(cell_id),
-                        .new_tile = -1,
-                });
-                hex_map->set_cell_item(
-                        cell_id, HexMapTiledNode::INVALID_CELL_ITEM);
-            }
-            if (mouse_right_released) {
-                commit_cell_changes("HexMap: erase cells");
-                input_state = INPUT_STATE_DEFAULT;
-                editor_cursor->set_visibility(true);
-            }
-            break;
+        break;
+
+    // transitions:
+    // - DEFAULT (left button up)
+    // actions:
+    // - change cells, and add them to the cells_changed list
+    // - commit changes on mouse up
+    case INPUT_STATE_PAINTING: {
+        HexMapCellId cell_id = editor_cursor->get_cell();
+        int tile = hex_map->get_cell_item(cell_id);
+        int orientation = hex_map->get_cell_item_orientation(cell_id);
+
+        EditorCursor::CellState cell = editor_cursor->get_only_cell_state();
+        if (cell.index != tile || cell.orientation != orientation) {
+            cells_changed.push_back(CellChange{
+                    .cell_id = cell_id,
+                    .orig_tile = tile,
+                    .orig_orientation = orientation,
+                    .new_tile = cell.index,
+                    .new_orientation = cell.orientation,
+            });
+            hex_map->set_cell_item(
+                    cell_id, cell.index, static_cast<int>(cell.orientation));
         }
-        // transitions:
-        // - DEFAULT (left button up)
-        // - DEFAULT (escape); clear selection
-        // actions:
-        // - update selection (mouse event)
-        case INPUT_STATE_SELECTING:
-            if (mouse_event.is_valid() && p_camera != nullptr) {
-                // XXX look at moving this into SelectionManager
-                Vector3 p1 = selection_anchor, p3 = editor_cursor->get_pos();
-                Vector3 p2, p4;
-                switch (editor_control->get_active_axis()) {
-                    // when working on the Y axis, we want to snap the
-                    // selection rectangle to 30 degree angles to better line
-                    // up with the hex grid.
-                    case EditAxis::AXIS_Y: {
-                        real_t snap = Math_PI / 6;
-                        real_t rot = p_camera->get_global_rotation().y;
-                        real_t delta = snap * round(rot / snap);
-                        Vector3 r1 = p1.rotated(Vector3(0, 1, 0), -delta);
-                        Vector3 r3 = p3.rotated(Vector3(0, 1, 0), -delta);
-                        p2 = Vector3(r1.x, r1.y, r3.z)
-                                     .rotated(Vector3(0, 1, 0), delta);
-                        p4 = Vector3(r3.x, r1.y, r1.z)
-                                     .rotated(Vector3(0, 1, 0), delta);
+        if (mouse_left_released) {
+            commit_cell_changes("HexMap: paint cells");
+            input_state = INPUT_STATE_DEFAULT;
+        }
+        break;
+    }
+    // transitions:
+    // - DEFAULT (left button up)
+    // actions:
+    // - change cells, and add them to the cells_changed list
+    // - commit changes on mouse up
+    case INPUT_STATE_ERASING: {
+        HexMapCellId cell_id = editor_cursor->get_cell();
+        int tile = hex_map->get_cell_item(cell_id);
+        if (tile != -1) {
+            cells_changed.push_back(CellChange{
+                    .cell_id = cell_id,
+                    .orig_tile = tile,
+                    .orig_orientation =
+                            hex_map->get_cell_item_orientation(cell_id),
+                    .new_tile = -1,
+            });
+            hex_map->set_cell_item(
+                    cell_id, HexMapTiledNode::INVALID_CELL_ITEM);
+        }
+        if (mouse_right_released) {
+            commit_cell_changes("HexMap: erase cells");
+            input_state = INPUT_STATE_DEFAULT;
+            editor_cursor->set_visibility(true);
+        }
+        break;
+    }
+    // transitions:
+    // - DEFAULT (left button up)
+    // - DEFAULT (escape); clear selection
+    // actions:
+    // - update selection (mouse event)
+    case INPUT_STATE_SELECTING:
+        if (mouse_event.is_valid() && p_camera != nullptr) {
+            // XXX look at moving this into SelectionManager
+            Vector3 p1 = selection_anchor, p3 = editor_cursor->get_pos();
+            Vector3 p2, p4;
+            switch (editor_control->get_active_axis()) {
+            // when working on the Y axis, we want to snap the
+            // selection rectangle to 30 degree angles to better line
+            // up with the hex grid.
+            case EditAxis::AXIS_Y: {
+                real_t snap = Math_PI / 6;
+                real_t rot = p_camera->get_global_rotation().y;
+                real_t delta = snap * round(rot / snap);
+                Vector3 r1 = p1.rotated(Vector3(0, 1, 0), -delta);
+                Vector3 r3 = p3.rotated(Vector3(0, 1, 0), -delta);
+                p2 = Vector3(r1.x, r1.y, r3.z)
+                             .rotated(Vector3(0, 1, 0), delta);
+                p4 = Vector3(r3.x, r1.y, r1.z)
+                             .rotated(Vector3(0, 1, 0), delta);
 
-                    } break;
-                    case EditAxis::AXIS_Q:
-                    case EditAxis::AXIS_R:
-                    case EditAxis::AXIS_S:
-                        p2 = Vector3(p1.x, p3.y, p1.z);
-                        p4 = Vector3(p3.x, p1.y, p3.z);
-                        break;
-                }
-
-                auto cells = hex_map->get_space().get_cell_ids_in_local_quad(
-                        p1, p2, p3, p4);
-
-                selection_manager->clear();
-                selection_manager->set_cells(cells);
+            } break;
+            case EditAxis::AXIS_Q:
+            case EditAxis::AXIS_R:
+            case EditAxis::AXIS_S:
+                p2 = Vector3(p1.x, p3.y, p1.z);
+                p4 = Vector3(p3.x, p1.y, p3.z);
+                break;
             }
-            if (mouse_left_released) {
-                auto profile = profiling_begin("complete selection");
-                EditorUndoRedoManager *undo_redo = get_undo_redo();
-                undo_redo->create_action("HexMap: select cells");
-                // do method will apply the existing selection
-                undo_redo->add_do_method(this,
-                        "set_selection_v",
-                        selection_manager->get_cells_v());
 
-                // undo will restore last selection
-                Array select_cells;
-                for (const HexMapCellId &cell : last_selection) {
-                    select_cells.push_back((Vector3i)cell);
-                }
-                undo_redo->add_undo_method(
-                        this, "set_selection_v", select_cells);
+            auto cells = hex_map->get_space().get_cell_ids_in_local_quad(
+                    p1, p2, p3, p4);
 
-                auto prof_commit =
-                        profiling_begin("commit selection undo_redo");
-                undo_redo->commit_action();
+            selection_manager->clear();
+            selection_manager->set_cells(cells);
+        }
+        if (mouse_left_released) {
+            auto profile = profiling_begin("complete selection");
+            EditorUndoRedoManager *undo_redo = get_undo_redo();
+            undo_redo->create_action("HexMap: select cells");
+            // do method will apply the existing selection
+            undo_redo->add_do_method(
+                    this, "set_selection_v", selection_manager->get_cells_v());
 
-                editor_cursor->set_visibility(true);
-                input_state = INPUT_STATE_DEFAULT;
-                return AFTER_GUI_INPUT_STOP;
-            } else if (escape_pressed) {
-                selection_manager->clear();
-                selection_manager->set_cells(last_selection);
-                editor_cursor->set_visibility(true);
-                input_state = INPUT_STATE_DEFAULT;
-                return AFTER_GUI_INPUT_STOP;
+            // undo will restore last selection
+            Array select_cells;
+            for (const HexMapCellId &cell : last_selection) {
+                select_cells.push_back((Vector3i)cell);
             }
-            break;
+            undo_redo->add_undo_method(this, "set_selection_v", select_cells);
 
-        // transitions:
-        // - DEFAULT (left click, escape)
-        // actions:
-        // - apply selection move
-        // - restore selected cells (cancel)
-        case INPUT_STATE_MOVING:
-            if (mouse_left_pressed) {
-                selection_move_apply();
-                input_state = INPUT_STATE_DEFAULT;
-                return AFTER_GUI_INPUT_STOP;
-            } else if (escape_pressed) {
-                selection_move_cancel();
-                input_state = INPUT_STATE_DEFAULT;
-                return AFTER_GUI_INPUT_STOP;
-            }
-            break;
+            auto prof_commit = profiling_begin("commit selection undo_redo");
+            undo_redo->commit_action();
 
-        // transitions:
-        // - DEFAULT (left click, escape)
-        // actions:
-        // - apply selection clone
-        // - cancel selection clone
-        case INPUT_STATE_CLONING:
-            if (mouse_left_pressed) {
-                selection_clone_apply();
-                input_state = INPUT_STATE_DEFAULT;
-                return AFTER_GUI_INPUT_STOP;
-            } else if (escape_pressed) {
-                selection_clone_cancel();
-                input_state = INPUT_STATE_DEFAULT;
-                return AFTER_GUI_INPUT_STOP;
-            }
-            break;
+            editor_cursor->set_visibility(true);
+            input_state = INPUT_STATE_DEFAULT;
+            return AFTER_GUI_INPUT_STOP;
+        } else if (escape_pressed) {
+            selection_manager->clear();
+            selection_manager->set_cells(last_selection);
+            editor_cursor->set_visibility(true);
+            input_state = INPUT_STATE_DEFAULT;
+            return AFTER_GUI_INPUT_STOP;
+        }
+        break;
+
+    // transitions:
+    // - DEFAULT (left click, escape)
+    // actions:
+    // - apply selection move
+    // - restore selected cells (cancel)
+    case INPUT_STATE_MOVING:
+        if (mouse_left_pressed) {
+            selection_move_apply();
+            input_state = INPUT_STATE_DEFAULT;
+            return AFTER_GUI_INPUT_STOP;
+        } else if (escape_pressed) {
+            selection_move_cancel();
+            input_state = INPUT_STATE_DEFAULT;
+            return AFTER_GUI_INPUT_STOP;
+        }
+        break;
+
+    // transitions:
+    // - DEFAULT (left click, escape)
+    // actions:
+    // - apply selection clone
+    // - cancel selection clone
+    case INPUT_STATE_CLONING:
+        if (mouse_left_pressed) {
+            selection_clone_apply();
+            input_state = INPUT_STATE_DEFAULT;
+            return AFTER_GUI_INPUT_STOP;
+        } else if (escape_pressed) {
+            selection_clone_cancel();
+            input_state = INPUT_STATE_DEFAULT;
+            return AFTER_GUI_INPUT_STOP;
+        }
+        break;
     }
 
     return EditorPlugin::AFTER_GUI_INPUT_PASS;
@@ -737,42 +732,42 @@ void HexMapTiledNodeEditorPlugin::_edit(Object *p_object) {
 
 void HexMapTiledNodeEditorPlugin::_notification(int p_what) {
     switch (p_what) {
-        case NOTIFICATION_PROCESS: {
-            // we cache the global transform of the HexMap.  When the global
-            // transform changes, we'll update our visuals accordingly.
-            static Transform3D cached_transform;
-            ERR_FAIL_COND_MSG(hex_map == nullptr,
-                    "HexMapTiledNodeEditorPlugin process without HexMap");
+    case NOTIFICATION_PROCESS: {
+        // we cache the global transform of the HexMap.  When the global
+        // transform changes, we'll update our visuals accordingly.
+        static Transform3D cached_transform;
+        ERR_FAIL_COND_MSG(hex_map == nullptr,
+                "HexMapTiledNodeEditorPlugin process without HexMap");
 
-            // if the transform of the HexMap node has been changed, update
-            // the grid.
-            Transform3D transform = hex_map->get_global_transform();
-            if (transform != cached_transform) {
-                cached_transform = transform;
-                editor_cursor->set_space(hex_map->get_space());
-                selection_manager->set_space(hex_map->get_space());
-            }
-        } break;
+        // if the transform of the HexMap node has been changed, update
+        // the grid.
+        Transform3D transform = hex_map->get_global_transform();
+        if (transform != cached_transform) {
+            cached_transform = transform;
+            editor_cursor->set_space(hex_map->get_space());
+            selection_manager->set_space(hex_map->get_space());
+        }
+    } break;
 
-        case NOTIFICATION_APPLICATION_FOCUS_OUT: {
-            // If the user switches applications while the mouse button is
-            // pressed, the state will remain pressed when they return to the
-            // editor.  This will result in drawing tiles when the mouse button
-            // isn't pressed.
-            //
-            // Workaround is to fire a release event when editor loses focus.
-            if (input_state == INPUT_STATE_PAINTING) {
-                Ref<InputEventMouseButton> release;
-                release.instantiate();
-                release->set_button_index(MouseButton::MOUSE_BUTTON_LEFT);
-                _forward_3d_gui_input(nullptr, release);
-            } else if (input_state == INPUT_STATE_ERASING) {
-                Ref<InputEventMouseButton> release;
-                release.instantiate();
-                release->set_button_index(MouseButton::MOUSE_BUTTON_RIGHT);
-                _forward_3d_gui_input(nullptr, release);
-            }
-        } break;
+    case NOTIFICATION_APPLICATION_FOCUS_OUT: {
+        // If the user switches applications while the mouse button is
+        // pressed, the state will remain pressed when they return to the
+        // editor.  This will result in drawing tiles when the mouse button
+        // isn't pressed.
+        //
+        // Workaround is to fire a release event when editor loses focus.
+        if (input_state == INPUT_STATE_PAINTING) {
+            Ref<InputEventMouseButton> release;
+            release.instantiate();
+            release->set_button_index(MouseButton::MOUSE_BUTTON_LEFT);
+            _forward_3d_gui_input(nullptr, release);
+        } else if (input_state == INPUT_STATE_ERASING) {
+            Ref<InputEventMouseButton> release;
+            release.instantiate();
+            release->set_button_index(MouseButton::MOUSE_BUTTON_RIGHT);
+            _forward_3d_gui_input(nullptr, release);
+        }
+    } break;
     }
 }
 

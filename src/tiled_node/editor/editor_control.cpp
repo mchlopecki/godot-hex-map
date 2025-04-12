@@ -68,99 +68,99 @@ Ref<Shortcut> EditorControl::editor_shortcut(const String &p_path,
 
 void EditorControl::handle_action(int p_action) {
     switch ((Action)p_action) {
-        case ACTION_PLANE_DOWN:
-            plane_spin_box->set_value(plane_spin_box->get_value() - 1);
-            break;
-        case ACTION_PLANE_UP:
-            plane_spin_box->set_value(plane_spin_box->get_value() + 1);
-            break;
-        case ACTION_AXIS_Y:
-            active_axis = EditAxis::AXIS_Y;
-            emit_signal("axis_changed", active_axis);
-            plane_spin_box->set_value(plane[active_axis]);
-            break;
-        case ACTION_AXIS_Q:
-            active_axis = EditAxis::AXIS_Q;
-            emit_signal("axis_changed", active_axis);
-            plane_spin_box->set_value(plane[active_axis]);
-            break;
-        case ACTION_AXIS_R:
+    case ACTION_PLANE_DOWN:
+        plane_spin_box->set_value(plane_spin_box->get_value() - 1);
+        break;
+    case ACTION_PLANE_UP:
+        plane_spin_box->set_value(plane_spin_box->get_value() + 1);
+        break;
+    case ACTION_AXIS_Y:
+        active_axis = EditAxis::AXIS_Y;
+        emit_signal("axis_changed", active_axis);
+        plane_spin_box->set_value(plane[active_axis]);
+        break;
+    case ACTION_AXIS_Q:
+        active_axis = EditAxis::AXIS_Q;
+        emit_signal("axis_changed", active_axis);
+        plane_spin_box->set_value(plane[active_axis]);
+        break;
+    case ACTION_AXIS_R:
+        active_axis = EditAxis::AXIS_R;
+        emit_signal("axis_changed", active_axis);
+        plane_spin_box->set_value(plane[active_axis]);
+        break;
+    case ACTION_AXIS_S:
+        active_axis = EditAxis::AXIS_S;
+        emit_signal("axis_changed", active_axis);
+        plane_spin_box->set_value(plane[active_axis]);
+        break;
+    case ACTION_AXIS_ROTATE_CW:
+        switch (active_axis) {
+        case EditAxis::AXIS_Y:
             active_axis = EditAxis::AXIS_R;
-            emit_signal("axis_changed", active_axis);
-            plane_spin_box->set_value(plane[active_axis]);
             break;
-        case ACTION_AXIS_S:
+        case EditAxis::AXIS_Q:
             active_axis = EditAxis::AXIS_S;
-            emit_signal("axis_changed", active_axis);
-            plane_spin_box->set_value(plane[active_axis]);
             break;
-        case ACTION_AXIS_ROTATE_CW:
-            switch (active_axis) {
-                case EditAxis::AXIS_Y:
-                    active_axis = EditAxis::AXIS_R;
-                    break;
-                case EditAxis::AXIS_Q:
-                    active_axis = EditAxis::AXIS_S;
-                    break;
-                case EditAxis::AXIS_R:
-                    active_axis = EditAxis::AXIS_Q;
-                    break;
-                case EditAxis::AXIS_S:
-                    active_axis = EditAxis::AXIS_R;
-                    break;
-            }
-            emit_signal("axis_changed", active_axis);
-            plane_spin_box->set_value(plane[active_axis]);
+        case EditAxis::AXIS_R:
+            active_axis = EditAxis::AXIS_Q;
             break;
-        case ACTION_AXIS_ROTATE_CCW:
-            switch (active_axis) {
-                case EditAxis::AXIS_Y:
-                    active_axis = EditAxis::AXIS_S;
-                    break;
-                case EditAxis::AXIS_Q:
-                    active_axis = EditAxis::AXIS_R;
-                    break;
-                case EditAxis::AXIS_R:
-                    active_axis = EditAxis::AXIS_S;
-                    break;
-                case EditAxis::AXIS_S:
-                    active_axis = EditAxis::AXIS_Q;
-                    break;
-            }
-            emit_signal("axis_changed", active_axis);
-            plane_spin_box->set_value(plane[active_axis]);
+        case EditAxis::AXIS_S:
+            active_axis = EditAxis::AXIS_R;
             break;
-        case ACTION_TILE_RESET:
-            cursor_orientation = HexMapTileOrientation::Upright0;
-            emit_signal("cursor_orientation_changed", cursor_orientation);
+        }
+        emit_signal("axis_changed", active_axis);
+        plane_spin_box->set_value(plane[active_axis]);
+        break;
+    case ACTION_AXIS_ROTATE_CCW:
+        switch (active_axis) {
+        case EditAxis::AXIS_Y:
+            active_axis = EditAxis::AXIS_S;
             break;
-        case ACTION_TILE_FLIP:
-            cursor_orientation.flip();
-            emit_signal("cursor_orientation_changed", cursor_orientation);
+        case EditAxis::AXIS_Q:
+            active_axis = EditAxis::AXIS_R;
             break;
-        case ACTION_TILE_ROTATE_CW:
-            cursor_orientation.rotate(-1);
-            emit_signal("cursor_orientation_changed", cursor_orientation);
+        case EditAxis::AXIS_R:
+            active_axis = EditAxis::AXIS_S;
             break;
-        case ACTION_TILE_ROTATE_CCW:
-            cursor_orientation.rotate(1);
-            emit_signal("cursor_orientation_changed", cursor_orientation);
+        case EditAxis::AXIS_S:
+            active_axis = EditAxis::AXIS_Q;
             break;
-        case ACTION_SELECTION_CLEAR:
-            emit_signal("selection_clear");
-            break;
-        case ACTION_SELECTION_FILL:
-            emit_signal("selection_fill");
-            break;
-        case ACTION_SELECTION_MOVE:
-            emit_signal("selection_move");
-            break;
-        case ACTION_SELECTION_CLONE:
-            emit_signal("selection_clone");
-            break;
-        case ACTION_DESELECT:
-            emit_signal("deselect");
-            break;
+        }
+        emit_signal("axis_changed", active_axis);
+        plane_spin_box->set_value(plane[active_axis]);
+        break;
+    case ACTION_TILE_RESET:
+        cursor_orientation = HexMapTileOrientation::Upright0;
+        emit_signal("cursor_orientation_changed", cursor_orientation);
+        break;
+    case ACTION_TILE_FLIP:
+        cursor_orientation.flip();
+        emit_signal("cursor_orientation_changed", cursor_orientation);
+        break;
+    case ACTION_TILE_ROTATE_CW:
+        cursor_orientation.rotate(-1);
+        emit_signal("cursor_orientation_changed", cursor_orientation);
+        break;
+    case ACTION_TILE_ROTATE_CCW:
+        cursor_orientation.rotate(1);
+        emit_signal("cursor_orientation_changed", cursor_orientation);
+        break;
+    case ACTION_SELECTION_CLEAR:
+        emit_signal("selection_clear");
+        break;
+    case ACTION_SELECTION_FILL:
+        emit_signal("selection_fill");
+        break;
+    case ACTION_SELECTION_MOVE:
+        emit_signal("selection_move");
+        break;
+    case ACTION_SELECTION_CLONE:
+        emit_signal("selection_clone");
+        break;
+    case ACTION_DESELECT:
+        emit_signal("deselect");
+        break;
     }
 
     // ensure the axis selection ratio buttons are marked correctly
