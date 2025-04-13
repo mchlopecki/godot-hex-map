@@ -1090,7 +1090,6 @@ HexMapTiledNode::HexMapTiledNode() {
 }
 
 HexMapTiledNode::~HexMapTiledNode() {
-    UtilityFunctions::print("HexMapTiledNode::~HexMapTiledNode()");
     clear();
     NavigationServer3D::get_singleton()->free_rid(
             navigation_source_geometry_parser);

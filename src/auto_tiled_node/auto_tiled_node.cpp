@@ -48,6 +48,7 @@ unsigned HexMapAutoTiledNode::add_rule(const Rule &rule) {
     auto iter = rules.insert(id, rule);
     assert(iter && "iter must return non-null");
     iter->value.id = id;
+    iter->value.update_radius();
     rules_order.push_back(id);
 
     if (int_node) {
@@ -65,6 +66,7 @@ void HexMapAutoTiledNode::update_rule(const Rule &rule) {
     Rule *entry = rules.getptr(rule.id);
     ERR_FAIL_NULL_MSG(entry, "update_rule() failed: rule id not found");
     *entry = rule;
+    entry->update_radius();
     emit_signal("rules_changed");
 }
 
@@ -83,7 +85,15 @@ void HexMapAutoTiledNode::cell_scale_changed() {
 void HexMapAutoTiledNode::apply_rules() {
     ERR_FAIL_NULL(int_node);
     ERR_FAIL_NULL(tiled_node);
-    int max_range = 0;
+
+    int pattern_size = -1;
+    for (const auto &iter : rules) {
+        int size = iter.value.get_pattern_size();
+        if (size > pattern_size) {
+            pattern_size = size;
+        }
+    }
+    assert(pattern_size > 0);
 
     // get an iterator that gives me some ordered sample of the cell values
     // surrounding a given point.... so
@@ -92,12 +102,11 @@ void HexMapAutoTiledNode::apply_rules() {
     for (const auto &iter : int_node->cell_map) {
         HexMapCellId cell_id = iter.key;
         int32_t cells[Rule::PatternCells];
-        for (int i = 0; i < Rule::PatternCells; i++) {
+        for (int i = 0; i < pattern_size; i++) {
             uint16_t *ptr =
                     int_node->cell_map.getptr(cell_id + Rule::CellOffsets[i]);
             cells[i] = ptr ? *ptr : -1;
         }
-
         for (int id : rules_order) {
             Rule &rule = rules[id];
 
@@ -246,7 +255,8 @@ inline int HexMapAutoTiledNode::Rule::match(int32_t cell_type[PatternCells],
     assert(o >= 0 && o < 6 && "orientation must be in 0..5 inclusive");
     auto *pattern_index = PatternIndex[static_cast<int>(orientation)];
 
-    for (int i = 0; i < PatternCells; i++) {
+    int pattern_size = get_pattern_size();
+    for (int i = 0; i < pattern_size; i++) {
         const auto &cell = pattern[pattern_index[i]];
 
         // match the cell state
@@ -275,6 +285,44 @@ inline int HexMapAutoTiledNode::Rule::match(int32_t cell_type[PatternCells],
 
     return -1;
 }
+
+void HexMapAutoTiledNode::Rule::update_radius() {
+    int max_index = -1;
+    for (int i = 0; i < PatternCells; i++) {
+        if (pattern[i].state == RULE_CELL_STATE_DISABLED) {
+            continue;
+        }
+        max_index = i;
+        if (i > 6) {
+            break;
+        }
+    }
+
+    if (max_index > 6) {
+        radius = 2;
+    } else if (max_index > 0) {
+        radius = 1;
+    } else if (max_index == 0) {
+        radius = 0;
+    } else {
+        radius = -1;
+    }
+}
+
+inline unsigned HexMapAutoTiledNode::Rule::get_pattern_size() const {
+    assert(radius <= 2 && "radius shoould not exceed 2");
+    switch (radius) {
+    case 0:
+        return 1;
+    case 1:
+        return 7;
+    case 2:
+        return PatternCells;
+    default:
+        return 0;
+    }
+}
+
 // GDSCRIPT Rule BINDINGS
 void HexMapAutoTiledNode::HexMapTileRule::_bind_methods() {
     ClassDB::bind_method(

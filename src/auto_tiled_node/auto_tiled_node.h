@@ -127,6 +127,12 @@ public:
                 HexMapTileOrientation orientation);
 
     private:
+        /// update the pattern radius; called from add_rule/update_rule
+        void update_radius();
+
+        /// get the number of cells that are needed to match the pattern
+        inline unsigned get_pattern_size() const;
+
         /// rule cell states
         enum {
             /// cell is ignored when matching pattern
@@ -144,6 +150,9 @@ public:
 
         /// tile to set when rule matches
         int16_t tile = 0;
+
+        /// radius of the pattern; calculated in update_radius()
+        unsigned radius = 0;
 
         /// cell pattern to match against
         struct {
