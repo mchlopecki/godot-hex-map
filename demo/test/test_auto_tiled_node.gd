@@ -101,8 +101,48 @@ v---^---v---^---v
             { "cell": HexMapCellId.new(), "text": "5" },
             { "cell": HexMapCellId.new().east(), "text": "!" },
         ],
-    ],
+    ], [
+        "complex example with empty cells",
+        "
+            v---^--v---^--v---^--v---^--v
+            |      | 9    | !    | 9    |
+            ^---v--^---v--^---v--^---v--^---v
+                | !    | !    | !    | !    |
+            v---^--v---^--v---^--v---^--v---^--v
+            | 9    | !    | _O ! | !    | 9    |
+            ^---v--^---v--^---v--^---v--^---v--^
+                | !    | !    | !    | !    |
+            v---^--v---^--v---^--v---^--v---^
+            |      | 9    | !    | 9    |
+            ^---v--^---v--^---v--^---v--^
+        ", [
+            { "cell": HexMapCellId.at(-1, -2), "text": "" },
+            { "cell": HexMapCellId.at( 0, -2), "text": "9" },
+            { "cell": HexMapCellId.at( 1, -2), "text": "!" },
+            { "cell": HexMapCellId.at( 2, -2), "text": "9" },
 
+            { "cell": HexMapCellId.at(-1, -1), "text": "!" },
+            { "cell": HexMapCellId.at( 0, -1), "text": "!" },
+            { "cell": HexMapCellId.at( 1, -1), "text": "!" },
+            { "cell": HexMapCellId.at( 2, -1), "text": "!" },
+
+            { "cell": HexMapCellId.at(-2,  0), "text": "9" },
+            { "cell": HexMapCellId.at(-1,  0), "text": "!" },
+            { "cell": HexMapCellId.at( 0,  0), "text": "!" },
+            { "cell": HexMapCellId.at( 1,  0), "text": "!" },
+            { "cell": HexMapCellId.at( 2,  0), "text": "9" },
+
+            { "cell": HexMapCellId.at(-2,  1), "text": "!" },
+            { "cell": HexMapCellId.at(-1,  1), "text": "!" },
+            { "cell": HexMapCellId.at( 0,  1), "text": "!" },
+            { "cell": HexMapCellId.at( 1,  1), "text": "!" },
+
+            { "cell": HexMapCellId.at(-3,  2), "text": "" },
+            { "cell": HexMapCellId.at(-2,  2), "text": "9" },
+            { "cell": HexMapCellId.at(-1,  2), "text": "!" },
+            { "cell": HexMapCellId.at( 0,  2), "text": "9" },
+        ],
+    ],
 
 ])
 
@@ -347,6 +387,31 @@ var rules_params = ParameterFactory.named_parameters(
             v---^--v---^--v---^
         "
     ],
+    ["empty tile (radius = 2) with rotation","
+            v---^--v
+            | _O 1 |
+            ^---v--^
+        ", [{
+            "tile": 9,
+            "cells": "
+                v---^--v---^--v---^--v
+                | _O ! |      | 1    |
+                ^---v--^---v--^---v--^
+            "},
+        ], "
+            v---^--v---^--v---^--v---^--v
+            | !    | 9    | !    | 9    |
+            ^---v--^---v--^---v--^---v--^---v
+                | !    | !    | !    | !    |
+            v---^--v---^--v---^--v---^--v---^--v
+            | 9    | !    | _O ! | !    | 9    |
+            ^---v--^---v--^---v--^---v--^---v--^
+                | !    | !    | !    | !    |
+            v---^--v---^--v---^--v---^--v---^
+            |      | 9    | !    | 9    |
+            ^---v--^---v--^---v--^---v--^
+        "
+    ],
 ])
 
 func test_auto_tiled_rules(params=use_parameters(rules_params)):
@@ -367,11 +432,11 @@ func test_auto_tiled_rules(params=use_parameters(rules_params)):
             if cell["text"] == "!":
                 # XXX impl
                 rule.set_cell_empty(cell["cell"])
-            else:
+            elif cell["text"] != "":
                 rule.set_cell_type(cell["cell"], int(cell["text"]))
         print(rule)
         auto_node.add_rule(rule)
-    print("result:\n", params.expected.dedent());
+    print("expected:\n", params.expected.dedent());
 
     # make the auto_node a child of int node
     int_node.add_child(auto_node)
@@ -382,7 +447,7 @@ func test_auto_tiled_rules(params=use_parameters(rules_params)):
 
         if cell["text"] == "!":
             assert_node_cell_value_eq(auto_node, cell_id, -1)
-        else:
+        elif cell["text"] != "":
             var tile = int(cell["text"])
             assert_node_cell_value_eq(auto_node, cell_id, tile)
 
@@ -391,3 +456,163 @@ func test_auto_tiled_rules(params=use_parameters(rules_params)):
     int_node.free()
 
     pass
+
+
+var benchmark_rules_params = ParameterFactory.named_parameters(
+    ["desc", "map_size", "map_values", "rules"], [
+    [
+        "1,000,000 map cells, three radius=0 rules that don't match",
+         1000000,
+        [9],
+        [{
+            "tile": 5,
+            "cells": "
+               v--^--v
+               | 1   |
+               ^--v--^
+            "},
+            {
+            "tile": 0,
+            "cells": "
+               v--^--v
+               | 2   |
+               ^--v--^
+            "},
+            {
+            "tile": 222,
+            "cells": "
+               v--^--v
+               | 2   |
+               ^--v--^
+            "},
+        ]
+    ], [
+        "1,000,000 map cells, three radius=1 rules that don't match",
+         1000000,
+        [9],
+        [{
+            "tile": 5,
+            "cells": "
+               v--^--v--^--v
+               | 1   | !   |
+               ^--v--^--v--^
+            "},
+            {
+            "tile": 0,
+            "cells": "
+               v--^--v--^--v
+               | 2   | !   |
+               ^--v--^--v--^
+            "},
+            {
+            "tile": 222,
+            "cells": "
+               v--^--v--^--v
+               | 3   | !   |
+               ^--v--^--v--^
+            "},
+        ]
+    ], [
+        "1,000,000 map cells, three radius=2 rules that don't match",
+         1000000,
+        [9],
+        [{
+            "tile": 5,
+            "cells": "
+               v--^--v--^--v--^--v
+               | 1   | 2   | 3   |
+               ^--v--^--v--^--v--^
+            "},
+            {
+            "tile": 0,
+            "cells": "
+               v--^--v--^--v--^--v
+               | 2   | 3   | 4   |
+               ^--v--^--v--^--v--^
+            "},
+            {
+            "tile": 222,
+            "cells": "
+               v--^--v--^--v--^--v
+               | 3   | 4   | 5   |
+               ^--v--^--v--^--v--^
+            "},
+        ]
+    ], [
+        "1,000,000 map cells, worst case rule r=2, all cells set & match",
+         1000000,
+        [1],
+        [{
+            "tile": 1,
+            "cells": "
+            v---^--v---^--v---^--v---^--v
+            |      | 1    | 1    | 1    |
+            ^---v--^---v--^---v--^---v--^---v
+                | 1    | 1    | 1    | 1    |
+            v---^--v---^--v---^--v---^--v---^--v
+            | 1    | 1    | _O 1 | 1    | 1    |
+            ^---v--^---v--^---v--^---v--^---v--^
+                | 1    | 1    | 1    | 1    |
+            v---^--v---^--v---^--v---^--v---^
+            |      | 1    | 1    | 1    |
+            ^---v--^---v--^---v--^---v--^
+            "},
+        ]
+    ], [
+        "1,000,000 map cells, worst case border_radius=2 match",
+         1000000,
+        [1],
+        [{
+            "tile": 1,
+            "cells": "
+            # we specifically pick the last cell to be evaluated in match to
+            # force worst-case match
+            v---^--v---^--v---^--v---^--v
+            |      |      |      |      |
+            ^---v--^---v--^---v--^---v--^---v
+                |      |      |      |      |
+            v---^--v---^--v---^--v---^--v---^--v
+            |      |      | _O ! |      |      |
+            ^---v--^---v--^---v--^---v--^---v--^
+                |  1   |      |      |      |
+            v---^--v---^--v---^--v---^--v---^
+            |      |      |      |      |
+            ^---v--^---v--^---v--^---v--^
+            "},
+        ]
+    ],
+
+])
+
+func test_benchmark_auto_tiled_rules(params=use_parameters(benchmark_rules_params)):
+    var int_node = HexMapInt.new()
+    var count = 0;
+    for cell_id in HexMapCellId.new().get_neighbors(100):
+        int_node.set_cell(cell_id, params.map_values[0])
+        count += 1
+        if count >= params.map_size:
+            break
+
+    # create the auto tiled node, add it as a child of the int node, then add
+    # required rules
+    var auto_node := HexMapAutoTiled.new()
+    for input in params.rules:
+        var rule := HexMapTileRule.new()
+        rule.tile = input["tile"]
+        for cell in parse_cell_map(input["cells"]):
+            if cell["text"] == "!":
+                rule.set_cell_empty(cell["cell"])
+            elif cell["text"] != "":
+                rule.set_cell_type(cell["cell"], int(cell["text"]))
+        print(rule)
+        auto_node.add_rule(rule)
+
+    var iteration_begin_usec = Time.get_ticks_usec()
+    # make the auto_node a child of int node
+    int_node.add_child(auto_node)
+    var duration = Time.get_ticks_usec() - iteration_begin_usec
+
+    pass_test(str("rules took ", duration, "us to complete"))
+    int_node.free()
+
+

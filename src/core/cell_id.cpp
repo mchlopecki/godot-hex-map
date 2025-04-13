@@ -78,6 +78,10 @@ void hex_bind::HexMapCellId::_bind_methods() {
             D_METHOD("from_coordinates", "q", "r", "y"),
             &hex_bind::HexMapCellId::from_coordinates);
     ClassDB::bind_static_method("HexMapCellId",
+            D_METHOD("at", "q", "r", "y"),
+            &hex_bind::HexMapCellId::from_coordinates,
+            DEFVAL(0));
+    ClassDB::bind_static_method("HexMapCellId",
             D_METHOD("from_vector", "vector"),
             &hex_bind::HexMapCellId::from_vector);
     ClassDB::bind_static_method("HexMapCellId",
