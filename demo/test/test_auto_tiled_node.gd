@@ -614,5 +614,3 @@ func test_benchmark_auto_tiled_rules(params=use_parameters(benchmark_rules_param
 
     pass_test(str("rules took ", duration, "us to complete"))
     int_node.free()
-
-
