@@ -38,6 +38,54 @@ public:
         /// number of cells contained in the rule pattern
         static const unsigned PatternCells = 19;
 
+    public:
+        /// rule cell states
+        enum CellState : uint8_t {
+            /// cell is ignored when matching this rule
+            RULE_CELL_STATE_DISABLED = 0,
+            /// cell must be empty when matcheng
+            RULE_CELL_STATE_EMPTY,
+            /// cell must not be empty when matcheng
+            RULE_CELL_STATE_NOT_EMPTY,
+            /// cell must have type specified in type field
+            RULE_CELL_STATE_TYPE,
+            /// cell must not have type specified in type field
+            RULE_CELL_STATE_NOT_TYPE,
+        };
+
+        /// internal state for a cell in the rule pattern
+        struct Cell {
+            /// state for this cell in the pattern
+            CellState state;
+
+            /// type for this cell
+            uint16_t type;
+        };
+
+        inline operator Ref<HexMapTileRule>() const;
+
+        /// get the details for a specific cell in the rule pattern
+        Cell get_cell(HexMapCellId cell_id) const;
+
+        /// clear a cell in the pattern so that it is ignored when matching
+        void clear_cell(HexMapCellId offset);
+
+        /// require a cell to be a specific type when matching
+        void
+        set_cell_type(HexMapCellId offset, unsigned type, bool invert = false);
+
+        /// require a cell be empty when matching
+        void set_cell_empty(HexMapCellId offset, bool invert = false);
+
+        /// check if the rule matches the provided cell data with the given
+        /// rotation
+        /// @param cell_data
+        /// @param orientation
+        /// @return -1 if matches, >= 0 for the index of mismatch
+        inline int match(int32_t cell_type[PatternCells],
+                HexMapTileOrientation orientation);
+
+    private:
         // clang-format off
 
         /// offset of each cell in the rule pattern from the origin cell
@@ -106,44 +154,11 @@ public:
         };
         // clang-format on
 
-    public:
-        inline operator Ref<HexMapTileRule>() const;
-
-        /// clear a cell in the pattern so that it is ignored when matching
-        void clear_cell(HexMapCellId offset);
-
-        /// require a cell to be a specific type when matching
-        void set_cell_type(HexMapCellId offset, unsigned type);
-
-        /// require a cell be empty when matching
-        void set_cell_empty(HexMapCellId offset);
-
-        /// check if the rule matches the provided cell data with the given
-        /// rotation
-        /// @param cell_data
-        /// @param orientation
-        /// @return -1 if matches, >= 0 for the index of mismatch
-        inline int match(int32_t cell_type[PatternCells],
-                HexMapTileOrientation orientation);
-
-    private:
         /// update the pattern radius; called from add_rule/update_rule
         void update_radius();
 
         /// get the number of cells that are needed to match the pattern
         inline unsigned get_pattern_size() const;
-
-        /// rule cell states
-        enum {
-            /// cell is ignored when matching pattern
-            RULE_CELL_STATE_DISABLED = 0,
-            /// cell must be empty when matcheng
-            RULE_CELL_STATE_EMPTY = 1,
-            /// cell must have type specified in type field
-            RULE_CELL_STATE_TYPE = 2,
-            /// cell must not have type specified in type field
-            RULE_CELL_STATE_NOT_TYPE = 3,
-        };
 
         /// internal rule id, used for ordering
         uint16_t id = RuleIdNotSet;
@@ -155,14 +170,8 @@ public:
         unsigned radius = 0;
 
         /// cell pattern to match against
-        struct {
-            /// state for this cell in the pattern
-            /// @see RULE_CELL_STATE_*
-            unsigned state : 2;
-
-            /// type for this cell
-            uint16_t type;
-        } pattern[PatternCells];
+        /// @see CellOffsets
+        Cell pattern[PatternCells];
     };
 
     /// GDScript wrapper for Rule class
@@ -178,8 +187,11 @@ public:
         void set_id(unsigned value);
 
         void clear_cell(const Ref<hex_bind::HexMapCellId> &);
-        void set_cell_type(const Ref<hex_bind::HexMapCellId> &, unsigned type);
-        void set_cell_empty(const Ref<hex_bind::HexMapCellId> &);
+        void set_cell_type(const Ref<hex_bind::HexMapCellId> &,
+                unsigned type,
+                bool not_);
+        void set_cell_empty(const Ref<hex_bind::HexMapCellId> &, bool not_);
+        Dictionary get_cell(const Ref<hex_bind::HexMapCellId> &) const;
 
         HexMapTileRule() {};
         HexMapTileRule(const Rule &rule) : inner(rule) {};

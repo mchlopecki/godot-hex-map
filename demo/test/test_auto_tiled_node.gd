@@ -190,6 +190,40 @@ var rules_params = ParameterFactory.named_parameters(
           ^--v--^--v--^--v--^
         "
     ],
+    ["not type rule", "
+            v--^--v--^--v--^--v
+            | 1   | 2   | 3   |
+            ^--v--^--v--^--v--^
+        ", [{
+            "tile": 5,
+            "cells": "
+               v--^--v
+               | !1  |
+               ^--v--^
+            "},
+        ], "
+          v--^--v--^--v--^--v
+          | -1  | 5   | 5   |
+          ^--v--^--v--^--v--^
+        "
+    ],
+    ["not empty rule", "
+            v--^--v--^--v--^--v
+            | 1   |     | 3   |
+            ^--v--^--v--^--v--^
+        ", [{
+            "tile": 5,
+            "cells": "
+               v--^--v
+               |  +  |
+               ^--v--^
+            "},
+        ], "
+          v--^--v--^--v--^--v
+          |  5  | -1  | 5   |
+          ^--v--^--v--^--v--^
+        "
+    ],
     ["neighbor-based pattern","
             ^--v--^--v--^--v
                |     |     |
@@ -425,13 +459,18 @@ func test_auto_tiled_rules(params=use_parameters(rules_params)):
     # create the auto tiled node, add it as a child of the int node, then add
     # required rules
     var auto_node := HexMapAutoTiled.new()
+    # XXX break this out into a func; we use it later for benchmarks
     for input in params.rules:
         var rule := HexMapTileRule.new()
         rule.tile = input["tile"]
         for cell in parse_cell_map(input["cells"]):
             if cell["text"] == "!":
-                # XXX impl
                 rule.set_cell_empty(cell["cell"])
+            elif cell["text"] == "+":
+                rule.set_cell_empty(cell["cell"], true)
+            elif cell["text"].begins_with("!"):
+                var tile = int(cell["text"].substr(1, -1))
+                rule.set_cell_type(cell["cell"], tile, true)
             elif cell["text"] != "":
                 rule.set_cell_type(cell["cell"], int(cell["text"]))
         print(rule)
@@ -585,6 +624,10 @@ var benchmark_rules_params = ParameterFactory.named_parameters(
 ])
 
 func test_benchmark_auto_tiled_rules(params=use_parameters(benchmark_rules_params)):
+    if OS.get_environment("HEX_MAP_RUN_BENCH") != "1":
+        pending("benchmarks disabled; set HEX_MAP_RUN_BENCH=1 to enable")
+        return
+
     var int_node = HexMapInt.new()
     var count = 0;
     for cell_id in HexMapCellId.new().get_neighbors(100):
@@ -602,6 +645,11 @@ func test_benchmark_auto_tiled_rules(params=use_parameters(benchmark_rules_param
         for cell in parse_cell_map(input["cells"]):
             if cell["text"] == "!":
                 rule.set_cell_empty(cell["cell"])
+            elif cell["text"] == "+":
+                rule.set_cell_empty(cell["cell"], true)
+            elif cell["text"].begins_with("!"):
+                var tile = int(cell["text"].substr(1, -1))
+                rule.set_cell_type(cell["cell"], tile, true)
             elif cell["text"] != "":
                 rule.set_cell_type(cell["cell"], int(cell["text"]))
         print(rule)
