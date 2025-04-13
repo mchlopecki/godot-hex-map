@@ -322,6 +322,31 @@ var rules_params = ParameterFactory.named_parameters(
             ^---v--^---v--^---v--^
         "
     ],
+    ["empty tile with rotation","
+            ^---v--^---v--^---v
+                |      |      |
+            v---^--v---^--v---^--v
+            |      | _O 1 |      |
+            ^---v--^---v--^---v--^
+                |      |      |
+            v---^--v---^--v---^
+        ", [{
+            "tile": 9,
+            "cells": "
+                v---^--v---^--v
+                | _O ! | 1    |
+                ^---v--^---v--^
+            "},
+        ], "
+            ^---v--^---v--^---v
+                |  9   |  9   |
+            v---^--v---^--v---^--v
+            |   9  | _O ! |  9   |
+            ^---v--^---v--^---v--^
+                |   9  |   9  |
+            v---^--v---^--v---^
+        "
+    ],
 ])
 
 func test_auto_tiled_rules(params=use_parameters(rules_params)):

@@ -1,10 +1,12 @@
 #include "auto_tiled_node.h"
+#include "core/iter_radial.h"
 #include "core/tile_orientation.h"
 #include "godot_cpp/classes/global_constants.hpp"
 #include "godot_cpp/core/class_db.hpp"
 #include "godot_cpp/core/error_macros.hpp"
 #include "godot_cpp/core/object.hpp"
 #include "godot_cpp/core/property_info.hpp"
+#include "godot_cpp/templates/hash_set.hpp"
 #include "godot_cpp/variant/utility_functions.hpp"
 #include "godot_cpp/variant/variant.hpp"
 
@@ -86,21 +88,46 @@ void HexMapAutoTiledNode::apply_rules() {
     ERR_FAIL_NULL(int_node);
     ERR_FAIL_NULL(tiled_node);
 
+    // cells go get based on the radius of the patterns
     int pattern_size = -1;
+
+    // radius expanded by any rule that has an empty cell at pattern origin
+    int border_radius = 0;
     for (const auto &iter : rules) {
         int size = iter.value.get_pattern_size();
         if (size > pattern_size) {
             pattern_size = size;
         }
+        if (iter.value.pattern[0].state ==
+                        HexMapAutoTiledNode::Rule::RULE_CELL_STATE_EMPTY &&
+                iter.value.radius > border_radius) {
+            border_radius = iter.value.radius;
+        }
     }
-    assert(pattern_size > 0);
 
-    // get an iterator that gives me some ordered sample of the cell values
-    // surrounding a given point.... so
-    //      int_node->get_cell_neighbor_values(HexMapCellId)
-    //
+    // if the number of cells to match in the pattern is less than one, nothing
+    // to match here.
+    if (pattern_size < 1) {
+        return;
+    }
+
+    // XXX this is an unnecessary perf hit when border_radius == 0.
+    HashSet<HexMapCellId::Key> cell_map;
     for (const auto &iter : int_node->cell_map) {
+        cell_map.insert(iter.key);
+        if (border_radius == 0) {
+            continue;
+        }
+
         HexMapCellId cell_id = iter.key;
+        for (const HexMapCellId id :
+                cell_id.get_neighbors(border_radius, HexMapPlanes::QRS)) {
+            cell_map.insert(id);
+        }
+    }
+
+    for (const auto key : cell_map) {
+        HexMapCellId cell_id = key;
         int32_t cells[Rule::PatternCells];
         for (int i = 0; i < pattern_size; i++) {
             uint16_t *ptr =
@@ -117,7 +144,7 @@ void HexMapAutoTiledNode::apply_rules() {
                     // pattern matched, set the tile and move on to the next
                     // cell.  Cells can only match one rule right now.
                     tiled_node->set_cell_item(
-                            iter.key, rule.tile, static_cast<int>(o));
+                            cell_id, rule.tile, static_cast<int>(o));
                     goto next_cell;
                 } else if (matched == 0) {
                     // center most cell of pattern did not match, so there's no
