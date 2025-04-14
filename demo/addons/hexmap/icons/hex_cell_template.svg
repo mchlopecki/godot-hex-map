@@ -7,7 +7,7 @@
    viewBox="0 0 4.2333333 4.2333333"
    version="1.1"
    id="svg1"
-   inkscape:export-filename="hex_cell_x.png"
+   inkscape:export-filename="hex_cell_star.png"
    inkscape:export-xdpi="1536"
    inkscape:export-ydpi="1536"
    inkscape:version="1.4 (e7c3feb1, 2024-10-09)"
@@ -34,7 +34,7 @@
      inkscape:window-width="1384"
      inkscape:window-height="1186"
      inkscape:window-x="961"
-     inkscape:window-y="77"
+     inkscape:window-y="49"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg1" />
   <defs
@@ -87,6 +87,30 @@
          height="2"
          id="rect140" />
     </pattern>
+    <rect
+       x="-0.069531695"
+       y="-0.069531695"
+       width="23.223586"
+       height="18.495431"
+       id="rect4" />
+    <rect
+       x="-0.069531695"
+       y="-0.069531695"
+       width="23.223586"
+       height="18.495431"
+       id="rect5" />
+    <rect
+       x="-0.069531695"
+       y="-0.069531695"
+       width="23.223586"
+       height="18.495431"
+       id="rect6" />
+    <rect
+       x="-0.069531695"
+       y="-0.069531695"
+       width="23.223586"
+       height="18.495431"
+       id="rect7" />
   </defs>
   <path
      sodipodi:type="star"
@@ -139,14 +163,34 @@
      d="M 3.8884611,3.1275184 2.0880513,4.1669855 0.28764149,3.1275184 0.2876415,1.0485842 2.0880513,0.00911713 3.8884611,1.0485842 Z"
      transform="matrix(0.94295617,0,0,0.94295617,0.14772579,0.14772579)"
      inkscape:label="cell_hover" />
+  <g
+     id="g7"
+     inkscape:label="X"
+     style="display:none">
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,1.0914062,-0.12117979)"
+       id="text6"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13.3333px;font-family:'Noto Sans Coptic';-inkscape-font-specification:'Noto Sans Coptic';text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect7);display:inline;fill:#ff0000;fill-opacity:1;stroke:#ffffff;stroke-width:1.13386;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="-0.0703125"
+         y="12.094061"
+         id="tspan1">x</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,1.0914062,-0.12117979)"
+       id="text1"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13.3333px;font-family:'Noto Sans Coptic';-inkscape-font-specification:'Noto Sans Coptic';text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2);display:inline;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:0.377953;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"><tspan
+         x="-0.0703125"
+         y="12.094061"
+         id="tspan2">x</tspan></text>
+  </g>
   <text
      xml:space="preserve"
-     transform="matrix(0.26458333,0,0,0.26458333,1.0469645,0.39281456)"
-     id="text1"
-     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;font-family:Courier;-inkscape-font-specification:Courier;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2);display:inline;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:0.623622;stroke-linejoin:round;stroke-opacity:1"><tspan
+     transform="matrix(0.26458333,0,0,0.26458333,0.78754884,0.53236548)"
+     id="text4"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:16px;font-family:'Noto Sans Gothic';-inkscape-font-specification:'Noto Sans Gothic';text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect5);display:inline;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.377953;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+     inkscape:label="star"><tspan
        x="-0.0703125"
-       y="10.877651"
-       id="tspan3"><tspan
-         style="font-family:'Noto Sans Syloti Nagri';-inkscape-font-specification:'Noto Sans Syloti Nagri'"
-         id="tspan1">X</tspan></tspan></text>
+       y="14.526973"
+       id="tspan3">*</tspan></text>
 </svg>

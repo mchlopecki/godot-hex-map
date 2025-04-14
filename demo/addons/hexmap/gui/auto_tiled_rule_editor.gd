@@ -74,24 +74,20 @@ func _on_painter_cell_clicked(id: HexMapCellId, button: MouseButton):
 	if button == MOUSE_BUTTON_LEFT:
 		if cell["state"] == "type" && cell["type"] == type:
 			rule.set_cell_type(id, type, true)
-			%GridPainter.set_cell_color(id, color)
-			%GridPainter.set_cell_not(id, true)
+			%GridPainter.set_cell(id, color, "not")
 		else:
 			rule.set_cell_type(id, type)
-			%GridPainter.set_cell_color(id, color)
-			%GridPainter.set_cell_not(id, false)
+			%GridPainter.set_cell(id, color, null)
 	elif button == MOUSE_BUTTON_RIGHT:
-		%GridPainter.set_cell_color(id, null)
 		if cell["state"] == "disabled":
 			rule.set_cell_empty(id)
-			%GridPainter.set_cell_not(id, true)
+			%GridPainter.set_cell(id, null, "not")
 		elif cell["state"] == "empty":	
-			# XXX need some visualization for must be some value
 			rule.set_cell_empty(id, true)
-			%GridPainter.set_cell_not(id, false)
+			%GridPainter.set_cell(id, Color.WEB_GRAY, "some")
 		else:
 			rule.clear_cell(id)
-			%GridPainter.set_cell_not(id, false)
+			%GridPainter.set_cell(id, null, null)
 
 func _build_cell_mesh() -> Mesh:
 	var mesh := CylinderMesh.new()

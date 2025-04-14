@@ -51,21 +51,25 @@ func cell_pressed(id: HexMapCellId) -> void:
 	else:
 		push_error("unknown mouse button pressed")
 
-func set_cell_color(id: HexMapCellId, color) -> void:
+func set_cell(id: HexMapCellId, color, icon) -> void:
 	var button = cell_buttons[id.as_int()]
 	if !button:
 		print("unknown cell_id ", id)
 		return
 	button.color = color
-
-func set_cell_not(id: HexMapCellId, value: bool) -> void:
-	var button = cell_buttons[id.as_int()]
-	if !button:
-		print("unknown cell_id ", id)
-		return
-	button.cross_out = value
+	match icon:
+		null:
+			button.icon = HexCellButton.Icon.None
+		"not":
+			button.icon = HexCellButton.Icon.X
+		"some":
+			button.icon = HexCellButton.Icon.Star
+		_:
+			push_error("unsupported cell icon ", icon)
 
 func reset() -> void:
 	for button in cell_buttons:
 		cell_buttons[button].color = null
+		cell_buttons[button].icon = HexCellButton.Icon.None
+
 

@@ -1,25 +1,29 @@
 @tool
 extends TextureButton
+class_name HexCellButton
 
 @export var color = null :
 	set(value):
 		if value != color:
 			color = value
-			update_textures()
+			call_deferred("update_textures")
 @export var border_color = null :
 	set(value):
 		if value != border_color:
 			border_color = value
-			update_textures()
-@export var cross_out = false :
+			call_deferred("update_textures")
+@export var icon := Icon.None :
 	set(value):
-		if value != cross_out:
-			cross_out = value
-			update_textures()
-
+		if value != icon:
+			print("setting icon to ", value)
+			icon = value
+			call_deferred("update_textures")
 
 static var cell_template : Image = preload("../icons/hex_cell_template.png")
-static var cell_template_x : Image = preload("../icons/hex_cell_x.png")
+static var icon_templates := {
+	Icon.X: preload("../icons/hex_cell_x.png"),
+	Icon.Star: preload("../icons/hex_cell_star.png"),
+}
 static var empty_textures := {};
 
 # size of the button; scaled for hidpi devices
@@ -30,14 +34,15 @@ const TEMPLATE_CHANNEL_BORDER = 1
 const TEMPLATE_CHANNEL_BG = 2
 const TEMPLATE_CHANNEL_BG_STRIPE = 0
 
-const TEMPLATE_BORDER = 1
-const TEMPLATE_BG = 2
-const TEMPLATE_BG_STRIPE = 0
-const CROSS_OUT = 3
-
 enum Template {
 	COLOR, # <channel>, <color>
-	CROSS_OUT,
+	ICON,
+}
+
+enum Icon {
+	None,
+	X,
+	Star,
 }
 
 # colors used for empty cells
@@ -91,10 +96,11 @@ static func build_image(steps: Array) -> Image:
 						var adj = cell_template.get_pixel(x, y)[channel]
 						if adj > 0.5:
 							image.set_pixel(x, y, color * adj)
-			Template.CROSS_OUT:
+			Template.ICON:
+				var icon = icon_templates[steps.pop_front()]
 				for x in range(size.x):
 					for y in range(size.y):
-						var color = cell_template_x.get_pixel(x, y)
+						var color = icon.get_pixel(x, y)
 						if color.a > 0.5:
 							image.set_pixel(x, y, color)
 
@@ -113,7 +119,7 @@ static func build_image(steps: Array) -> Image:
 
 func update_textures() -> void:
 	# If nothing is customized, use the default templates
-	if !color && !border_color && !cross_out:
+	if !color && !border_color && icon == Icon.None:
 		texture_normal = empty_textures["normal"]
 		texture_hover = empty_textures["hover"]
 		texture_pressed = empty_textures["pressed"]
@@ -129,8 +135,8 @@ func update_textures() -> void:
 	else:
 		base.append_array([ Template.COLOR, TEMPLATE_CHANNEL_BG, color ])
 
-	if cross_out:
-		base.append_array([ Template.CROSS_OUT ])
+	if icon != Icon.None:
+		base.append_array([ Template.ICON, icon ])
 
 	var normal := build_image(base + [
 		Template.COLOR, TEMPLATE_CHANNEL_BORDER,
