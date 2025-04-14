@@ -26,6 +26,7 @@ func _ready() -> void:
 		var button = cell_button.instantiate()
 
 		if cell_id.get_q() == 0 && cell_id.get_r() == 0:
+			print("Setting border color")
 			button.border_color = Color.WHITE
 
 		# XXX get this vector offset from HexCellButton
@@ -56,6 +57,13 @@ func set_cell_color(id: HexMapCellId, color) -> void:
 		print("unknown cell_id ", id)
 		return
 	button.color = color
+
+func set_cell_not(id: HexMapCellId, value: bool) -> void:
+	var button = cell_buttons[id.as_int()]
+	if !button:
+		print("unknown cell_id ", id)
+		return
+	button.cross_out = value
 
 func reset() -> void:
 	for button in cell_buttons:

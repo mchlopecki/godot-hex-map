@@ -11,32 +11,50 @@ extends TextureButton
 		if value != border_color:
 			border_color = value
 			update_textures()
-		
+@export var cross_out = false :
+	set(value):
+		if value != cross_out:
+			cross_out = value
+			update_textures()
+
 
 static var cell_template : Image = preload("../icons/hex_cell_template.png")
+static var cell_template_x : Image = preload("../icons/hex_cell_x.png")
 static var empty_textures := {};
 
 # size of the button; scaled for hidpi devices
 const IMAGE_SIZE = Vector2(32, 32)
 
 # color channel used by each part of the template
+const TEMPLATE_CHANNEL_BORDER = 1
+const TEMPLATE_CHANNEL_BG = 2
+const TEMPLATE_CHANNEL_BG_STRIPE = 0
+
 const TEMPLATE_BORDER = 1
 const TEMPLATE_BG = 2
 const TEMPLATE_BG_STRIPE = 0
+const CROSS_OUT = 3
+
+enum Template {
+	COLOR, # <channel>, <color>
+	CROSS_OUT,
+}
 
 # colors used for empty cells
-static var EMPTY_BG_COLOR = Color.from_ok_hsl(0, 0, 0.2, 1)
-static var EMPTY_BG_STRIPE_COLOR = Color.from_ok_hsl(0, 0, 0.3, 1)
-static var EMPTY_BORDER_COLOR = Color.from_ok_hsl(0, 0, 0.5, 1)
+static var DEFAULT_BG_COLOR = Color.from_ok_hsl(0, 0, 0.2, 1)
+static var DEFAULT_BG_STRIPE_COLOR = Color.from_ok_hsl(0, 0, 0.3, 1)
+static var DEFAULT_BORDER_COLOR = Color.from_ok_hsl(0, 0, 0.5, 1)
 
 static func _static_init() -> void:
 	# build the textures for an empty button
 	var base = [
-		TEMPLATE_BG, EMPTY_BG_COLOR,
-		TEMPLATE_BG_STRIPE, EMPTY_BG_STRIPE_COLOR,
+		Template.COLOR, TEMPLATE_CHANNEL_BG, DEFAULT_BG_COLOR,
+		Template.COLOR, TEMPLATE_CHANNEL_BG_STRIPE, DEFAULT_BG_STRIPE_COLOR,
 	]
 
-	var normal := build_image(base + [TEMPLATE_BORDER, EMPTY_BORDER_COLOR])
+	var normal := build_image(base + [
+		Template.COLOR, TEMPLATE_CHANNEL_BORDER, DEFAULT_BORDER_COLOR,
+	])
 	empty_textures["normal"] = ImageTexture.create_from_image(normal)
 
 	var bitmap := BitMap.new()
@@ -44,10 +62,13 @@ static func _static_init() -> void:
 	empty_textures["click_mask"] = bitmap
 
 	empty_textures["hover"] = ImageTexture.create_from_image(
-		build_image(base + [ TEMPLATE_BORDER, Color.GOLD ])
-	)
+		build_image(base + [
+			Template.COLOR, TEMPLATE_CHANNEL_BORDER, Color.GOLD,
+		]))
 	empty_textures["pressed"] = ImageTexture.create_from_image(
-		build_image(base + [ TEMPLATE_BORDER, Color.WHITE, ]))
+		build_image(base + [
+			Template.COLOR, TEMPLATE_CHANNEL_BORDER, Color.WHITE,
+		]))
 
 # build a hex cell Image, coloring various parts of the template image as
 # requested
@@ -58,16 +79,28 @@ static func build_image(steps: Array) -> Image:
 	image.fill(Color.from_hsv(0,0,0,0))
 	image.set_pixel(size.x -1, size.y -1, Color.CORAL)
 	image.resize(size.x, size.y)
-	for i in range(0, steps.size(), 2):
-		var channel = steps[i]
-		var color = steps[i+1]
-	
-		for x in range(size.x):
-			for y in range(size.y):
-				var adj = cell_template.get_pixel(x, y)[channel]
-				if adj > 0.5:
-					image.set_pixel(x, y, color * adj)
+
+	while not steps.is_empty():
+		var step: Template = steps.pop_front()
+		match step:
+			Template.COLOR:
+				var channel: int = steps.pop_front()
+				var color: Color = steps.pop_front()
+				for x in range(size.x):
+					for y in range(size.y):
+						var adj = cell_template.get_pixel(x, y)[channel]
+						if adj > 0.5:
+							image.set_pixel(x, y, color * adj)
+			Template.CROSS_OUT:
+				for x in range(size.x):
+					for y in range(size.y):
+						var color = cell_template_x.get_pixel(x, y)
+						if color.a > 0.5:
+							image.set_pixel(x, y, color)
+
 				pass
+			_:
+				push_error("build_image(): unsupported step ", step)
 
 	# resize the image down to the size we need
 	# we're doing all this work at a higher resolution then scaling to reduce
@@ -76,40 +109,47 @@ static func build_image(steps: Array) -> Image:
 	size = IMAGE_SIZE * EditorInterface.get_editor_scale()
 	image.resize(size.x, size.y, Image.INTERPOLATE_LANCZOS)
 	return image
+	return image
 
 func update_textures() -> void:
-	if !color && !border_color:
+	# If nothing is customized, use the default templates
+	if !color && !border_color && !cross_out:
 		texture_normal = empty_textures["normal"]
 		texture_hover = empty_textures["hover"]
 		texture_pressed = empty_textures["pressed"]
 		texture_click_mask = empty_textures["click_mask"]
-	elif !color:
-		# we only have a border color, so build the normal image only
-		var normal := build_image([
-			TEMPLATE_BG, EMPTY_BG_COLOR,
-			TEMPLATE_BG_STRIPE, EMPTY_BG_STRIPE_COLOR,
-			TEMPLATE_BORDER, border_color
+		return
+
+	var base = []
+	if color == null:
+		base.append_array([
+			Template.COLOR, TEMPLATE_CHANNEL_BG, DEFAULT_BG_COLOR,
+			Template.COLOR, TEMPLATE_CHANNEL_BG_STRIPE, DEFAULT_BG_STRIPE_COLOR,
 		])
-		texture_normal = ImageTexture.create_from_image(normal)
-		texture_hover = empty_textures["hover"]
-		texture_pressed = empty_textures["pressed"]
-		texture_click_mask = empty_textures["click_mask"]
 	else:
-		var base := [TEMPLATE_BG, color]
-		var normal := build_image(base + 
-			[TEMPLATE_BORDER, Color.from_ok_hsl(0, 0, 0.5, 1)])
-		texture_normal = ImageTexture.create_from_image(normal)
+		base.append_array([ Template.COLOR, TEMPLATE_CHANNEL_BG, color ])
 
-		var bitmap := BitMap.new()
-		bitmap.create_from_image_alpha(normal)
-		texture_click_mask = bitmap
+	if cross_out:
+		base.append_array([ Template.CROSS_OUT ])
 
-		texture_hover = ImageTexture.create_from_image(
-			build_image(base + [ TEMPLATE_BORDER, Color.GOLD ])
-		)
+	var normal := build_image(base + [
+		Template.COLOR, TEMPLATE_CHANNEL_BORDER,
+			border_color if border_color else DEFAULT_BORDER_COLOR
+	])
+	texture_normal = ImageTexture.create_from_image(normal)
 
-		texture_pressed = ImageTexture.create_from_image(
-			build_image(base + [ TEMPLATE_BORDER, Color.WHITE, ]))
+	var bitmap := BitMap.new()
+	bitmap.create_from_image_alpha(normal)
+	texture_click_mask = bitmap
+
+	texture_hover = ImageTexture.create_from_image(
+		build_image(base + [
+			Template.COLOR, TEMPLATE_CHANNEL_BORDER, Color.GOLD
+		]))
+	texture_pressed = ImageTexture.create_from_image(
+		build_image(base + [
+			Template.COLOR, TEMPLATE_CHANNEL_BORDER, Color.WHITE
+		]))
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
