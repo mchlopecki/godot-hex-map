@@ -4,13 +4,16 @@ extends VBoxContainer
 signal save_pressed(rule: HexMapTileRule, is_update: bool)
 signal cancel_pressed
 
-
 @export var cell_types: Array :
 	set(value):
 		if not is_node_ready():
 			await ready
 		%TypeSelector.cell_types = value
 		cell_types = value
+		cell_types_by_value.clear()
+		for type in cell_types:
+			cell_types_by_value[type.value] = type
+			
 
 @export var mesh_library: MeshLibrary :
 	set(value):
@@ -22,6 +25,7 @@ signal cancel_pressed
 
 var rule : HexMapTileRule
 var is_update: bool
+var cell_types_by_value: Dictionary
 
 func clear() -> void:
 	%GridPainter.reset()
@@ -29,9 +33,43 @@ func clear() -> void:
 	%TileMeshInstance3D.mesh = _build_cell_mesh()
 	rule = HexMapTileRule.new()
 
-func set_rule(rule: HexMapTileRule, update: bool) -> void:
-	rule = rule
+func set_rule(value: HexMapTileRule, update: bool) -> void:
+	rule = value 
+	for cell in rule.get_cells():
+		print("cell ", cell)
+		set_cell_state(cell["offset"], cell["state"], cell["type"])
+		pass
+
+	var mesh = mesh_library.get_item_mesh(value.tile)
+	%TileMeshInstance3D.mesh = mesh
+
 	is_update = update
+
+func set_cell_state(offset: HexMapCellId, state: String, type) -> void:
+	# if a type was specified, look up the color for that type
+	var color = null
+	if type != null:
+		color = cell_types_by_value[type].color
+
+	# print("set_cell_state() ", state, ", type ", type, ", color ", color)
+	match state:
+		"empty":
+			rule.set_cell_empty(offset)
+			%GridPainter.set_cell(offset, null, "not")
+		"not_empty":
+			rule.set_cell_empty(offset, true)
+			%GridPainter.set_cell(offset, Color.WEB_GRAY, "some")
+		"type":
+			rule.set_cell_type(offset, type)
+			%GridPainter.set_cell(offset, color, null)
+		"not_type":
+			rule.set_cell_type(offset, type, true)
+			%GridPainter.set_cell(offset, color, "not")
+		"disabled":
+			rule.clear_cell(offset)
+			%GridPainter.set_cell(offset, null, null)
+		_:
+			push_error("unsupported cell state ", state)
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -64,7 +102,6 @@ func _on_mesh_item_selected(index: int):
 	var mesh = mesh_library.get_item_mesh(id)
 	%TileMeshInstance3D.mesh = mesh
 	rule.tile = id
-	print("rule updated ", rule)
 
 func _on_painter_cell_clicked(id: HexMapCellId, button: MouseButton):
 	var cell = rule.get_cell(id)
@@ -73,21 +110,16 @@ func _on_painter_cell_clicked(id: HexMapCellId, button: MouseButton):
 
 	if button == MOUSE_BUTTON_LEFT:
 		if cell["state"] == "type" && cell["type"] == type:
-			rule.set_cell_type(id, type, true)
-			%GridPainter.set_cell(id, color, "not")
+			set_cell_state(id, "not_type", type)
 		else:
-			rule.set_cell_type(id, type)
-			%GridPainter.set_cell(id, color, null)
+			set_cell_state(id, "type", type)
 	elif button == MOUSE_BUTTON_RIGHT:
 		if cell["state"] == "disabled":
-			rule.set_cell_empty(id)
-			%GridPainter.set_cell(id, null, "not")
+			set_cell_state(id, "empty", null)
 		elif cell["state"] == "empty":	
-			rule.set_cell_empty(id, true)
-			%GridPainter.set_cell(id, Color.WEB_GRAY, "some")
+			set_cell_state(id, "not_empty", null)
 		else:
-			rule.clear_cell(id)
-			%GridPainter.set_cell(id, null, null)
+			set_cell_state(id, "disabled", null)
 
 func _build_cell_mesh() -> Mesh:
 	var mesh := CylinderMesh.new()

@@ -1,11 +1,12 @@
 [gd_scene load_steps=4 format=3 uid="uid://ilwmmns8ccdg"]
 
 [ext_resource type="Script" path="res://addons/hexmap/gui/auto_tiled_node_editor_bottom_panel.gd" id="1_2bs26"]
+[ext_resource type="PackedScene" uid="uid://bcii1uofabb8u" path="res://addons/hexmap/gui/auto_tiled_node_rules_list.tscn" id="2_ep4b4"]
 [ext_resource type="PackedScene" uid="uid://p42lol2mxn4a" path="res://addons/hexmap/gui/auto_tiled_rule_editor.tscn" id="3_g8rki"]
-[ext_resource type="Texture2D" uid="uid://27nqiq38njor" path="res://addons/hexmap/icons/Add.svg" id="12_x2iba"]
 
 [node name="AutoTiledNodeEditorBottomPanel" type="VBoxContainer"]
-offset_right = 350.0
+offset_right = 1151.0
+offset_bottom = 648.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_2bs26")
@@ -15,32 +16,20 @@ layout_mode = 2
 size_flags_vertical = 3
 
 [node name="HSplitContainer" type="HSplitContainer" parent="HBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-split_offset = 200
+split_offset = 210
 
 [node name="ScrollContainer" type="ScrollContainer" parent="HBoxContainer/HSplitContainer"]
-custom_minimum_size = Vector2(350, 0)
+custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 horizontal_scroll_mode = 3
 
-[node name="PanelContainer" type="PanelContainer" parent="HBoxContainer/HSplitContainer/ScrollContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="RulesList" type="VBoxContainer" parent="HBoxContainer/HSplitContainer/ScrollContainer/PanelContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="NewRuleButton" type="Button" parent="HBoxContainer/HSplitContainer/ScrollContainer/PanelContainer/RulesList"]
+[node name="RulesList" parent="HBoxContainer/HSplitContainer/ScrollContainer" instance=ExtResource("2_ep4b4")]
 unique_name_in_owner = true
 layout_mode = 2
-text = "New Rule"
-icon = ExtResource("12_x2iba")
 
 [node name="RuleEditor" parent="HBoxContainer/HSplitContainer" instance=ExtResource("3_g8rki")]
 unique_name_in_owner = true
-visible = false
 layout_mode = 2

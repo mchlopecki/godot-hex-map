@@ -1,6 +1,7 @@
 #include "hex_map_node.h"
 #include "cell_id.h"
 #include "godot_cpp/core/object.hpp"
+#include "godot_cpp/variant/array.hpp"
 #include "godot_cpp/variant/utility_functions.hpp"
 
 void HexMapNode::_bind_methods() {
@@ -65,6 +66,9 @@ void HexMapNode::_bind_methods() {
 
     ADD_SIGNAL(MethodInfo("cell_scale_changed"));
     ADD_SIGNAL(MethodInfo("mesh_offset_changed"));
+    ADD_SIGNAL(MethodInfo(
+            "cells_changed", PropertyInfo(Variant::ARRAY, "cells")));
+    // XXX add signal cell_changed; connect in auto-tiled node, apply rules
 }
 
 void HexMapNode::set_space(const HexMapSpace &space) {
@@ -133,6 +137,15 @@ void HexMapNode::set_cell(const Ref<hex_bind::HexMapCellId> cell_id,
         int p_item,
         int p_orientation) {
     set_cell(**cell_id, p_item, p_orientation);
+    // XXX emit this here because it is the entry point for set single cell via
+    // gdscript, but this feels like there's a gap in our signal coverage.
+    // FOUND IT!  HexMapNodeEditorPlugin::selection_move() calls set_cell()
+    // directly, which bypasses the cells_changed signal.  This causes a
+    // graphical artifact during move cells of an IntNode with a child
+    // AutoTiledNode; the grabbed cells don't disappear from the screen because
+    // the AutoTiledNode is never notified that the IntNode was changed.
+    emit_signal("cells_changed",
+            Array::make(cell_id->inner.to_vec(), p_item, p_orientation));
 }
 
 void HexMapNode::set_cells(const Array cells) {
@@ -143,6 +156,7 @@ void HexMapNode::set_cells(const Array cells) {
         HexMapTileOrientation orientation = cells[i + 2];
         set_cell(cell_id, value, orientation);
     }
+    emit_signal("cells_changed", cells);
 }
 
 Array HexMapNode::get_cells(const Array cells) {

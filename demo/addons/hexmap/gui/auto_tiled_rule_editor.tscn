@@ -28,44 +28,49 @@ layout_mode = 2
 size_flags_horizontal = 0
 read_only = true
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer"]
+[node name="HSplitContainer" type="HSplitContainer" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/HSplitContainer"]
 layout_mode = 2
 
-[node name="GridPainter" type="Control" parent="HBoxContainer/VBoxContainer"]
+[node name="GridPainter" type="Control" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 4
 size_flags_vertical = 0
 script = ExtResource("2_x2pvy")
 
-[node name="GridPreview" type="SubViewportContainer" parent="HBoxContainer/VBoxContainer"]
+[node name="GridPreview" type="SubViewportContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
 custom_minimum_size = Vector2(256, 256)
 layout_mode = 2
 size_flags_vertical = 3
 stretch = true
 
-[node name="SubViewport" type="SubViewport" parent="HBoxContainer/VBoxContainer/GridPreview"]
+[node name="SubViewport" type="SubViewport" parent="HBoxContainer/HSplitContainer/VBoxContainer/GridPreview"]
 own_world_3d = true
 handle_input_locally = false
 canvas_cull_mask = 4294967294
 size = Vector2i(311, 512)
 render_target_update_mode = 4
 
-[node name="TileMeshInstance3D" type="MeshInstance3D" parent="HBoxContainer/VBoxContainer/GridPreview/SubViewport"]
+[node name="TileMeshInstance3D" type="MeshInstance3D" parent="HBoxContainer/HSplitContainer/VBoxContainer/GridPreview/SubViewport"]
 unique_name_in_owner = true
 mesh = SubResource("CylinderMesh_q0f4s")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="HBoxContainer/VBoxContainer/GridPreview/SubViewport"]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="HBoxContainer/HSplitContainer/VBoxContainer/GridPreview/SubViewport"]
 transform = Transform3D(-0.718499, -0.528546, 0.452104, 0.652904, -0.288491, 0.700349, -0.239738, 0.798381, 0.552371, 0, 5.70908, 0)
 shadow_enabled = true
 
-[node name="Camera3D" type="Camera3D" parent="HBoxContainer/VBoxContainer/GridPreview/SubViewport"]
+[node name="Camera3D" type="Camera3D" parent="HBoxContainer/HSplitContainer/VBoxContainer/GridPreview/SubViewport"]
 transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 3.5, 3.5)
 projection = 1
 current = true
 fov = 90.0
 size = 8.0
 
-[node name="MeshItemList" type="ItemList" parent="HBoxContainer"]
+[node name="MeshItemList" type="ItemList" parent="HBoxContainer/HSplitContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3

@@ -41,8 +41,6 @@ public:
     inline const TypeMap &get_cell_types() const { return cell_types; };
 
     /// return an Array of Dictionary with value, name, color keys
-    /// XXX dictionary may not be possible as there's no simple "insert"/"set"
-    /// function
     Array _get_cell_types() const;
 
     void set_cell(const HexMapCellId &,

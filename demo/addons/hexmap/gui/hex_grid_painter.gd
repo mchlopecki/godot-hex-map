@@ -15,7 +15,6 @@ func _ready() -> void:
 
 	# center point of the control
 	var control_center = _get_minimum_size() / 2
-	print("size ", _get_minimum_size(), ", center ", control_center);
 
 	var cells = HexMapCellId.new().get_neighbors(2, true)
 	for cell_id in cells:
@@ -26,7 +25,6 @@ func _ready() -> void:
 		var button = cell_button.instantiate()
 
 		if cell_id.get_q() == 0 && cell_id.get_r() == 0:
-			print("Setting border color")
 			button.border_color = Color.WHITE
 
 		# XXX get this vector offset from HexCellButton
@@ -57,6 +55,7 @@ func set_cell(id: HexMapCellId, color, icon) -> void:
 		print("unknown cell_id ", id)
 		return
 	button.color = color
+
 	match icon:
 		null:
 			button.icon = HexCellButton.Icon.None

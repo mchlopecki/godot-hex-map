@@ -60,6 +60,9 @@ public:
 
             /// type for this cell
             uint16_t type;
+
+            /// return this class as a Dictionary
+            Dictionary to_dict() const;
         };
 
         inline operator Ref<HexMapTileRule>() const;
@@ -133,24 +136,24 @@ public:
               7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 },
             // Upright60
             { 0,
-              2, 3, 4, 5, 6, 1,
-              9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 7, 8 },
+              6, 1, 2, 3, 4, 5,
+              17, 18, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 },
             // Upright120
             { 0,
-              3, 4, 5, 6, 1, 2,
-              11, 12, 13, 14, 15, 16, 17, 18, 7, 8, 9, 10 },
+              5, 6, 1, 2, 3, 4,
+              15, 16, 17, 18, 7, 8, 9, 10, 11, 12, 13, 14 },
             // Upright180
             { 0,
               4, 5, 6, 1, 2, 3,
               13, 14, 15, 16, 17, 18, 7, 8, 9, 10, 11, 12 },
             // Upright240
             { 0,
-              5, 6, 1, 2, 3, 4,
-              15, 16, 17, 18, 7, 8, 9, 10, 11, 12, 13, 14 },
+              3, 4, 5, 6, 1, 2,
+              11, 12, 13, 14, 15, 16, 17, 18, 7, 8, 9, 10 },
             // Upright300
             { 0,
-              6, 1, 2, 3, 4, 5,
-              17, 18, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 },
+              2, 3, 4, 5, 6, 1,
+              9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 7, 8 },
         };
         // clang-format on
 
@@ -192,6 +195,7 @@ public:
                 bool not_);
         void set_cell_empty(const Ref<hex_bind::HexMapCellId> &, bool not_);
         Dictionary get_cell(const Ref<hex_bind::HexMapCellId> &) const;
+        Array get_cells() const;
 
         HexMapTileRule() {};
         HexMapTileRule(const Rule &rule) : inner(rule) {};
@@ -246,6 +250,7 @@ protected:
     // bool _set(const StringName &p_name, const Variant &p_value);
 
 private:
+    void on_int_node_cells_changed(Array);
     void apply_rules();
 
     Ref<MeshLibrary> mesh_library;

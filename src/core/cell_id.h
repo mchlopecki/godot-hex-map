@@ -79,6 +79,8 @@ public:
     inline operator Variant() const { return (Vector3i) * this; }
     inline operator Ref<hex_bind::HexMapCellId>() const;
     operator String() const;
+    inline Ref<hex_bind::HexMapCellId> to_ref() const { return *this; }
+    inline Vector3i to_vec() const { return *this; }
 
     HexMapCellId operator+(const HexMapCellId &other) const {
         return HexMapCellId(q + other.q, r + other.r, y + other.y);

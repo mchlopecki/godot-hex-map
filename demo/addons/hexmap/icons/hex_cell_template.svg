@@ -30,11 +30,11 @@
      inkscape:export-bgcolor="#00000000"
      inkscape:zoom="20.339121"
      inkscape:cx="10.25118"
-     inkscape:cy="4.2528878"
+     inkscape:cy="4.2283047"
      inkscape:window-width="1384"
-     inkscape:window-height="1186"
-     inkscape:window-x="961"
-     inkscape:window-y="49"
+     inkscape:window-height="1051"
+     inkscape:window-x="129"
+     inkscape:window-y="38"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg1" />
   <defs
@@ -111,6 +111,12 @@
        width="23.223586"
        height="18.495431"
        id="rect7" />
+    <rect
+       x="-0.069531695"
+       y="-0.069531695"
+       width="23.223586"
+       height="18.495431"
+       id="rect8" />
   </defs>
   <path
      sodipodi:type="star"
@@ -166,7 +172,8 @@
   <g
      id="g7"
      inkscape:label="X"
-     style="display:none">
+     style="display:none"
+     transform="matrix(0.91842477,0,0,0.89786916,0.18217003,0.20611979)">
     <text
        xml:space="preserve"
        transform="matrix(0.26458333,0,0,0.26458333,1.0914062,-0.12117979)"
@@ -179,18 +186,32 @@
        xml:space="preserve"
        transform="matrix(0.26458333,0,0,0.26458333,1.0914062,-0.12117979)"
        id="text1"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13.3333px;font-family:'Noto Sans Coptic';-inkscape-font-specification:'Noto Sans Coptic';text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2);display:inline;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:0.377953;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"><tspan
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13.3333px;font-family:'Noto Sans Coptic';-inkscape-font-specification:'Noto Sans Coptic';text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2);display:inline;fill:#e21717;fill-opacity:1;stroke:none;stroke-width:0.377953;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"><tspan
          x="-0.0703125"
          y="12.094061"
          id="tspan2">x</tspan></text>
   </g>
-  <text
-     xml:space="preserve"
-     transform="matrix(0.26458333,0,0,0.26458333,0.78754884,0.53236548)"
-     id="text4"
-     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:16px;font-family:'Noto Sans Gothic';-inkscape-font-specification:'Noto Sans Gothic';text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect5);display:inline;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.377953;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
-     inkscape:label="star"><tspan
-       x="-0.0703125"
-       y="14.526973"
-       id="tspan3">*</tspan></text>
+  <g
+     id="g8"
+     inkscape:label="star"
+     style="display:inline">
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,0.78754884,0.53236548)"
+       id="text4"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:16px;font-family:'Noto Sans Gothic';-inkscape-font-specification:'Noto Sans Gothic';text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect5);display:inline;fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:1.13386;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:markers fill stroke"
+       inkscape:label="star"><tspan
+         x="-0.0703125"
+         y="14.526973"
+         id="tspan3">*</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,0.78754884,0.53236548)"
+       id="text7"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:16px;font-family:'Noto Sans Gothic';-inkscape-font-specification:'Noto Sans Gothic';text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect8);display:inline;fill:#484848;fill-opacity:1;stroke:none;stroke-width:0.377953;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+       inkscape:label="star"><tspan
+         x="-0.0703125"
+         y="14.526973"
+         id="tspan4">*</tspan></text>
+  </g>
 </svg>

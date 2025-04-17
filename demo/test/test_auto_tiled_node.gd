@@ -446,6 +446,36 @@ var rules_params = ParameterFactory.named_parameters(
             ^---v--^---v--^---v--^---v--^
         "
     ],
+    ["empty tile (radius = 2) with rotation","
+        ^---v--^---v--^---v
+            | 2    | 1    |
+        v---^--v---^--v---^--v
+        | 2    | _O 2 | 1    |
+        ^---v--^---v--^---v--^
+            | 2    | 2    |
+        v---^--v---^--v---^
+        ", [{
+            "tile": 9,
+            "cells": "
+
+            ^---v--^---v--^---v
+                | 1    | 1    |
+            v---^--v---^--v---^--v
+            | 2    | _O 2 | 2    |
+            ^---v--^---v--^---v--^
+                | 2    | 2    |
+            v---^--v---^--v---^
+            "},
+        ], "
+            ^-----v-----^-----v-----^-----v
+                  | !         | !         |
+            v-----^-----v-----^-----v-----^-----v
+            | !         | _O 9, -60 | !         |
+            ^-----v-----^-----v-----^-----v-----^
+                  | !         | !         |
+            v-----^-----v-----^-----v-----^
+        "
+    ],
 ])
 
 func test_auto_tiled_rules(params=use_parameters(rules_params)):
@@ -487,8 +517,16 @@ func test_auto_tiled_rules(params=use_parameters(rules_params)):
         if cell["text"] == "!":
             assert_node_cell_value_eq(auto_node, cell_id, -1)
         elif cell["text"] != "":
-            var tile = int(cell["text"])
-            assert_node_cell_value_eq(auto_node, cell_id, tile)
+            var words = cell.text.split(", ")
+            var tile = int(words[0])
+            var orientation = 0
+            if words.size() > 1:
+                var degree = int(words[1])
+                if degree < 0:
+                    degree = 360 + degree
+                orientation = (int(degree)/60)
+
+            assert_node_cell_eq(auto_node, cell_id, tile, orientation)
 
     int_node.remove_child(auto_node)
     auto_node.free()

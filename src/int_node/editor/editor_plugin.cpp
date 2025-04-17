@@ -64,7 +64,7 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
         bottom_panel->set("cell_types", int_node->_get_cell_types());
         bottom_panel->set("edit_plane_axis", (int)edit_axis);
         bottom_panel->set("edit_plane_depth", edit_axis_depth[edit_axis]);
-        bool show_cells = int_node->get_meta("_show_cells_", true);
+        show_cells = int_node->get_meta("_show_cells_", true);
         bottom_panel->set("show_cells", show_cells);
 
         // add & show the panel
@@ -77,11 +77,8 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
         // the cell meshes we create in update_mesh_library() are centered on
         // origin, so set the TileNode to center the mesh in the cell.
         tiled_node->set_center_y(true);
-        tiled_node->set_visible(show_cells);
+        set_tiled_map_visibility(show_cells);
         update_mesh_library();
-
-        // XXX editor_cursor is getting hung up on center-y, when set to false
-        // on the IntNode editor_cursor doesn't line up with the real grid.
 
         // populate the tiled node with our cells
         for (const auto &iter : int_node->cell_map) {
@@ -104,6 +101,10 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
         int_node->connect("editor_plugin_types_changed",
                 callable_mp(this,
                         &HexMapIntNodeEditorPlugin::update_mesh_library));
+        int_node->connect("cells_changed",
+                callable_mp(this,
+                        &HexMapIntNodeEditorPlugin::
+                                on_int_node_cells_changed));
 
     } else {
         if (tiled_node != nullptr) {
@@ -137,6 +138,10 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
 void HexMapIntNodeEditorPlugin::update_mesh_library() {
     mesh_library.instantiate();
     const HexMapSpace &space = int_node->get_space();
+    // XXX this should be something provided by HexSpace, we use the math in
+    // at least four places
+    const Transform3D mesh_transform =
+            Transform3D(Basis(), -space.get_mesh_offset());
 
     for (const auto &iter : int_node->get_cell_types()) {
         Ref<StandardMaterial3D> material;
@@ -163,6 +168,7 @@ void HexMapIntNodeEditorPlugin::update_mesh_library() {
         mesh_library->create_item(iter.key);
         mesh_library->set_item_name(iter.key, iter.value.name);
         mesh_library->set_item_mesh(iter.key, mesh);
+        mesh_library->set_item_mesh_transform(iter.key, mesh_transform);
     }
 
     if (tiled_node) {
@@ -284,6 +290,23 @@ void HexMapIntNodeEditorPlugin::set_edit_plane(int axis, int depth) {
 
 void HexMapIntNodeEditorPlugin::set_tiled_map_visibility(bool visible) {
     ERR_FAIL_NULL(tiled_node);
-    tiled_node->set_visible(visible);
+    tiled_node->clear();
+    if (visible) {
+        for (const auto &iter : int_node->cell_map) {
+            tiled_node->set_cell(iter.key, iter.value);
+        }
+    }
+    show_cells = visible;
+
+    // XXX this should only display actively cells we're actively painting when
+    // visibility is disabled
+    // XXX when enabled, we may want to auto-hide child autotiled nodes?
+    // tiled_node->set_visible(visible);
+}
+
+void HexMapIntNodeEditorPlugin::on_int_node_cells_changed(Array _cells) {
+    if (!show_cells) {
+        tiled_node->clear();
+    }
 }
 #endif // TOOLS_ENABLED
