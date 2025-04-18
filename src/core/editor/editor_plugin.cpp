@@ -255,12 +255,23 @@ void HexMapNodeEditorPlugin::selection_move() {
 
     copy_selection_to_cursor();
 
-    // save the original cell contents, then clear the cells
+    // save the original cell contents
     last_selection = selection_manager->get_cells_v();
     move_source_cells = hex_map->get_cells(last_selection);
+
+    // clear the cells; we use set_cells() to ensure the "cells_changed" signal
+    // is emitted
+    Array cells;
+    size_t count = selection_manager->size();
+    cells.resize(count * HexMapNode::CellArrayWidth);
+    size_t index = 0;
     for (const HexMapCellId &cell_id : selection_manager->get_cells()) {
-        hex_map->set_cell(cell_id, HexMapNode::INVALID_CELL_ITEM);
+        size_t base = index * HexMapNode::CellArrayWidth;
+        cells[base] = cell_id;
+        cells[base + 1] = HexMapNode::INVALID_CELL_ITEM;
+        index++;
     }
+    hex_map->set_cells(cells);
 
     // clear selection
     _deselect_cells();
@@ -451,7 +462,8 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                     .new_tile = cell.index,
                     .new_orientation = cell.orientation,
             });
-            hex_map->set_cell(cell_id, cell.index, cell.orientation);
+            hex_map->set_cells(
+                    Array::make(cell_id, cell.index, cell.orientation));
         }
         if (mouse_left_released) {
             commit_cell_changes("HexMap: paint cells");
@@ -474,7 +486,7 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                     .orig_orientation = orientation,
                     .new_tile = -1,
             });
-            hex_map->set_cell(cell_id, HexMapNode::INVALID_CELL_ITEM);
+            hex_map->set_cells(Array::make(cell_id, -1));
         }
         if (mouse_right_released) {
             commit_cell_changes("HexMap: erase cells");

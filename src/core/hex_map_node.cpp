@@ -139,11 +139,16 @@ void HexMapNode::set_cell(const Ref<hex_bind::HexMapCellId> cell_id,
     set_cell(**cell_id, p_item, p_orientation);
     // XXX emit this here because it is the entry point for set single cell via
     // gdscript, but this feels like there's a gap in our signal coverage.
+    //
     // FOUND IT!  HexMapNodeEditorPlugin::selection_move() calls set_cell()
     // directly, which bypasses the cells_changed signal.  This causes a
     // graphical artifact during move cells of an IntNode with a child
     // AutoTiledNode; the grabbed cells don't disappear from the screen because
     // the AutoTiledNode is never notified that the IntNode was changed.
+    //
+    // Yea, additional problems encountered during drag paint/erase; those
+    // maybe should also trigger events.  Some event is necessary to have
+    // autotiled show results with every cell changed in paint/erase.
     emit_signal("cells_changed",
             Array::make(cell_id->inner.to_vec(), p_item, p_orientation));
 }

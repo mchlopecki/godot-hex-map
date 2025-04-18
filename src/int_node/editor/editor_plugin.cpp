@@ -64,7 +64,7 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
         bottom_panel->set("cell_types", int_node->_get_cell_types());
         bottom_panel->set("edit_plane_axis", (int)edit_axis);
         bottom_panel->set("edit_plane_depth", edit_axis_depth[edit_axis]);
-        show_cells = int_node->get_meta("_show_cells_", true);
+        bool show_cells = int_node->get_meta("_show_cells_", true);
         bottom_panel->set("show_cells", show_cells);
 
         // add & show the panel
@@ -101,10 +101,6 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
         int_node->connect("editor_plugin_types_changed",
                 callable_mp(this,
                         &HexMapIntNodeEditorPlugin::update_mesh_library));
-        int_node->connect("cells_changed",
-                callable_mp(this,
-                        &HexMapIntNodeEditorPlugin::
-                                on_int_node_cells_changed));
 
     } else {
         if (tiled_node != nullptr) {
@@ -290,23 +286,6 @@ void HexMapIntNodeEditorPlugin::set_edit_plane(int axis, int depth) {
 
 void HexMapIntNodeEditorPlugin::set_tiled_map_visibility(bool visible) {
     ERR_FAIL_NULL(tiled_node);
-    tiled_node->clear();
-    if (visible) {
-        for (const auto &iter : int_node->cell_map) {
-            tiled_node->set_cell(iter.key, iter.value);
-        }
-    }
-    show_cells = visible;
-
-    // XXX this should only display actively cells we're actively painting when
-    // visibility is disabled
-    // XXX when enabled, we may want to auto-hide child autotiled nodes?
-    // tiled_node->set_visible(visible);
-}
-
-void HexMapIntNodeEditorPlugin::on_int_node_cells_changed(Array _cells) {
-    if (!show_cells) {
-        tiled_node->clear();
-    }
+    tiled_node->set_visible(visible);
 }
 #endif // TOOLS_ENABLED

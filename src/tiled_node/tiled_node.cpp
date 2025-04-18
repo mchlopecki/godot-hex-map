@@ -781,7 +781,6 @@ void HexMapTiledNode::update_dirty_octants() {
 }
 
 void HexMapTiledNode::update_octant_meshes() {
-    UtilityFunctions::print("calling apply_changes() on all meshes");
     for (auto &it : octants) {
         it.value->apply_changes();
     }

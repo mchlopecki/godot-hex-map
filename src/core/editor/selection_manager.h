@@ -30,6 +30,7 @@ public:
     Array get_cells_v() const;
 
     void clear();
+    size_t size() const;
     void add_cell(HexMapCellId);
     void set_cells(Vector<HexMapCellId>);
     void set_cells(Array);

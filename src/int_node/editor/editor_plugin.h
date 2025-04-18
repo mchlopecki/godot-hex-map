@@ -37,9 +37,6 @@ private:
     /// colors defined by `int_node->get_cell_types()`.
     Ref<MeshLibrary> mesh_library;
 
-    /// set to true to visualize the contents of the IntNode
-    bool show_cells = true;
-
     /// update the `MeshLibrary` used in the `HexMapTiledNode` editor display
     void update_mesh_library();
 
@@ -52,7 +49,6 @@ private:
     void delete_cell_type(int id);
     void set_edit_plane(int axis, int depth);
     void set_tiled_map_visibility(bool visible);
-    void on_int_node_cells_changed(Array);
 };
 
 #endif

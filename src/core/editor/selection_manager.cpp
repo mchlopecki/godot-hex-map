@@ -156,6 +156,10 @@ void SelectionManager::redraw_selection() {
 
 void SelectionManager::clear() { mesh_manager.clear(); }
 
+size_t SelectionManager::size() const {
+    return mesh_manager.get_cells().size();
+}
+
 void SelectionManager::add_cell(CellId cell) {
     assert(cell_mesh.is_valid() && "mesh should be valid");
     mesh_manager.set_cell(cell,
