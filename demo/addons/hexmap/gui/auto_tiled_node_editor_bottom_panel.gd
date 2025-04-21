@@ -38,6 +38,7 @@ func _process(delta: float) -> void:
 
 func edit_rule(rule: HexMapTileRule) -> void:
 	%RuleEditor.clear()
+	%RuleEditor.set_hex_space(int_node.get_space())
 	%RuleEditor.cell_scale = int_node.get_space().cell_scale
 	%RuleEditor.cell_types = int_node.cell_types
 	%RuleEditor.mesh_library = node.mesh_library

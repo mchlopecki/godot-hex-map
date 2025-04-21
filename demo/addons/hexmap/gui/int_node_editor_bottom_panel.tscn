@@ -169,7 +169,7 @@ size_flags_horizontal = 3
 [node name="HSeparator" type="HSeparator" parent="HBoxContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="TypeSelector" parent="HBoxContainer/VBoxContainer" node_paths=PackedStringArray("event_bus") instance=ExtResource("12_ijmfj")]
+[node name="TypeSelector" parent="HBoxContainer/VBoxContainer" instance=ExtResource("12_ijmfj")]
 unique_name_in_owner = true
 layout_mode = 2
-event_bus = NodePath("../../..")
+size_flags_vertical = 3

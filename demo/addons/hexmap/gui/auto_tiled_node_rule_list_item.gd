@@ -3,6 +3,8 @@ extends Button
 
 @export var preview := Texture2D.new() :
     set(value):
+        if not is_node_ready():
+            await ready
         %TilePreview.texture = value
 
 var rule : HexMapTileRule 

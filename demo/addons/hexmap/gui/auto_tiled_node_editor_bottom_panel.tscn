@@ -1,8 +1,10 @@
-[gd_scene load_steps=4 format=3 uid="uid://ilwmmns8ccdg"]
+[gd_scene load_steps=5 format=3 uid="uid://ilwmmns8ccdg"]
 
 [ext_resource type="Script" path="res://addons/hexmap/gui/auto_tiled_node_editor_bottom_panel.gd" id="1_2bs26"]
 [ext_resource type="PackedScene" uid="uid://bcii1uofabb8u" path="res://addons/hexmap/gui/auto_tiled_node_rules_list.tscn" id="2_ep4b4"]
 [ext_resource type="PackedScene" uid="uid://p42lol2mxn4a" path="res://addons/hexmap/gui/auto_tiled_rule_editor.tscn" id="3_g8rki"]
+
+[sub_resource type="MeshLibrary" id="MeshLibrary_pgy6p"]
 
 [node name="AutoTiledNodeEditorBottomPanel" type="VBoxContainer"]
 offset_right = 1151.0
@@ -19,7 +21,6 @@ size_flags_vertical = 3
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-split_offset = 210
 
 [node name="ScrollContainer" type="ScrollContainer" parent="HBoxContainer/HSplitContainer"]
 custom_minimum_size = Vector2(150, 0)
@@ -29,6 +30,7 @@ horizontal_scroll_mode = 3
 [node name="RulesList" parent="HBoxContainer/HSplitContainer/ScrollContainer" instance=ExtResource("2_ep4b4")]
 unique_name_in_owner = true
 layout_mode = 2
+mesh_library = SubResource("MeshLibrary_pgy6p")
 
 [node name="RuleEditor" parent="HBoxContainer/HSplitContainer" instance=ExtResource("3_g8rki")]
 unique_name_in_owner = true

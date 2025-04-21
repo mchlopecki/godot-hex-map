@@ -312,6 +312,11 @@ void hex_bind::HexMapSpace::_bind_methods() {
                          ""),
             "set_cell_scale",
             "get_cell_scale");
+
+    ClassDB::bind_method(D_METHOD("get_cell_center", "cell_id"),
+            &hex_bind::HexMapSpace::get_cell_center);
+    ClassDB::bind_method(D_METHOD("get_cell_id", "local_pos"),
+            &hex_bind::HexMapSpace::get_cell_id);
 }
 
 real_t hex_bind::HexMapSpace::get_cell_height() const {
@@ -336,4 +341,14 @@ Vector3 hex_bind::HexMapSpace::get_cell_scale() const {
 
 void hex_bind::HexMapSpace::set_cell_scale(Vector3 value) {
     inner.set_cell_scale(value);
+}
+
+Vector3 hex_bind::HexMapSpace::get_cell_center(
+        const Ref<hex_bind::HexMapCellId> &ref) const {
+    return inner.get_cell_center(ref->inner);
+}
+
+Ref<hex_bind::HexMapCellId> hex_bind::HexMapSpace::get_cell_id(
+        Vector3 local_pos) const {
+    return inner.get_cell_id(local_pos);
 }

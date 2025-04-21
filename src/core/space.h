@@ -143,6 +143,9 @@ public:
     Vector3 get_cell_scale() const;
     void set_cell_scale(Vector3);
 
+    Vector3 get_cell_center(const Ref<hex_bind::HexMapCellId> &) const;
+    Ref<hex_bind::HexMapCellId> get_cell_id(Vector3) const;
+
     ::HexMapSpace inner;
 
 protected:

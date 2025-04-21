@@ -1,8 +1,8 @@
-[gd_scene load_steps=5 format=3 uid="uid://p42lol2mxn4a"]
+[gd_scene load_steps=8 format=3 uid="uid://p42lol2mxn4a"]
 
 [ext_resource type="Script" path="res://addons/hexmap/gui/auto_tiled_rule_editor.gd" id="1_hjusd"]
-[ext_resource type="PackedScene" uid="uid://bxi5mdivmmoos" path="res://addons/hexmap/gui/int_node_type_selector.tscn" id="1_v0udd"]
-[ext_resource type="Script" path="res://addons/hexmap/gui/hex_grid_painter.gd" id="2_x2pvy"]
+[ext_resource type="Script" path="res://addons/hexmap/gui/grid_painter_3d.gd" id="2_sqqto"]
+[ext_resource type="PackedScene" uid="uid://dut4042ogc1kq" path="res://addons/hexmap/gui/palette.tscn" id="3_ndemm"]
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_q0f4s"]
 top_radius = 1.0
@@ -10,71 +10,165 @@ bottom_radius = 1.0
 height = 1.0
 radial_segments = 6
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bss4o"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.211765, 0.239216, 0.290196, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.137392, 0.157545, 0.194983, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_u03qc"]
+bg_color = Color(0.449002, 0.351909, 0.569049, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_j0dfp"]
+draw_center = false
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.980514, 0.762206, 0.322341, 1)
+border_blend = true
+
 [node name="AutoTiledRuleEditor" type="VBoxContainer"]
-offset_right = 1048.0
-offset_bottom = 839.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_hjusd")
+cell_types = []
 
-[node name="HBoxContainer" type="HBoxContainer" parent="."]
+[node name="Control" type="Control" parent="."]
+unique_name_in_owner = true
+clip_contents = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="TypeSelector" parent="HBoxContainer" instance=ExtResource("1_v0udd")]
+[node name="RulePainter3D" type="SubViewportContainer" parent="Control"]
 unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 0
-read_only = true
-
-[node name="HSplitContainer" type="HSplitContainer" parent="HBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/HSplitContainer"]
-layout_mode = 2
-
-[node name="GridPainter" type="Control" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 0
-script = ExtResource("2_x2pvy")
-
-[node name="GridPreview" type="SubViewportContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
 custom_minimum_size = Vector2(256, 256)
-layout_mode = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 size_flags_vertical = 3
+focus_mode = 2
+mouse_filter = 0
+mouse_force_pass_scroll_events = false
 stretch = true
+script = ExtResource("2_sqqto")
+cells = [{
+"offset": Object(HexMapCellId,"script":null)
+,
+"state": "type",
+"type": 0
+}]
+selected_type = null
 
-[node name="SubViewport" type="SubViewport" parent="HBoxContainer/HSplitContainer/VBoxContainer/GridPreview"]
+[node name="SubViewport" type="SubViewport" parent="Control/RulePainter3D"]
 own_world_3d = true
 handle_input_locally = false
 canvas_cull_mask = 4294967294
-size = Vector2i(311, 512)
+size = Vector2i(1152, 613)
 render_target_update_mode = 4
 
-[node name="TileMeshInstance3D" type="MeshInstance3D" parent="HBoxContainer/HSplitContainer/VBoxContainer/GridPreview/SubViewport"]
+[node name="TileMeshInstance3D" type="MeshInstance3D" parent="Control/RulePainter3D/SubViewport"]
 unique_name_in_owner = true
+visible = false
 mesh = SubResource("CylinderMesh_q0f4s")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="HBoxContainer/HSplitContainer/VBoxContainer/GridPreview/SubViewport"]
-transform = Transform3D(-0.718499, -0.528546, 0.452104, 0.652904, -0.288491, 0.700349, -0.239738, 0.798381, 0.552371, 0, 5.70908, 0)
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="Control/RulePainter3D/SubViewport"]
+transform = Transform3D(-0.718499, -0.528546, 0.452104, 0.652904, -0.288491, 0.700349, -0.239738, 0.798381, 0.552371, 0, 5.70908, -2.38419e-07)
 shadow_enabled = true
 
-[node name="Camera3D" type="Camera3D" parent="HBoxContainer/HSplitContainer/VBoxContainer/GridPreview/SubViewport"]
-transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 3.5, 3.5)
+[node name="Camera3D" type="Camera3D" parent="Control/RulePainter3D/SubViewport"]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 7.07107, 7.07107)
 projection = 1
 current = true
-fov = 90.0
-size = 8.0
+fov = 35.0
+size = 6.30598
 
-[node name="MeshItemList" type="ItemList" parent="HBoxContainer/HSplitContainer"]
+[node name="CellMeshes" type="Node3D" parent="Control/RulePainter3D/SubViewport"]
+unique_name_in_owner = true
+
+[node name="LeftPanel" type="PanelContainer" parent="Control"]
+clip_contents = true
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 0.168403
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 100.0
+offset_bottom = -20.0
+grow_vertical = 2
+focus_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bss4o")
+metadata/_edit_use_anchors_ = true
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Control/LeftPanel"]
+z_index = 1
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="CellTypePalette" parent="Control/LeftPanel/ScrollContainer" instance=ExtResource("3_ndemm")]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
-same_column_width = true
+size_flags_vertical = 3
+
+[node name="RightPanel" type="PanelContainer" parent="Control"]
+z_index = 1
+clip_contents = true
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -82.0
+offset_top = 13.0
+offset_bottom = -11.0
+grow_horizontal = 0
+grow_vertical = 2
+focus_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_u03qc")
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Control/RightPanel"]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="Button" type="Button" parent="Control/RightPanel/ScrollContainer"]
+z_index = 1
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+text = "BUTTON"
+
+[node name="ActiveBorder" type="PanelContainer" parent="Control"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_j0dfp")
 
 [node name="ToolbarHBox" type="HBoxContainer" parent="."]
 layout_mode = 2
