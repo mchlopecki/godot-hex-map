@@ -1,21 +1,117 @@
 @tool
+@static_unload
 extends SubViewportContainer
 
-@export var cells := [
-        {"offset": HexMapCellId.at(0,0,0), "state": "type", "type": 0},
-    ] :
-    set(value):
-        cells = value
-        populate_cells()
+
+signal cell_clicked(cell_id: HexMapCellId, mouse_button: int)
+
 @export var cell_types := [] :
     set(value):
-        cell_types = value
-        populate_cells()
+        cell_type_color.clear()
+        for type in cell_types:
+            cell_type_color[type.value] = type.color
 @export var tile_mesh : Mesh :
     set(value):
         tile_mesh = value
-        populate_cells()
 @export var selected_type := -1
+
+# map cell_type to color
+var cell_type_color := {}
+var cell_instances := {}
+
+class HexCell:
+    extends Node3D
+    const Math_SQRT3_2 = 0.8660254037844386
+    const BOTTOM_OFFSET = Vector3(0, -0.5, 0)
+    
+    @export var state : Array :
+        set(value):
+            state = value
+            _on_state_changed()
+
+    var floor_mesh_instance: MeshInstance3D
+    var cell_mesh_instance: MeshInstance3D
+    var state_node: Node3D
+
+    static var tile_mesh: Mesh = preload("../models/autotiled_rule_tile.obj")
+    static var tile_not_mesh: Mesh = preload("../models/autotiled_rule_tile_not.obj")
+    static var tile_any_mesh: Mesh = preload("../models/autotiled_rule_tile_any.obj")
+
+    # storing all statics in a Dictionary because hot-reload doesn't work
+    # properly for static variables.
+    # see https://github.com/godotengine/godot/issues/105667
+    static var shared = {}
+
+    static func _static_init() -> void:
+        # Grid material 
+        var mat := StandardMaterial3D.new()
+        mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+        mat.disable_fog = true
+        mat.disable_receive_shadows = true
+        mat.albedo_color = Color.GOLD
+        shared["grid_mat"] = mat
+
+        # grid mesh
+        var st = SurfaceTool.new()
+        st.begin(Mesh.PRIMITIVE_LINE_STRIP)
+        st.set_material(mat)
+        st.add_vertex(Vector3(0.0, 0, -1.0))
+        st.add_vertex(Vector3(-Math_SQRT3_2, 0, -0.5))
+        st.add_vertex(Vector3(-Math_SQRT3_2, 0, 0.5))
+        st.add_vertex(Vector3(0.0, 0, 1.0))
+        st.add_vertex(Vector3(Math_SQRT3_2, 0, 0.5))
+        st.add_vertex(Vector3(Math_SQRT3_2, 0, -0.5))
+        st.add_vertex(Vector3(0.0, 0, -1.0))
+        shared["grid_mesh"] = st.commit()
+
+    # just keep track of our children
+    func _ready() -> void:
+        floor_mesh_instance = MeshInstance3D.new()
+        floor_mesh_instance.mesh = shared.grid_mesh
+        print("add floor mesh child")
+        add_child(floor_mesh_instance)
+
+    # update the meshes for this node based on state
+    func _on_state_changed():
+        if state_node != null:
+            remove_child(state_node)
+            state_node.queue_free()
+            state_node = null
+        match state[0]:
+            "disabled":
+                pass
+            "empty":
+                state_node = MeshInstance3D.new()
+                state_node.mesh = tile_not_mesh
+                add_child(state_node)
+                pass
+            "not_empty":
+                state_node = MeshInstance3D.new()
+                state_node.mesh = tile_any_mesh
+                add_child(state_node)
+                pass
+            "type":
+                var mat := StandardMaterial3D.new()
+                mat.albedo_color = state[1]
+                state_node = MeshInstance3D.new()
+                state_node.mesh = tile_mesh
+                state_node.material_override = mat
+                add_child(state_node)
+            "not_type":
+                var mat := StandardMaterial3D.new()
+                mat.albedo_color = state[1]
+                state_node = MeshInstance3D.new()
+                state_node.mesh = tile_mesh
+                state_node.material_override = mat
+                var decor = MeshInstance3D.new()
+                decor.mesh = tile_not_mesh
+                state_node.add_child(decor)
+                add_child(state_node)
+
+                pass
+            _:
+                push_error("unsupported cell state ", state)
+
 
 
 # camera controls
@@ -31,68 +127,26 @@ var hex_space := HexMapSpace.new()
 func set_hex_space(value: HexMapSpace) -> void:
     hex_space = value
 
+func set_cell(cell_id: HexMapCellId, state: Array) -> void:
+    var cell = cell_instances.get_or_add(cell_id.as_int(), HexCell.new())
+    cell.state = state
+    cell.position = hex_space.get_cell_center(cell_id)
+    cell.scale = hex_space.get_cell_scale()
+
+    if not cell.is_inside_tree():
+        %CellMeshes.add_child(cell)
+
 func reset() -> void:
-    cells.clear()
+    # XXX clear child cells
     cell_types.clear()
     selected_type = -1
 
-func _replace_cell(offset: HexMapCellId, state: String, type):
-    for cell in cells:
-        if cell.offset.equals(offset):
-            cell.state = state
-            cell.type = type
-            return
-
-func populate_cells() -> void:
-    if not is_node_ready():
-        await ready
-
-    for child in %CellMeshes.get_children():
-        %CellMeshes.remove_child(child)
-        child.queue_free()
-
-    for cell in cells:
-        var instance := MeshInstance3D.new()
-        instance.mesh = build_cell_mesh(cell)
-        instance.position = hex_space.get_cell_center(cell.offset)
-        %CellMeshes.add_child(instance)
-    pass
-
-func build_cell_mesh(desc: Dictionary) -> Mesh:
-    var mesh := CylinderMesh.new()
-    mesh.top_radius = hex_space.cell_radius * 0.95
-    mesh.bottom_radius = hex_space.cell_radius * 0.95
-    mesh.rings = 1
-    mesh.radial_segments = 6
-    mesh.height = 0.2 * hex_space.cell_height
-    match desc.state:
-        "empty":
-            pass
-        "not_empty":
-            pass
-        "type":
-            var mat := StandardMaterial3D.new()
-            for type in cell_types:
-                if type.value == desc.type:
-                    mat.albedo_color = type.color
-                    break
-            mesh.material = mat
-            pass
-        "not type":
-            pass
-        "disabled":
-            pass
-        _:
-            push_error("unsupported cell state ", desc.state)
-
-    return mesh
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
     _orbit_camera(Vector2())
     mouse_entered.connect(func(): grab_focus())
     pass # Replace with function body.
-
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
@@ -119,19 +173,9 @@ func _gui_input(event: InputEvent) -> void:
         var zoom_factor = 1 + (1.08 - 1) * event.factor
         _scale_camera_distance(zoom_factor)
 
-    # painting
-    if event is InputEventMouseButton \
-            and event.button_index == MOUSE_BUTTON_LEFT \
-            and event.is_pressed() \
-            and selected_type != -1:
-        _replace_cell(cursor_cell, "type", selected_type)
-        populate_cells()
-    # erasing
-    elif event is InputEventMouseButton \
-            and event.button_index == MOUSE_BUTTON_RIGHT \
-            and event.is_pressed():
-        _replace_cell(cursor_cell, "disabled", -1)
-        populate_cells()
+    # painting/erasing
+    if event is InputEventMouseButton and event.is_pressed():
+        cell_clicked.emit(cursor_cell, event.button_index)
 
 func _input(event: InputEvent) -> void:
     if event is InputEventKey:

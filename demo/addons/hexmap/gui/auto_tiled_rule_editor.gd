@@ -25,9 +25,17 @@ signal cancel_pressed
 # cell radius & height used for building cell meshes in the preview
 @export var cell_scale := Vector3(1, 1, 1)
 
+# rule being edited
 var rule : HexMapTileRule
+
+# set to true when we're updating an existing rule; XXX maybe pull this from
+# rule.id == USHRT_MAX?
 var is_update: bool
-var cell_types_by_value: Dictionary
+
+# map cell type to color, built from cell_types in _on_cell_types_changed()
+var cell_type_colors := {}
+
+var selected_type := -1
 
 # hex map settings
 var hex_space : HexMapSpace;
@@ -39,16 +47,19 @@ func set_hex_space(value: HexMapSpace) -> void:
 func clear() -> void:
     %CellTypePalette.clear()
     %RulePainter3D.reset()
-    %TileMeshInstance3D.mesh = _build_cell_mesh()
     rule = HexMapTileRule.new()
 
 func set_rule(value: HexMapTileRule, update: bool) -> void:
     rule = value 
-    %RulePainter3D.cells = rule.get_cells()
-    # for cell in rule.get_cells():
-    #     print("cell ", cell)
-    #     set_cell_state(cell["offset"], cell["state"], cell["type"])
-    #     pass
+
+    # reset the painter
+    %RulePainter3D.reset()
+
+    # update the painter cell state, and for _on_painter_cell_clicked, create
+    # a dictionary to look up cell state by cell id
+    for cell in rule.get_cells():
+        %RulePainter3D.set_cell(cell["offset"],
+            [cell["state"], cell_type_colors[cell["type"]]])
 
     var mesh = mesh_library.get_item_mesh(value.tile)
     %TileMeshInstance3D.mesh = mesh
@@ -59,7 +70,7 @@ func set_cell_state(offset: HexMapCellId, state: String, type) -> void:
     # if a type was specified, look up the color for that type
     var color = null
     if type != null:
-        color = cell_types_by_value[type].color
+        color = cell_type_colors[type].color
 
     # print("set_cell_state() ", state, ", type ", type, ", color ", color)
     match state:
@@ -89,6 +100,7 @@ func _ready() -> void:
     %SaveButton.pressed.connect(func(): save_pressed.emit(rule, is_update))
     %RulePainter3D.focus_entered.connect(func(): %ActiveBorder.visible = true)
     %RulePainter3D.focus_exited.connect(func(): %ActiveBorder.visible = false)
+    %RulePainter3D.cell_clicked.connect(_on_painter_cell_clicked)
     %CellTypePalette.selected.connect(_on_cell_type_palette_selected)
     _on_cell_types_changed()
     pass # Replace with function body.
@@ -117,29 +129,50 @@ func _on_mesh_item_selected(index: int):
     %TileMeshInstance3D.mesh = mesh
     rule.tile = id
 
-func _build_cell_mesh() -> Mesh:
-    var mesh := CylinderMesh.new()
-    mesh.height = cell_scale.y
-    mesh.top_radius = cell_scale.x
-    mesh.bottom_radius = 1
-    mesh.radial_segments = 6
-    mesh.rings = 1
-    return mesh
-
 func _on_cell_types_changed() -> void:
-
-    cell_types_by_value.clear()
+    cell_type_colors.clear()
+    cell_type_colors[null] = null
+    cell_type_colors[-1] = null
     %CellTypePalette.clear()
     for type in cell_types:
-        cell_types_by_value[type.value] = type
+        cell_type_colors[type.value] = type.color
         %CellTypePalette.add_item({
             "id": type.value,
             "preview": type.color,
             "desc": type.name,
         })
-
     %RulePainter3D.cell_types = cell_types
 
 func _on_cell_type_palette_selected(id: int) -> void:
     %RulePainter3D.selected_type = id
+    selected_type = id
     pass
+
+func _on_painter_cell_clicked(cell_id: HexMapCellId, button: int) -> void:
+    var cell = rule.get_cell(cell_id)
+    if !cell:
+        return
+
+    var color = cell_type_colors[selected_type]
+    # check for painting click, only when a cell type is selected in the
+    # palette
+    if button == MOUSE_BUTTON_MASK_LEFT && selected_type != -1:
+        if cell.state == "type" \
+                and cell.type == selected_type:
+            rule.set_cell_type(cell_id, selected_type, true)
+            %RulePainter3D.set_cell(cell_id, ["not_type", color])
+        else:
+            rule.set_cell_type(cell_id, selected_type)
+            %RulePainter3D.set_cell(cell_id, ["type", color])
+
+    # handle erase click
+    if button == MOUSE_BUTTON_MASK_RIGHT:
+        if cell.state == "disabled":
+            rule.set_cell_empty(cell_id)
+            %RulePainter3D.set_cell(cell_id, ["empty"])
+        elif cell.state == "empty":
+            rule.set_cell_empty(cell_id, true)
+            %RulePainter3D.set_cell(cell_id, ["not_empty"])
+        else:
+            rule.clear_cell(cell_id)
+            %RulePainter3D.set_cell(cell_id, ["disabled"])

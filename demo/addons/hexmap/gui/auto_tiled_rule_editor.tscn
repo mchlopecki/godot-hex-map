@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://p42lol2mxn4a"]
+[gd_scene load_steps=9 format=3 uid="uid://p42lol2mxn4a"]
 
 [ext_resource type="Script" path="res://addons/hexmap/gui/auto_tiled_rule_editor.gd" id="1_hjusd"]
 [ext_resource type="Script" path="res://addons/hexmap/gui/grid_painter_3d.gd" id="2_sqqto"]
@@ -9,6 +9,8 @@ top_radius = 1.0
 bottom_radius = 1.0
 height = 1.0
 radial_segments = 6
+
+[sub_resource type="Environment" id="Environment_005ur"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bss4o"]
 content_margin_left = 4.0
@@ -71,13 +73,6 @@ mouse_filter = 0
 mouse_force_pass_scroll_events = false
 stretch = true
 script = ExtResource("2_sqqto")
-cells = [{
-"offset": Object(HexMapCellId,"script":null)
-,
-"state": "type",
-"type": 0
-}]
-selected_type = null
 
 [node name="SubViewport" type="SubViewport" parent="Control/RulePainter3D"]
 own_world_3d = true
@@ -93,11 +88,12 @@ mesh = SubResource("CylinderMesh_q0f4s")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="Control/RulePainter3D/SubViewport"]
 transform = Transform3D(-0.718499, -0.528546, 0.452104, 0.652904, -0.288491, 0.700349, -0.239738, 0.798381, 0.552371, 0, 5.70908, -2.38419e-07)
-shadow_enabled = true
+sky_mode = 1
 
 [node name="Camera3D" type="Camera3D" parent="Control/RulePainter3D/SubViewport"]
 unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 7.07107, 7.07107)
+environment = SubResource("Environment_005ur")
 projection = 1
 current = true
 fov = 35.0

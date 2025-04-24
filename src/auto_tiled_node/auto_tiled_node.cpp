@@ -283,7 +283,7 @@ HexMapAutoTiledNode::Rule::Cell HexMapAutoTiledNode::Rule::get_cell(
         }
     }
     // XXX need a better way to denote an error here
-    ERR_FAIL_V_MSG(Cell{ .type = USHRT_MAX },
+    ERR_FAIL_V_MSG(Cell{ .state = RULE_CELL_INVALID_OFFSET },
             "Rule::get_cell(): invalid cell offset");
 }
 
@@ -326,6 +326,7 @@ inline int HexMapAutoTiledNode::Rule::match(int32_t cell_type[PatternCells],
         // match the cell state
         switch (cell.state) {
         case RULE_CELL_STATE_DISABLED:
+        case RULE_CELL_INVALID_OFFSET:
             continue;
         case RULE_CELL_STATE_EMPTY:
             if (cell_type[i] == -1) {
@@ -417,6 +418,9 @@ Dictionary HexMapAutoTiledNode::Rule::Cell::to_dict() const {
         out["state"] = "not_type";
         out["type"] = type;
         break;
+    case RULE_CELL_INVALID_OFFSET:
+        assert(false && "cannot create dictionary for invalid offset");
+        break;
     }
 
     return out;
@@ -479,11 +483,15 @@ void HexMapAutoTiledNode::HexMapTileRule::set_cell_empty(
     inner.set_cell_empty(ref->inner, invert);
 }
 
-Dictionary HexMapAutoTiledNode::HexMapTileRule::get_cell(
+Variant HexMapAutoTiledNode::HexMapTileRule::get_cell(
         const Ref<hex_bind::HexMapCellId> &ref) const {
     Dictionary out;
     auto cell = inner.get_cell(ref->inner);
-    return cell.to_dict();
+    if (cell.state == Rule::RULE_CELL_INVALID_OFFSET) {
+        return nullptr;
+    } else {
+        return cell.to_dict();
+    }
 }
 
 Array HexMapAutoTiledNode::HexMapTileRule::get_cells() const {
@@ -534,6 +542,9 @@ String HexMapAutoTiledNode::HexMapTileRule::_to_string() const {
             break;
         case HexMapAutoTiledNode::Rule::RULE_CELL_STATE_NOT_TYPE:
             fields[itos(i)] = vformat("! %-3d", inner.pattern[i].type);
+            break;
+        case Rule::RULE_CELL_INVALID_OFFSET:
+            assert(false && "rule cell should not have INVALID_OFFSET state");
             break;
         }
     }

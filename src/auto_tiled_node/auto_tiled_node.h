@@ -51,6 +51,8 @@ public:
             RULE_CELL_STATE_TYPE,
             /// cell must not have type specified in type field
             RULE_CELL_STATE_NOT_TYPE,
+            /// invalid cell offset, used in get_cell()
+            RULE_CELL_INVALID_OFFSET = 0xff,
         };
 
         /// internal state for a cell in the rule pattern
@@ -194,7 +196,7 @@ public:
                 unsigned type,
                 bool not_);
         void set_cell_empty(const Ref<hex_bind::HexMapCellId> &, bool not_);
-        Dictionary get_cell(const Ref<hex_bind::HexMapCellId> &) const;
+        Variant get_cell(const Ref<hex_bind::HexMapCellId> &) const;
         Array get_cells() const;
 
         HexMapTileRule() {};
