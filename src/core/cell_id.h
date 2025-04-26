@@ -94,6 +94,7 @@ public:
     bool operator<(const HexMapCellId &other) const {
         return Key(*this) < Key(other);
     }
+    HexMapCellId operator-() const { return HexMapCellId(-q, -r, -y); }
 
     friend bool operator==(const HexMapCellId &a, const HexMapCellId &b) {
         return a.q == b.q && a.r == b.r && a.y == b.y;
@@ -135,6 +136,13 @@ public:
         return Vector3i(x, y, r);
     }
 
+    // rotate the cell about the y-axis relative to another cell
+    // @param steps [int] 60 degree steps to rotate
+    // @param center [HexMapCellId] cell to rotate about; default origin
+    // @return [HexMapCellId]
+    HexMapCellId rotate(int steps,
+            HexMapCellId center = HexMapCellId(0, 0, 0)) const;
+
     static const HexMapCellId Origin;
     static const HexMapCellId Invalid;
 };
@@ -161,9 +169,12 @@ public:
 
     // GDScript field accessors
     int get_q();
+    void set_q(int);
     int get_r();
-    int get_s();
+    void set_r(int);
     int get_y();
+    void set_y(int);
+    int get_s();
 
     // GDScript static constructors
     static Ref<hex_bind::HexMapCellId>
@@ -181,6 +192,11 @@ public:
     Ref<hex_bind::HexMapCellId> add(Ref<hex_bind::HexMapCellId>) const;
     Ref<hex_bind::HexMapCellId> subtract(Ref<hex_bind::HexMapCellId>) const;
     Ref<hex_bind::HexMapCellId> reverse() const;
+
+    // rotation
+    Ref<hex_bind::HexMapCellId> rotate(int steps,
+            Ref<hex_bind::HexMapCellId> center =
+                    Ref<hex_bind::HexMapCellId>()) const;
 
     // directional helpers
     Ref<hex_bind::HexMapCellId> east() const;

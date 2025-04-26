@@ -1,6 +1,10 @@
+#include <cassert>
 #include <climits>
+#include <godot_cpp/classes/global_constants.hpp>
 #include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/core/math.hpp>
+#include <godot_cpp/core/object.hpp>
 #include <godot_cpp/variant/packed_vector3_array.hpp>
 #include <godot_cpp/variant/string.hpp>
 
@@ -64,6 +68,31 @@ HexMapIterRadial HexMapCellId::get_neighbors(unsigned int radius,
     return HexMapIterRadial(*this, radius, !include_center, planes);
 }
 
+HexMapCellId HexMapCellId::rotate(int steps, HexMapCellId center) const {
+    // XXX we only support rotation about y-axis
+    center.y = y;
+    HexMapCellId pos = *this - center;
+    steps = steps % 6;
+    if (steps < 0) {
+        steps += 6;
+    }
+    switch (steps) {
+    case 0:
+        return HexMapCellId(*this);
+    case 1:
+        return HexMapCellId(-pos.s(), -pos.q, 0) + center;
+    case 2:
+        return HexMapCellId(pos.r, pos.s(), 0) + center;
+    case 3:
+        return HexMapCellId(-pos.q, -pos.r, 0) + center;
+    case 4:
+        return HexMapCellId(pos.s(), pos.q, 0) + center;
+    case 5:
+        return HexMapCellId(-pos.r, -pos.s(), 0) + center;
+    }
+    assert(false && "should never reach here");
+}
+
 HexMapCellId::operator String() const {
     // clang-format off
     return (String)"{ .q = " + itos(q) +
@@ -95,9 +124,29 @@ void hex_bind::HexMapCellId::_bind_methods() {
 
     // field accessors
     ClassDB::bind_method(D_METHOD("get_q"), &hex_bind::HexMapCellId::get_q);
+    ClassDB::bind_method(
+            D_METHOD("set_q", "value"), &hex_bind::HexMapCellId::set_q);
+    ADD_PROPERTY(
+            PropertyInfo(Variant::INT, "q", godot::PROPERTY_HINT_NONE, ""),
+            "set_q",
+            "get_q");
     ClassDB::bind_method(D_METHOD("get_r"), &hex_bind::HexMapCellId::get_r);
-    ClassDB::bind_method(D_METHOD("get_s"), &hex_bind::HexMapCellId::get_s);
+    ClassDB::bind_method(
+            D_METHOD("set_r", "value"), &hex_bind::HexMapCellId::set_r);
+    ADD_PROPERTY(
+            PropertyInfo(Variant::INT, "r", godot::PROPERTY_HINT_NONE, ""),
+            "set_r",
+            "get_r");
     ClassDB::bind_method(D_METHOD("get_y"), &hex_bind::HexMapCellId::get_y);
+    ClassDB::bind_method(
+            D_METHOD("set_y", "value"), &hex_bind::HexMapCellId::set_y);
+    ADD_PROPERTY(
+            PropertyInfo(Variant::INT, "y", godot::PROPERTY_HINT_NONE, ""),
+            "set_y",
+            "get_y");
+
+    // calculated field
+    ClassDB::bind_method(D_METHOD("get_s"), &hex_bind::HexMapCellId::get_s);
 
     // directional helpers
     ClassDB::bind_method(D_METHOD("east"), &hex_bind::HexMapCellId::east);
@@ -128,15 +177,21 @@ void hex_bind::HexMapCellId::_bind_methods() {
             D_METHOD("subtract", "other"), &hex_bind::HexMapCellId::subtract);
     ClassDB::bind_method(
             D_METHOD("reverse"), &hex_bind::HexMapCellId::reverse);
+    ClassDB::bind_method(D_METHOD("rotate", "steps", "center"),
+            &hex_bind::HexMapCellId::rotate,
+            DEFVAL(nullptr));
 }
 
 int hex_bind::HexMapCellId::get_q() { return inner.q; }
+void hex_bind::HexMapCellId::set_q(int value) { inner.q = value; }
 
 int hex_bind::HexMapCellId::get_r() { return inner.r; }
+void hex_bind::HexMapCellId::set_r(int value) { inner.r = value; }
 
 int hex_bind::HexMapCellId::get_s() { return inner.s(); }
 
 int hex_bind::HexMapCellId::get_y() { return inner.y; }
+void hex_bind::HexMapCellId::set_y(int value) { inner.y = value; }
 
 Ref<hex_bind::HexMapCellId>
 hex_bind::HexMapCellId::from_coordinates(int p_q, int p_r, int p_y) {
@@ -220,5 +275,14 @@ Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::subtract(
 }
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::reverse() const {
-    return inner * -1;
+    return -inner;
+}
+
+Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::rotate(int steps,
+        Ref<hex_bind::HexMapCellId> center) const {
+    if (center.is_valid()) {
+        return inner.rotate(steps, center->inner);
+    } else {
+        return inner.rotate(steps);
+    }
 }
