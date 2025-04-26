@@ -103,40 +103,23 @@ void HexMapAutoTiledNode::apply_rules() {
 
     tiled_node->clear();
 
-    // cells go get based on the radius of the patterns
-    int pattern_size = -1;
+    // XXX change how we go about getting cells
+    // - union all non-disabled cell fields into an array setting a read bit
+    //   - blaaaaah
+    // - also set a bit for empty
+    // - calculate three radiuses for covering empty checks: qr, y, and -y
+    //   - max/min of each q, r, y for each empty offset
 
-    // radius expanded by any rule that has an empty cell at pattern origin
-    int border_radius = 0;
-    for (const auto &iter : rules) {
-        int size = iter.value.get_pattern_size();
-        if (size > pattern_size) {
-            pattern_size = size;
-        }
-        if (iter.value.pattern[0].state ==
-                        HexMapAutoTiledNode::Rule::RULE_CELL_STATE_EMPTY &&
-                iter.value.radius > border_radius) {
-            border_radius = iter.value.radius;
-        }
-    }
+    // cells to get based on the radius of the patterns
+    // int pattern_size = Rule::PatternCells;
 
-    // if the number of cells to match in the pattern is less than one, nothing
-    // to match here.
-    if (pattern_size < 1) {
-        return;
-    }
-
-    // XXX this is an unnecessary perf hit when border_radius == 0.
     HashSet<HexMapCellId::Key> cell_map;
     for (const auto &iter : int_node->cell_map) {
         cell_map.insert(iter.key);
-        if (border_radius == 0) {
-            continue;
-        }
 
         HexMapCellId cell_id = iter.key;
         for (const HexMapCellId id :
-                cell_id.get_neighbors(border_radius, HexMapPlanes::QRS)) {
+                cell_id.get_neighbors(2, HexMapPlanes::All)) {
             cell_map.insert(id);
         }
     }
@@ -144,7 +127,7 @@ void HexMapAutoTiledNode::apply_rules() {
     for (const auto key : cell_map) {
         HexMapCellId cell_id = key;
         int32_t cells[Rule::PatternCells];
-        for (int i = 0; i < pattern_size; i++) {
+        for (int i = 0; i < Rule::PatternCells; i++) {
             uint16_t *ptr =
                     int_node->cell_map.getptr(cell_id + Rule::CellOffsets[i]);
             cells[i] = ptr ? *ptr : -1;
@@ -156,12 +139,14 @@ void HexMapAutoTiledNode::apply_rules() {
             for (int o = 0; o < 6; o++) {
                 int matched = rule.match(cells, o);
                 if (matched == -1) {
+                    UtilityFunctions::print("rule matched " + cell_id +
+                            ", orientation " + itos(o));
                     // pattern matched, set the tile and move on to the next
                     // cell.  Cells can only match one rule right now.
                     tiled_node->set_cell_item(
                             cell_id, rule.tile, static_cast<int>(o));
                     goto next_cell;
-                } else if (matched == 0) {
+                } else if (matched < 5) {
                     // center most cell of pattern did not match, so there's no
                     // reason to try rotating the pattern to match.  Move on to
                     // next rule.
@@ -319,8 +304,9 @@ inline int HexMapAutoTiledNode::Rule::match(int32_t cell_type[PatternCells],
     assert(o >= 0 && o < 6 && "orientation must be in 0..5 inclusive");
     auto *pattern_index = PatternIndex[static_cast<int>(orientation)];
 
-    int pattern_size = get_pattern_size();
+    int pattern_size = PatternCells;
     for (int i = 0; i < pattern_size; i++) {
+        int index = pattern_index[i];
         const auto &cell = pattern[pattern_index[i]];
 
         // match the cell state
@@ -339,12 +325,12 @@ inline int HexMapAutoTiledNode::Rule::match(int32_t cell_type[PatternCells],
             }
             break;
         case RULE_CELL_STATE_TYPE:
-            if (cell_type[i] == pattern[pattern_index[i]].type) {
+            if (cell_type[i] == cell.type) {
                 continue;
             }
             break;
         case RULE_CELL_STATE_NOT_TYPE:
-            if (cell_type[i] != pattern[pattern_index[i]].type) {
+            if (cell_type[i] != cell.type) {
                 continue;
             }
             break;
@@ -381,6 +367,7 @@ void HexMapAutoTiledNode::Rule::update_radius() {
 }
 
 inline unsigned HexMapAutoTiledNode::Rule::get_pattern_size() const {
+    return PatternCells;
     assert(radius <= 2 && "radius shoould not exceed 2");
     switch (radius) {
     case 0:

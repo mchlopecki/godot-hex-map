@@ -49,7 +49,7 @@ func assert_node_cell_value_eq(node, cell_id: HexMapCellId, type: int) -> void:
 		fail_test(str("cell ", cell_id, " type incorrect; expected ", type,
 			", found: ", found["value"]))
 
-func assert_node_cell_eq(node, cell_id: HexMapCellId, type: int, orientation) -> void:
+func assert_node_cell_eq(node, cell_id: HexMapCellId, type: int, orientation = 0) -> void:
 	var found = node.get_cell(cell_id)
 	if found.value != type:
 		fail_test(str("cell ", cell_id, " type incorrect; expected ", type,

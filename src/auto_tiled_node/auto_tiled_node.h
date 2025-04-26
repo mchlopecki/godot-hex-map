@@ -36,7 +36,7 @@ public:
         friend HexMapAutoTiledNode;
 
         /// number of cells contained in the rule pattern
-        static const unsigned PatternCells = 19;
+        static const unsigned PatternCells = 35;
 
     public:
         /// rule cell states
@@ -95,18 +95,39 @@ public:
 
         /// offset of each cell in the rule pattern from the origin cell
         static constexpr HexMapCellId CellOffsets[PatternCells] = {
-            HexMapCellId(),
+            // radius = 0, whole column, y = 0, 1, -1, 2, -2
+            HexMapCellId( 0,  0,  0),   // 0: origin
+            HexMapCellId( 0,  0,  1),
+            HexMapCellId( 0,  0, -1),
+            HexMapCellId( 0,  0,  2),
+            HexMapCellId( 0,  0, -2),
 
             // radius = 1, starting at southwest corner, counter-clockwise
-            HexMapCellId(-1,  1, 0),
+            HexMapCellId(-1,  1, 0),    // 5
             HexMapCellId( 0,  1, 0),
             HexMapCellId( 1,  0, 0),
             HexMapCellId( 1, -1, 0),
             HexMapCellId( 0, -1, 0),
-            HexMapCellId(-1,  0, 0),
+            HexMapCellId(-1,  0, 0),    // 10
+
+            // radius = 1, y = 1
+            HexMapCellId(-1,  1, 1),    // 11
+            HexMapCellId( 0,  1, 1),
+            HexMapCellId( 1,  0, 1),
+            HexMapCellId( 1, -1, 1),
+            HexMapCellId( 0, -1, 1),
+            HexMapCellId(-1,  0, 1),    // 16
+
+            // radius = 1, y = -1
+            HexMapCellId(-1,  1, -1),   // 17
+            HexMapCellId( 0,  1, -1),
+            HexMapCellId( 1,  0, -1),
+            HexMapCellId( 1, -1, -1),
+            HexMapCellId( 0, -1, -1),
+            HexMapCellId(-1,  0, -1),   // 22
 
             // radius = 2, starting at southwest corner, counter-clockwise
-            HexMapCellId(-2,  2, 0),
+            HexMapCellId(-2,  2, 0),    // 23
             HexMapCellId(-1,  2, 0),
             HexMapCellId( 0,  2, 0),
             HexMapCellId( 1,  1, 0),
@@ -117,7 +138,7 @@ public:
             HexMapCellId( 0, -2, 0),
             HexMapCellId(-1, -1, 0),
             HexMapCellId(-2,  0, 0),
-            HexMapCellId(-2,  1, 0),
+            HexMapCellId(-2,  1, 0),    // 35
         };
 
         /// Used to rotate the cell pattern based on TileOrientation, each
@@ -133,29 +154,47 @@ public:
         static_assert(HexMapTileOrientation::Upright300 == 5);
         static constexpr uint8_t PatternIndex[6][PatternCells] = {
             // Upright0
-            { 0,
-              1, 2, 3, 4, 5, 6,
-              7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 },
+            { 0, 1, 2, 3, 4,            // q = r = 0
+              5, 6, 7, 8, 9, 10,        // radius = 1, y = 0
+              11, 12, 13, 14, 15, 16,   // radius = 1, y = 1
+              17, 18, 19, 20, 21, 22,   // radius = 1, y = -1
+              23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, // r=2, y=0
+            },
             // Upright60
-            { 0,
-              6, 1, 2, 3, 4, 5,
-              17, 18, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 },
+            { 0, 1, 2, 3, 4,            // q = r = 0
+              10, 5, 6, 7, 8, 9,        // radius = 1, y = 0
+              16, 11, 12, 13, 14, 15,   // radius = 1, y = 1
+              22, 17, 18, 19, 20, 21,   // radius = 1, y = -1
+              33, 34, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,   // r=2, y=0
+            },
             // Upright120
-            { 0,
-              5, 6, 1, 2, 3, 4,
-              15, 16, 17, 18, 7, 8, 9, 10, 11, 12, 13, 14 },
+            { 0, 1, 2, 3, 4,            // q = r = 0
+              9, 10, 5, 6, 7, 8,        // radius = 1, y = 0
+              15, 16, 11, 12, 13, 14,   // radius = 1, y = 1
+              21, 22, 17, 18, 19, 20,   // radius = 1, y = -1
+              31, 32, 33, 34, 23, 24, 25, 26, 27, 28, 29, 30,   // r=2, y=0
+            },
             // Upright180
-            { 0,
-              4, 5, 6, 1, 2, 3,
-              13, 14, 15, 16, 17, 18, 7, 8, 9, 10, 11, 12 },
+            { 0, 1, 2, 3, 4,            // q = r = 0
+              8, 9, 10, 5, 6, 7,        // radius = 1, y = 0
+              14, 15, 16, 11, 12, 13,   // radius = 1, y = 1
+              20, 21, 22, 17, 18, 19,   // radius = 1, y = -1
+              29, 30, 31, 32, 33, 34, 23, 24, 25, 26, 27, 28,   // r=2, y=0
+            },
             // Upright240
-            { 0,
-              3, 4, 5, 6, 1, 2,
-              11, 12, 13, 14, 15, 16, 17, 18, 7, 8, 9, 10 },
+            { 0, 1, 2, 3, 4,            // q = r = 0
+              7, 8, 9, 10, 5, 6,        // radius = 1, y = 0
+              13, 14, 15, 16, 11, 12,   // radius = 1, y = 1
+              19, 20, 21, 22, 17, 18,   // radius = 1, y = -1
+              27, 28, 29, 30, 31, 32, 33, 34, 23, 24, 25, 26,   // r=2, y=0
+            },
             // Upright300
-            { 0,
-              2, 3, 4, 5, 6, 1,
-              9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 7, 8 },
+            { 0, 1, 2, 3, 4,            // q = r = 0
+              6, 7, 8, 9, 10, 5,        // radius = 1, y = 0
+              12, 13, 14, 15, 16, 11,   // radius = 1, y = 1
+              18, 19, 20, 21, 22, 17,   // radius = 1, y = -1
+              25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 23, 24,   // r=2, y=0
+            },
         };
         // clang-format on
 
