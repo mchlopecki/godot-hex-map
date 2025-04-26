@@ -130,4 +130,3 @@ func test_rotate() -> void:
     cell = HexMapCellId.at(4,-3,10)
     center = HexMapCellId.at(3, -3, 0)
     assert_cell_eq(cell.rotate(3, center), HexMapCellId.at(2,-3,10))
-
