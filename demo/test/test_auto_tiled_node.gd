@@ -637,7 +637,7 @@ var rules_params = ParameterFactory.named_parameters(
             v-----^-----v-----^-----v-----^
         "
     ],
-    # I want to verify that we're correctly expanding our search space to 
+    # I want to verify that we're correctly expanding our search space to
     # match empty cells.  The rules in this test case all have an empty cell
     # at origin, so we'll have to evaluate the rules in places where we don't
     # have a cell value set in the int node.  This test is to confirm that we
