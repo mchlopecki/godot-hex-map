@@ -496,7 +496,7 @@ var rules_params = ParameterFactory.named_parameters(
             v---^--v---^--v---^
         "
     ],
-    ["empty tile (radius = 2) with rotation","
+    ["empty tile (radius = 2) with all orientations" ,"
             v---^--v
             | _O 1 |
             ^---v--^
@@ -521,7 +521,7 @@ var rules_params = ParameterFactory.named_parameters(
             ^---v--^---v--^---v--^---v--^
         "
     ],
-    ["empty tile (radius = 2) with rotation","
+    ["empty tile (radius = 2) with one orientation","
         ^---v--^---v--^---v
             | 2    | 1    |
         v---^--v---^--v---^--v
@@ -637,6 +637,70 @@ var rules_params = ParameterFactory.named_parameters(
             v-----^-----v-----^-----v-----^
         "
     ],
+    # I want to verify that we're correctly expanding our search space to 
+    # match empty cells.  The rules in this test case all have an empty cell
+    # at origin, so we'll have to evaluate the rules in places where we don't
+    # have a cell value set in the int node.  This test is to confirm that we
+    # properly expand the cell search space based on where the nearest tile
+    # can be found for these empty cell rules.
+    ["expand search space for empty cells","
+        y = 2
+        v--^---v
+        | _O 5 |
+        ^--v---^
+        y = 1
+        v---^---v---^---v
+        | _O 10 | 11    |
+        ^---v---^---v---^
+        y = 0
+        ^--v--^--v--^--v--^--v--^--v--^--v
+           | 2   |     | _O  |     | 8   |
+        v--^--v--^--v--^--v--^--v--^--v--^--v
+        | 1   |     |     |     |     | 9   |
+        ^--v--^--v--^--v--^--v--^--v--^--v--^
+        ", [
+            {
+            "tile": 12,
+            "cells": "
+            ^---v--^---v
+                | 2    |
+            v---^--v---^--v---^--v
+            | 1    |      | _O ! |
+            ^---v--^---v--^---v--^
+            "},
+            {
+            "tile": 25,
+            "cells": "
+            y = 2
+            v--^--v
+            | 5   |
+            ^--v--^
+            y = 0
+            v--^--v
+            |  !  |
+            ^--v--^
+            "},
+            {
+            "tile": 1011,
+            "cells": "
+            y = 1
+            v---^---v---^---v
+            | 10    | _O 11 |
+            ^---v---^---v---^
+            y = 0
+            v---^--v---^--v
+            |      | _O ! |
+            ^---v--^---v--^
+            "},
+        ], "
+        y = 0
+        ^---v---^---v---^---v---^---v---^---v---^---v
+            | !     | !     | _O 25 | 1011  | !     |
+        v---^---v---^---v---^---v---^---v---^---v---^---v
+        | !     | !     | 12    | !     | !     | !     |
+        ^---v---^---v---^---v---^---v---^---v---^---v---^
+        "
+    ],
 ])
 
 func test_auto_tiled_rules(params=use_parameters(rules_params)):
@@ -645,6 +709,7 @@ func test_auto_tiled_rules(params=use_parameters(rules_params)):
     var int_node := HexMapInt.new()
     for cell in parse_cell_map(params.int_node):
         if !cell["text"].is_empty():
+            print("set_cell(", cell, ")")
             int_node.set_cell(cell["cell"], int(cell["text"]))
 
     # create the auto tiled node, add it as a child of the int node, then add
@@ -787,8 +852,6 @@ func test_each_rule_cell_matches() -> void:
             # clean up so GUT doesn't complain of orphans
             int_node.remove_child(auto_node)
             auto_node.free()
-
-    pass
 
 var benchmark_rules_params = ParameterFactory.named_parameters(
     ["desc", "map_size", "map_values", "rules"], [
@@ -945,7 +1008,7 @@ func test_benchmark_auto_tiled_rules(params=use_parameters(benchmark_rules_param
                 rule.set_cell_type(cell["cell"], tile, true)
             elif cell["text"] != "":
                 rule.set_cell_type(cell["cell"], int(cell["text"]))
-        print(rule)
+        # print(rule)
         auto_node.add_rule(rule)
 
     var iteration_begin_usec = Time.get_ticks_usec()
@@ -953,5 +1016,5 @@ func test_benchmark_auto_tiled_rules(params=use_parameters(benchmark_rules_param
     int_node.add_child(auto_node)
     var duration = Time.get_ticks_usec() - iteration_begin_usec
 
-    pass_test(str("rules took ", duration, "us to complete"))
+    pass_test(str(params.desc, " took ", duration, "us to complete"))
     int_node.free()

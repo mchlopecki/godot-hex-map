@@ -94,6 +94,8 @@ public:
         // clang-format off
 
         /// offset of each cell in the rule pattern from the origin cell
+        // NOTE: the order of these is important; we depend on it in
+        // get_radii(), and in match().
         static constexpr HexMapCellId CellOffsets[PatternCells] = {
             // radius = 0, whole column, y = 0, 1, -1, 2, -2
             HexMapCellId( 0,  0,  0),   // 0: origin
@@ -131,14 +133,14 @@ public:
             HexMapCellId(-1,  2, 0),
             HexMapCellId( 0,  2, 0),
             HexMapCellId( 1,  1, 0),
-            HexMapCellId( 2,  0, 0),
+            HexMapCellId( 2,  0, 0),    // 27
             HexMapCellId( 2, -1, 0),
             HexMapCellId( 2, -2, 0),
             HexMapCellId( 1, -2, 0),
-            HexMapCellId( 0, -2, 0),
+            HexMapCellId( 0, -2, 0),    // 31
             HexMapCellId(-1, -1, 0),
             HexMapCellId(-2,  0, 0),
-            HexMapCellId(-2,  1, 0),    // 35
+            HexMapCellId(-2,  1, 0),    // 34
         };
 
         /// Used to rotate the cell pattern based on TileOrientation, each
@@ -198,11 +200,8 @@ public:
         };
         // clang-format on
 
-        /// update the pattern radius; called from add_rule/update_rule
-        void update_radius();
-
         /// get the number of cells that are needed to match the pattern
-        inline unsigned get_pattern_size() const;
+        void update_internal();
 
         /// internal rule id, used for ordering
         uint16_t id = RuleIdNotSet;
@@ -210,12 +209,29 @@ public:
         /// tile to set when rule matches
         int16_t tile = 0;
 
-        /// radius of the pattern; calculated in update_radius()
-        unsigned radius = 0;
-
         /// cell pattern to match against
         /// @see CellOffsets
         Cell pattern[PatternCells];
+
+        /// bitmask of cells that are needed to match this rule with rotation
+        uint64_t cell_mask;
+
+        /// padding needed for existing cells to match this rule
+        ///
+        /// apply_rules() only considers those cells with a value set.  To
+        /// support rules with an empty cell at the origin cell in the pattern,
+        /// we need to expand the cells processed by apply_rules().  We want
+        /// to limit the number of additional cells we need to process, so we
+        /// calculate how many cells above/below/around the empty cell are
+        /// needed to match the pattern.
+        ///
+        /// In this variable, we store the distance to the "nearest" non-empty
+        /// cell.  `delta_y` is the adjustment to Y from the center of the
+        /// cell pattern.
+        struct {
+            int8_t delta_y : 4;
+            int8_t radius : 4;
+        } cell_pad;
     };
 
     /// GDScript wrapper for Rule class

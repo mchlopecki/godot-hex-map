@@ -52,7 +52,6 @@ unsigned HexMapAutoTiledNode::add_rule(const Rule &rule) {
     auto iter = rules.insert(id, rule);
     assert(iter && "iter must return non-null");
     iter->value.id = id;
-    iter->value.update_radius();
     rules_order.push_back(id);
 
     if (int_node) {
@@ -63,7 +62,6 @@ unsigned HexMapAutoTiledNode::add_rule(const Rule &rule) {
 }
 
 unsigned HexMapAutoTiledNode::add_rule(const Ref<HexMapTileRule> &ref) {
-    UtilityFunctions::print("add_rule(): ", ref);
     return add_rule(ref->inner);
 }
 
@@ -72,7 +70,6 @@ void HexMapAutoTiledNode::update_rule(const Rule &rule) {
     ERR_FAIL_NULL_MSG(entry,
             "update_rule() failed: rule id not found: " + itos(rule.id));
     *entry = rule;
-    entry->update_radius();
     if (int_node) {
         apply_rules();
     }
@@ -103,24 +100,57 @@ void HexMapAutoTiledNode::apply_rules() {
 
     tiled_node->clear();
 
-    // XXX change how we go about getting cells
-    // - union all non-disabled cell fields into an array setting a read bit
-    //   - blaaaaah
-    // - also set a bit for empty
-    // - calculate three radiuses for covering empty checks: qr, y, and -y
-    //   - max/min of each q, r, y for each empty offset
+    // union the cell masks from all rules to determine which neighboring cells
+    // we neet to fetch to match rules
+    uint64_t cell_mask = 0;
 
-    // cells to get based on the radius of the patterns
-    // int pattern_size = Rule::PatternCells;
+    // do something similar for the cell padding.  Calculate the padding we
+    // need for all cells across y=-2...2 to allow for matching against rules
+    // with an empty cell at the center of the pattern.  We normally only
+    // apply the rules to those cells that have some value defined, but to
+    // support a pattern matching an empty cell (no value assigned) at the
+    // center of the pattern, we need to evaluate cells with no value set.  To
+    // prevent evaluating every command, we only expand our search area around
+    // existing cells based on the rules defined.
+    //
+    // As an example, a rule with the center cell empty, but the cell below it
+    // must have the value 3, we'll expand the cell ids to include the cell id
+    // **above** every cell that is defined.
+    int8_t cell_padding[5] = { -1, -1, -1, -1, -1 };
+    for (const auto &iter : rules) {
+        cell_mask |= iter.value.cell_mask;
 
+        // manually merge the cell pad (terrible name; fix later)
+        auto pad = iter.value.cell_pad;
+        int index = 2 + pad.delta_y;
+        if (pad.radius > cell_padding[index]) {
+            cell_padding[index] = pad.radius;
+        }
+    }
+
+    // expand the search space for cell padding needed to support empty tile
+    // rules.  This is a small penalty hit when there are no empty-center-cell
+    // rules defined.
     HashSet<HexMapCellId::Key> cell_map;
     for (const auto &iter : int_node->cell_map) {
         cell_map.insert(iter.key);
 
         HexMapCellId cell_id = iter.key;
-        for (const HexMapCellId id :
-                cell_id.get_neighbors(2, HexMapPlanes::All)) {
-            cell_map.insert(id);
+        // UtilityFunctions::print("insert cell " + cell_id);
+
+        for (int i = 0; i < 5; i++) {
+            if (cell_padding[i] < 0) {
+                continue;
+            }
+            int radius = cell_padding[i];
+            HexMapCellId cell_id = iter.key;
+            cell_id.y += -2 + i;
+
+            for (const HexMapCellId id :
+                    cell_id.get_neighbors(radius, HexMapPlanes::QRS, true)) {
+                // UtilityFunctions::print("insert pad cell " + id);
+                cell_map.insert(id);
+            }
         }
     }
 
@@ -128,6 +158,10 @@ void HexMapAutoTiledNode::apply_rules() {
         HexMapCellId cell_id = key;
         int32_t cells[Rule::PatternCells];
         for (int i = 0; i < Rule::PatternCells; i++) {
+            if ((cell_mask & (1ULL << i)) == 0) {
+                cells[i] = -1;
+                continue;
+            }
             uint16_t *ptr =
                     int_node->cell_map.getptr(cell_id + Rule::CellOffsets[i]);
             cells[i] = ptr ? *ptr : -1;
@@ -135,25 +169,25 @@ void HexMapAutoTiledNode::apply_rules() {
         for (int id : rules_order) {
             Rule &rule = rules[id];
 
-            // do a quick exclude here for center tile
             for (int o = 0; o < 6; o++) {
                 int matched = rule.match(cells, o);
                 if (matched == -1) {
-                    UtilityFunctions::print("rule matched " + cell_id +
-                            ", orientation " + itos(o));
-                    // pattern matched, set the tile and move on to the next
-                    // cell.  Cells can only match one rule right now.
+                    // pattern matches with the current orientation, set the
+                    // tile & orientation in the tiled node, and move on to the
+                    // next cell for evaluation.
                     tiled_node->set_cell_item(
                             cell_id, rule.tile, static_cast<int>(o));
                     goto next_cell;
                 } else if (matched < 5) {
-                    // center most cell of pattern did not match, so there's no
-                    // reason to try rotating the pattern to match.  Move on to
-                    // next rule.
+                    // XXX fix ugly magic number
+                    //
+                    // If one of the center cells (q = r = 0, y = -2...2) does
+                    // not match, no ammount of rotation will make it match, so
+                    // just move on to the next rule.
                     goto next_rule;
                 }
             }
-        next_rule:;
+        next_rule: /* noop */;
         }
     next_cell: /* noop */;
     }
@@ -255,6 +289,7 @@ void HexMapAutoTiledNode::Rule::clear_cell(HexMapCellId offset) {
     for (int i = 0; i < PatternCells; i++) {
         if (offset == CellOffsets[i]) {
             pattern[i].state = RULE_CELL_STATE_DISABLED;
+            update_internal();
             return;
         }
     }
@@ -280,6 +315,7 @@ void HexMapAutoTiledNode::Rule::set_cell_type(HexMapCellId offset,
             pattern[i].state =
                     invert ? RULE_CELL_STATE_NOT_TYPE : RULE_CELL_STATE_TYPE;
             pattern[i].type = type;
+            update_internal();
             return;
         }
     }
@@ -292,6 +328,7 @@ void HexMapAutoTiledNode::Rule::set_cell_empty(HexMapCellId offset,
         if (offset == CellOffsets[i]) {
             pattern[i].state =
                     invert ? RULE_CELL_STATE_NOT_EMPTY : RULE_CELL_STATE_EMPTY;
+            update_internal();
             return;
         }
     }
@@ -342,42 +379,68 @@ inline int HexMapAutoTiledNode::Rule::match(int32_t cell_type[PatternCells],
     return -1;
 }
 
-void HexMapAutoTiledNode::Rule::update_radius() {
-    int max_index = -1;
+void HexMapAutoTiledNode::Rule::update_internal() {
+    cell_mask = 0;
     for (int i = 0; i < PatternCells; i++) {
         if (pattern[i].state == RULE_CELL_STATE_DISABLED) {
             continue;
         }
-        max_index = i;
-        if (i > 6) {
+
+        if (i < 5) {
+            cell_mask |= (1 << i);
+        } else if (i < 11) {
+            cell_mask |= 0b111111 << 5;
+            i = 10;
+        } else if (i < 17) {
+            cell_mask |= 0b111111 << 11;
+            i = 16;
+        } else if (i < 23) {
+            cell_mask |= 0b111111 << 17;
+            i = 22;
+        } else {
+            cell_mask |= (uint64_t)0xfff << 23;
             break;
         }
     }
 
-    if (max_index > 6) {
-        radius = 2;
-    } else if (max_index > 0) {
-        radius = 1;
-    } else if (max_index == 0) {
-        radius = 0;
-    } else {
-        ERR_FAIL_MSG("no cells set in pattern");
-        radius = -1;
+    // calculate any cell padding that may be needed for this rule
+    cell_pad = { .delta_y = 0, .radius = -1 };
+    if (pattern[0].state != RULE_CELL_STATE_EMPTY) {
+        return;
     }
-}
+    for (int i = 0; i < PatternCells; i++) {
+        if (pattern[i].state == RULE_CELL_STATE_DISABLED ||
+                pattern[i].state == RULE_CELL_STATE_EMPTY) {
+            continue;
+        }
 
-inline unsigned HexMapAutoTiledNode::Rule::get_pattern_size() const {
-    return PatternCells;
-    assert(radius <= 2 && "radius shoould not exceed 2");
-    switch (radius) {
-    case 0:
-        return 1;
-    case 1:
-        return 7;
-    case 2:
-        return PatternCells;
-    default:
-        return 0;
+        if (i == 0) {
+            continue;
+        } else if (i == 1) {
+            cell_pad = { .delta_y = -1, .radius = 0 };
+            break;
+        } else if (i == 2) {
+            cell_pad = { .delta_y = 1, .radius = 0 };
+            break;
+        } else if (i == 3) {
+            cell_pad = { .delta_y = -2, .radius = 0 };
+            break;
+        } else if (i == 4) {
+            cell_pad = { .delta_y = 2, .radius = 0 };
+            break;
+        } else if (i < 11) {
+            cell_pad = { .delta_y = 0, .radius = 1 };
+            break;
+        } else if (i < 17) {
+            cell_pad = { .delta_y = -1, .radius = 1 };
+            break;
+        } else if (i < 23) {
+            cell_pad = { .delta_y = 1, .radius = 1 };
+            break;
+        } else {
+            cell_pad = { .delta_y = 0, .radius = 2 };
+            break;
+        }
     }
 }
 
@@ -493,18 +556,19 @@ Array HexMapAutoTiledNode::HexMapTileRule::get_cells() const {
 }
 
 String HexMapAutoTiledNode::HexMapTileRule::_to_string() const {
+    // XXX expand to print y=-2...2
     // clang-format off
     String fmt = "Rule {id}: tile {tile}\n"
         "        v---^---v---^---v---^---v\n"
-        "        | {15} | {14} | {13} |\n"
+        "        | {31} | {30} | {29} |\n"
         "    v---^---v---^---v---^---v---^---v\n"
-        "    | {16} | {5} | {4} | {12} |\n"
+        "    | {32} | {9} | {8} | {28} |\n"
         "v---^---v---^---v---^---v---^---v---^---v\n"
-        "| {17} | {6} | {0} | {3} | {11} |\n"
+        "| {33} | {10} | {0} | {7} | {27} |\n"
         "^---v---^---v---^---v---^---v---^---v---^\n"
-        "    | {18} | {1} | {2} | {10} |\n"
+        "    | {34} | {5} | {6} | {26} |\n"
         "    ^---v---^---v---^---v---^---v---^\n"
-        "        | {7} | {8} | {9} |\n"
+        "        | {23} | {24} | {25} |\n"
         "        ^---v---^---v---^---v---^\n";
     // clang-format on
 
