@@ -2,18 +2,28 @@
 @static_unload
 extends SubViewportContainer
 
-
-signal cell_clicked(cell_id: HexMapCellId, mouse_button: int)
+signal cell_clicked(cell_id: HexMapCellId, mouse_button: int, drag: bool)
+signal layer_changed(layer: int)
 
 @export var cell_types := [] :
     set(value):
         cell_type_color.clear()
         for type in cell_types:
             cell_type_color[type.value] = type.color
+@export var active_layer := 0 :
+    set(value):
+        if value == active_layer:
+            return
+        active_layer = clampi(value, -2, 2)
+        _on_active_layer_changed()
 @export var tile_mesh : Mesh :
     set(value):
         tile_mesh = value
-@export var selected_type := -1
+        %TileMeshInstance3D.mesh = tile_mesh
+@export var tile_mesh_transform : Transform3D :
+    set(value):
+        tile_mesh_transform = value
+        %TileMeshInstance3D.transform = value
 
 # map cell_type to color
 var cell_type_color := {}
@@ -28,9 +38,22 @@ class HexCell:
         set(value):
             state = value
             _on_state_changed()
+    @export var show_grid := true :
+        set(value):
+            show_grid = value
+            if is_node_ready():
+                floor_mesh_instance.visible = value
+    @export var hovered := false :
+        set(value):
+            hovered = value
+            if is_node_ready():
+                if hovered:
+                    floor_mesh_instance \
+                        .material_override = sharedx.grid_mat_hover
+                else:
+                    floor_mesh_instance.material_override = null
 
     var floor_mesh_instance: MeshInstance3D
-    var cell_mesh_instance: MeshInstance3D
     var state_node: Node3D
 
     static var tile_mesh: Mesh = preload("../models/autotiled_rule_tile.obj")
@@ -40,7 +63,7 @@ class HexCell:
     # storing all statics in a Dictionary because hot-reload doesn't work
     # properly for static variables.
     # see https://github.com/godotengine/godot/issues/105667
-    static var shared = {}
+    static var sharedx = {}
 
     static func _static_init() -> void:
         # Grid material 
@@ -49,12 +72,21 @@ class HexCell:
         mat.disable_fog = true
         mat.disable_receive_shadows = true
         mat.albedo_color = Color.GOLD
-        shared["grid_mat"] = mat
+        sharedx["grid_mat"] = mat
+
+        # hovered
+        mat = StandardMaterial3D.new()
+        mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+        mat.disable_fog = true
+        mat.disable_receive_shadows = true
+        mat.albedo_color = Color.WHITE
+        mat.no_depth_test = true
+        sharedx["grid_mat_hover"] = mat
 
         # grid mesh
         var st = SurfaceTool.new()
         st.begin(Mesh.PRIMITIVE_LINE_STRIP)
-        st.set_material(mat)
+        st.set_material(sharedx.grid_mat)
         st.add_vertex(Vector3(0.0, 0, -1.0))
         st.add_vertex(Vector3(-Math_SQRT3_2, 0, -0.5))
         st.add_vertex(Vector3(-Math_SQRT3_2, 0, 0.5))
@@ -62,13 +94,13 @@ class HexCell:
         st.add_vertex(Vector3(Math_SQRT3_2, 0, 0.5))
         st.add_vertex(Vector3(Math_SQRT3_2, 0, -0.5))
         st.add_vertex(Vector3(0.0, 0, -1.0))
-        shared["grid_mesh"] = st.commit()
+        sharedx["grid_mesh"] = st.commit()
 
     # just keep track of our children
     func _ready() -> void:
         floor_mesh_instance = MeshInstance3D.new()
-        floor_mesh_instance.mesh = shared.grid_mesh
-        print("add floor mesh child")
+        floor_mesh_instance.mesh = sharedx.grid_mesh
+        floor_mesh_instance.visible = show_grid
         add_child(floor_mesh_instance)
 
     # update the meshes for this node based on state
@@ -117,7 +149,7 @@ class HexCell:
 # camera controls
 var y_rot := 0.0
 var x_rot := deg_to_rad(45)
-var distance := 10.0
+var distance := 15.0
 var edit_plane := Plane(Vector3.UP)
 var cursor_cell := HexMapCellId.new()
 
@@ -132,6 +164,7 @@ func set_cell(cell_id: HexMapCellId, state: Array) -> void:
     cell.state = state
     cell.position = hex_space.get_cell_center(cell_id)
     cell.scale = hex_space.get_cell_scale()
+    cell.show_grid = cell_id.y == active_layer
 
     if not cell.is_inside_tree():
         %CellMeshes.add_child(cell)
@@ -139,13 +172,15 @@ func set_cell(cell_id: HexMapCellId, state: Array) -> void:
 func reset() -> void:
     # XXX clear child cells
     cell_types.clear()
-    selected_type = -1
-
+    tile_mesh = null
+    tile_mesh_transform = Transform3D()
+    active_layer = 0
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-    _orbit_camera(Vector2())
     mouse_entered.connect(func(): grab_focus())
+    _orbit_camera(Vector2())
+    _on_active_layer_changed()
     pass # Replace with function body.
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -175,12 +210,26 @@ func _gui_input(event: InputEvent) -> void:
 
     # painting/erasing
     if event is InputEventMouseButton and event.is_pressed():
-        cell_clicked.emit(cursor_cell, event.button_index)
+        cell_clicked.emit(cursor_cell, event.button_index, false)
+    elif event is InputEventMouseMotion:
+        if event.button_mask == MOUSE_BUTTON_MASK_LEFT:
+            cell_clicked.emit(cursor_cell, MOUSE_BUTTON_MASK_LEFT, true)
+        elif event.button_mask == MOUSE_BUTTON_MASK_RIGHT:
+            cell_clicked.emit(cursor_cell, MOUSE_BUTTON_MASK_RIGHT, true)
 
-func _input(event: InputEvent) -> void:
-    if event is InputEventKey:
-        print("focused ", has_focus(), ", key ", event)
-        accept_event()
+    # layer changes
+    if event is InputEventKey && event.is_pressed():
+        var editor_settings = EditorInterface.get_editor_settings()
+        if editor_settings \
+                .get_setting("hex_map/previous_floor") \
+                .matches_event(event):
+            active_layer -= 1
+            accept_event()
+        if editor_settings \
+                .get_setting("hex_map/next_floor") \
+                .matches_event(event):
+            active_layer += 1
+            accept_event()
 
 func _orbit_camera(relative: Vector2) -> void:
     # adapted from Node3DEditorViewport::_nav_orbit()
@@ -206,7 +255,7 @@ func _orbit_camera(relative: Vector2) -> void:
 
 func _scale_camera_distance(scale: float) -> void:
     # XXX set distance limits based off HexSpace cell size
-    distance = clamp(distance * scale, 2, 30)
+    distance = clamp(distance * scale, 2, 4000)
     _update_camera_transform()
 
 func _update_camera_transform():
@@ -232,4 +281,22 @@ func _update_cursor_cell(pos: Vector2) -> Variant:
     if cell_id.equals(cursor_cell):
         return false
     cursor_cell = cell_id
+
+    # update hovered state on cells
+    var active_key = cursor_cell.as_int()
+    for key in cell_instances:
+        cell_instances[key].hovered = (key == active_key)
+
+    # hide/show the Tile mesh if the cursor_cell is the origin
+    %TileMeshInstance3D.visible = not cursor_cell.equals(HexMapCellId.new())
+
     return true
+
+func _on_active_layer_changed() -> void:
+    for key in cell_instances:
+        var cell_id = HexMapCellId.from_int(key)
+        cell_instances[key].show_grid = cell_id.y == active_layer
+    edit_plane.d = active_layer
+    print("edit_plane ", edit_plane)
+    layer_changed.emit(active_layer)
+

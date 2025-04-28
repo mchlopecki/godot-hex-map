@@ -302,9 +302,9 @@ HexMapAutoTiledNode::Rule::Cell HexMapAutoTiledNode::Rule::get_cell(
             return pattern[i];
         }
     }
-    // XXX need a better way to denote an error here
-    ERR_FAIL_V_MSG(Cell{ .state = RULE_CELL_INVALID_OFFSET },
-            "Rule::get_cell(): invalid cell offset");
+    // don't print an error here because this is used to check for a valid
+    // cell offset in the editor
+    return Cell{ .state = RULE_CELL_INVALID_OFFSET };
 }
 
 void HexMapAutoTiledNode::Rule::set_cell_type(HexMapCellId offset,

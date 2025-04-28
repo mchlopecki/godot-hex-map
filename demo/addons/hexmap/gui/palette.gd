@@ -123,8 +123,6 @@ func clear() -> void:
     rebuild_palette()
 
 func add_item(item: Dictionary) -> void:
-    print("add_item ", item)
-    print("item.preview is a texture ", item.preview is Texture2D)
     var id = item.id
     if items.has(id):
         push_error("item id already defined ", items[id],
@@ -231,6 +229,3 @@ func _ready() -> void:
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
     pass
-
-func _on_button_pressed() -> void:
-    print("button pressed")

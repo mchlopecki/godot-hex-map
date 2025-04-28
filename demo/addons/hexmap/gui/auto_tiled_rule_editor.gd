@@ -62,9 +62,7 @@ func set_rule(value: HexMapTileRule, update: bool) -> void:
     for cell in rule.get_cells():
         %RulePainter3D.set_cell(cell["offset"],
             [cell["state"], cell_type_colors[cell["type"]]])
-
-    var mesh = mesh_library.get_item_mesh(value.tile)
-    %TileMeshInstance3D.mesh = mesh
+    _on_mesh_palette_selected(value.tile)
 
     is_update = update
 
@@ -96,18 +94,18 @@ func set_cell_state(offset: HexMapCellId, state: String, type) -> void:
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-    # %GridPainter.cell_clicked.connect(_on_painter_cell_clicked)
-    # %MeshItemList.item_selected.connect(_on_mesh_item_selected)
     %CancelButton.pressed.connect(func(): cancel_pressed.emit())
     %SaveButton.pressed.connect(func(): save_pressed.emit(rule, is_update))
     %RulePainter3D.focus_entered.connect(func(): %ActiveBorder.visible = true)
     %RulePainter3D.focus_exited.connect(func(): %ActiveBorder.visible = false)
     %RulePainter3D.cell_clicked.connect(_on_painter_cell_clicked)
+    %RulePainter3D.layer_changed.connect(_on_painter_layer_changed)
     %CellTypePalette.selected.connect(_on_cell_type_palette_selected)
+    %MeshPalette.selected.connect(_on_mesh_palette_selected)
 
     var layer = 2
     for child in %LayerSelector.get_children():
-        child.pressed.connect(_on_layer_select.bind(layer))
+        child.pressed.connect(_on_layer_select.bind(child, layer))
         layer -= 1
 
     _on_cell_types_changed()
@@ -131,11 +129,6 @@ func _rebuild_mesh_item_list() -> void:
 
     %MeshItemList.sort_items_by_text()
 
-func _on_mesh_item_selected(index: int):
-    var id = %MeshItemList.get_item_metadata(index)
-    var mesh = mesh_library.get_item_mesh(id)
-    %TileMeshInstance3D.mesh = mesh
-    rule.tile = id
 
 func _on_cell_types_changed() -> void:
     cell_type_colors.clear()
@@ -153,7 +146,6 @@ func _on_cell_types_changed() -> void:
 
 func _on_mesh_library_changed() -> void:
     %MeshPalette.clear()
-    print("is a texture ", mesh_library.get_item_preview(0) is Texture2D)
     for id in mesh_library.get_item_list():
         %MeshPalette.add_item({
             "id": id,
@@ -162,11 +154,20 @@ func _on_mesh_library_changed() -> void:
         })
 
 func _on_cell_type_palette_selected(id: int) -> void:
-    %RulePainter3D.selected_type = id
     selected_type = id
     pass
 
-func _on_painter_cell_clicked(cell_id: HexMapCellId, button: int) -> void:
+func _on_mesh_palette_selected(id: int) -> void:
+    rule.tile = id
+    if id != -1:
+        %RulePainter3D.tile_mesh = mesh_library.get_item_mesh(id)
+        %RulePainter3D.tile_mesh_transform = mesh_library \
+                .get_item_mesh_transform(id)
+    else:
+        %RulePainter3D.tile_mesh = null
+        %RulePainter3D.tile_mesh_transform = Transform3D()
+
+func _on_painter_cell_clicked(cell_id: HexMapCellId, button: int, drag: bool) -> void:
     var cell = rule.get_cell(cell_id)
     if !cell:
         return
@@ -175,7 +176,8 @@ func _on_painter_cell_clicked(cell_id: HexMapCellId, button: int) -> void:
     # check for painting click, only when a cell type is selected in the
     # palette
     if button == MOUSE_BUTTON_MASK_LEFT && selected_type != -1:
-        if cell.state == "type" \
+        if not drag \
+                and cell.state == "type" \
                 and cell.type == selected_type:
             rule.set_cell_type(cell_id, selected_type, true)
             %RulePainter3D.set_cell(cell_id, ["not_type", color])
@@ -185,18 +187,26 @@ func _on_painter_cell_clicked(cell_id: HexMapCellId, button: int) -> void:
 
     # handle erase click
     if button == MOUSE_BUTTON_MASK_RIGHT:
-        if cell.state == "disabled":
+        if cell.state == "disabled" and not drag:
             rule.set_cell_empty(cell_id)
             %RulePainter3D.set_cell(cell_id, ["empty"])
-        elif cell.state == "empty":
+        elif cell.state == "empty" and not drag:
             rule.set_cell_empty(cell_id, true)
             %RulePainter3D.set_cell(cell_id, ["not_empty"])
         else:
             rule.clear_cell(cell_id)
             %RulePainter3D.set_cell(cell_id, ["disabled"])
 
-func _on_layer_select(layer: int):
+func _on_layer_select(node: TextureButton, layer: int):
+    if node.button_pressed == false:
+        node.button_pressed = true
+        return
+    %RulePainter3D.active_layer = layer
+    # %RulePainter3D.grab_focus()
+
+func _on_painter_layer_changed(layer: int):
     var count := 2
     for child in %LayerSelector.get_children():
         child.button_pressed = layer == count
         count -= 1
+    

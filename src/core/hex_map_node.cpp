@@ -1,5 +1,6 @@
 #include "hex_map_node.h"
 #include "cell_id.h"
+#include "godot_cpp/core/error_macros.hpp"
 #include "godot_cpp/core/object.hpp"
 #include "godot_cpp/variant/array.hpp"
 #include "godot_cpp/variant/utility_functions.hpp"
@@ -155,6 +156,9 @@ void HexMapNode::set_cell(const Ref<hex_bind::HexMapCellId> cell_id,
 
 void HexMapNode::set_cells(const Array cells) {
     int size = cells.size();
+    ERR_FAIL_COND_MSG(size % CellArrayWidth != 0,
+            "set_cells(): Array size must be a multiple of " +
+                    itos(CellArrayWidth));
     for (int i = 0; i < size; i += 3) {
         HexMapCellId cell_id(cells[i]);
         int value = cells[i + 1];

@@ -486,7 +486,7 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                     .orig_orientation = orientation,
                     .new_tile = -1,
             });
-            hex_map->set_cells(Array::make(cell_id, -1));
+            hex_map->set_cells(Array::make(cell_id, -1, 0));
         }
         if (mouse_right_released) {
             commit_cell_changes("HexMap: erase cells");

@@ -207,7 +207,7 @@ public:
         uint16_t id = RuleIdNotSet;
 
         /// tile to set when rule matches
-        int16_t tile = 0;
+        int16_t tile = -1;
 
         /// cell pattern to match against
         /// @see CellOffsets
