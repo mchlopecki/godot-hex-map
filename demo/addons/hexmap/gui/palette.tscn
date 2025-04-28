@@ -52,5 +52,6 @@ theme_override_constants/v_separation = 3
 
 [node name="FullPalette" type="VBoxContainer" parent="PanelContainer"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_override_constants/separation = -1

@@ -24,6 +24,11 @@ var items := {}
 class PaletteChip:
     extends Panel
 
+    @export var preview : Texture2D :
+        set(value):
+            preview = value
+            _update_chip()
+
     @export var color : Color :
         set(value):
             color = value
@@ -52,6 +57,12 @@ class PaletteChip:
             stylebox.shadow_size = 5
 
         add_theme_stylebox_override("panel", stylebox)
+
+    func _update_chip():
+        if preview:
+            var texture_rect := TextureRect.new()
+            texture_rect.texture = preview
+            add_child(texture_rect)
 
     func _gui_input(event: InputEvent) -> void:
         if event is InputEventMouseButton \
@@ -112,6 +123,8 @@ func clear() -> void:
     rebuild_palette()
 
 func add_item(item: Dictionary) -> void:
+    print("add_item ", item)
+    print("item.preview is a texture ", item.preview is Texture2D)
     var id = item.id
     if items.has(id):
         push_error("item id already defined ", items[id],
@@ -166,6 +179,13 @@ func populate_compact_palette() -> void:
             button.selected = id == selected_id
             button.custom_minimum_size = Vector2(64, 64)
             button.tooltip_text = item.desc
+        elif item.preview is Texture2D:
+            button = PaletteChip.new()
+            button.preview = item.preview
+            button.color = Color.TRANSPARENT
+            button.selected = id == selected_id
+            button.custom_minimum_size = Vector2(64, 64)
+            button.tooltip_text = item.desc
         else:
             push_error("invalid type for item.preview: ", item)
 
@@ -181,6 +201,10 @@ func populate_full_palette() -> void:
         if item.preview is Color:
             preview = ColorRect.new()
             preview.color = item.preview
+            preview.custom_minimum_size = Vector2(64, 64)
+        elif item.preview is Texture2D:
+            preview = TextureRect.new()
+            preview.texture = item.preview
             preview.custom_minimum_size = Vector2(64, 64)
         else:
             push_error("invalid type for item.preview: ", item)

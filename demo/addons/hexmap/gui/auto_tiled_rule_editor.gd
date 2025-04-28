@@ -15,10 +15,12 @@ signal cancel_pressed
             await ready
         _on_cell_types_changed()
 
-
 @export var mesh_library: MeshLibrary :
     set(value):
         mesh_library = value
+        if not is_node_ready():
+            await ready
+        _on_mesh_library_changed()
         # %RulePainter3D.mesh_library = value
         # _rebuild_mesh_item_list()
 
@@ -102,6 +104,12 @@ func _ready() -> void:
     %RulePainter3D.focus_exited.connect(func(): %ActiveBorder.visible = false)
     %RulePainter3D.cell_clicked.connect(_on_painter_cell_clicked)
     %CellTypePalette.selected.connect(_on_cell_type_palette_selected)
+
+    var layer = 2
+    for child in %LayerSelector.get_children():
+        child.pressed.connect(_on_layer_select.bind(layer))
+        layer -= 1
+
     _on_cell_types_changed()
     pass # Replace with function body.
 
@@ -143,6 +151,16 @@ func _on_cell_types_changed() -> void:
         })
     %RulePainter3D.cell_types = cell_types
 
+func _on_mesh_library_changed() -> void:
+    %MeshPalette.clear()
+    print("is a texture ", mesh_library.get_item_preview(0) is Texture2D)
+    for id in mesh_library.get_item_list():
+        %MeshPalette.add_item({
+            "id": id,
+            "preview": mesh_library.get_item_preview(id),
+            "desc": mesh_library.get_item_name(id),
+        })
+
 func _on_cell_type_palette_selected(id: int) -> void:
     %RulePainter3D.selected_type = id
     selected_type = id
@@ -176,3 +194,9 @@ func _on_painter_cell_clicked(cell_id: HexMapCellId, button: int) -> void:
         else:
             rule.clear_cell(cell_id)
             %RulePainter3D.set_cell(cell_id, ["disabled"])
+
+func _on_layer_select(layer: int):
+    var count := 2
+    for child in %LayerSelector.get_children():
+        child.button_pressed = layer == count
+        count -= 1
