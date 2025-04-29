@@ -31,6 +31,7 @@ protected:
     HexMapSpace space;
 
     static void _bind_methods();
+    void _notification(int p_what);
 
 public:
     enum { INVALID_CELL_ITEM = -1 };

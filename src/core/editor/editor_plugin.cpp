@@ -1,3 +1,5 @@
+#include "godot_cpp/classes/input.hpp"
+#include "godot_cpp/classes/sub_viewport.hpp"
 #include "godot_cpp/variant/dictionary.hpp"
 #ifdef TOOLS_ENABLED
 
@@ -895,6 +897,45 @@ EditorPlugin::AfterGUIInput HexMapNodeEditorPlugin::handle_keypress(
         selection_clone();
         return EditorPlugin::AFTER_GUI_INPUT_STOP;
     }
+    if (ED_IS_SHORTCUT("hex_map/focus", event)) {
+        // Awful hack to recenter the map at the cursor because we cannot move
+        // the viewport camera without it jumping back due to LERP[^1].
+        // [^1]: https://github.com/godotengine/godot-proposals/issues/12112
+
+        // calculate what cell we want to center, and grab the location of the
+        // center of that cell.
+        HexMapCellId cell_id = editor_cursor->get_cell();
+        Vector3 center = hex_map->get_space().get_cell_center(cell_id);
+
+        // create a transform to map that center point to the origin.  If this
+        // is not the current transform of the HexMap, set it as the new
+        // transform.  If this is already the transform, clear the transform.
+        // This allows a user to hit the shortcut key twice to clear any
+        // custom transform from this shortcut.
+        Transform3D transform(Basis(), -center);
+        if (hex_map->get_transform() != transform) {
+            hex_map->set_transform(transform);
+        } else {
+            hex_map->set_transform(Transform3D());
+        }
+
+        // sent the keypress event to center origin
+        Ref<InputEventKey> ev;
+        ev.instantiate();
+        ev->set_keycode(KEY_O);
+        ev->set_pressed(true);
+        Input::get_singleton()->parse_input_event(ev);
+
+        // move the cursor to the center of the viewport
+        // XXX this does not work right when the user is working in another
+        // viewport besides index 0.
+        auto viewport =
+                EditorInterface::get_singleton()->get_editor_viewport_3d();
+        Size2 size = viewport->get_visible_rect().size;
+        viewport->warp_mouse(Vector2(size.x / 2, size.y / 2));
+
+        return EditorPlugin::AFTER_GUI_INPUT_STOP;
+    }
 
     return EditorPlugin::AFTER_GUI_INPUT_PASS;
 }
@@ -1001,6 +1042,8 @@ HexMapNodeEditorPlugin::HexMapNodeEditorPlugin() {
             Key(KEY_MASK_SHIFT + Key::KEY_D));
     add_editor_shortcut(
             "hex_map/selection_move", "Move Selected Cells", Key::KEY_G);
+
+    add_editor_shortcut("hex_map/focus", "Focus Cursor Cells", Key::KEY_V);
 }
 
 HexMapNodeEditorPlugin::~HexMapNodeEditorPlugin() {

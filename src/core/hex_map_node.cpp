@@ -72,6 +72,17 @@ void HexMapNode::_bind_methods() {
     // XXX add signal cell_changed; connect in auto-tiled node, apply rules
 }
 
+void HexMapNode::_notification(int p_what) {
+    switch (p_what) {
+    case NOTIFICATION_POSTINITIALIZE:
+        set_notify_transform(true);
+        break;
+    case NOTIFICATION_TRANSFORM_CHANGED:
+        space.set_transform(get_global_transform());
+        break;
+    }
+}
+
 void HexMapNode::set_space(const HexMapSpace &space) {
     this->space = space;
     cell_scale_changed();
