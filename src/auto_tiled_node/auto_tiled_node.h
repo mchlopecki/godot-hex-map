@@ -278,6 +278,7 @@ public:
     Ref<MeshLibrary> get_mesh_library() const;
     Dictionary get_rules() const;
     Array get_rules_order() const;
+    void set_rules_order(Array);
 
     /// add a new rule; id of new rule will be returned
     unsigned add_rule(const Rule &);

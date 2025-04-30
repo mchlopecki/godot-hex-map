@@ -170,7 +170,6 @@ func set_cell(cell_id: HexMapCellId, state: Array) -> void:
         %CellMeshes.add_child(cell)
 
 func reset() -> void:
-    # XXX clear child cells
     cell_types.clear()
     tile_mesh = null
     tile_mesh_transform = Transform3D()

@@ -1,5 +1,6 @@
-[gd_scene load_steps=10 format=3 uid="uid://p42lol2mxn4a"]
+[gd_scene load_steps=11 format=3 uid="uid://p42lol2mxn4a"]
 
+[ext_resource type="Theme" uid="uid://hmpeb1yvo8yj" path="res://addons/hexmap/hex_map_theme.tres" id="1_2dvln"]
 [ext_resource type="Script" path="res://addons/hexmap/gui/auto_tiled_rule_editor.gd" id="1_hjusd"]
 [ext_resource type="Script" path="res://addons/hexmap/gui/grid_painter_3d.gd" id="2_sqqto"]
 [ext_resource type="PackedScene" uid="uid://dut4042ogc1kq" path="res://addons/hexmap/gui/palette.tscn" id="3_ndemm"]
@@ -42,6 +43,7 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+theme = ExtResource("1_2dvln")
 script = ExtResource("1_hjusd")
 cell_types = []
 
@@ -85,12 +87,12 @@ sky_mode = 1
 
 [node name="Camera3D" type="Camera3D" parent="Control/RulePainter3D/SubViewport"]
 unique_name_in_owner = true
-transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 7.07107, 7.07107)
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 10.6066, 10.6066)
 environment = SubResource("Environment_005ur")
 projection = 1
 current = true
 fov = 35.0
-size = 6.30598
+size = 9.45896
 
 [node name="SpotLight3D" type="SpotLight3D" parent="Control/RulePainter3D/SubViewport/Camera3D"]
 transform = Transform3D(0.965926, -0.0669873, 0.25, 0, 0.965926, 0.258819, -0.258819, -0.25, 0.933013, 3, 3, 0)
@@ -230,9 +232,15 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_j0dfp")
 layout_mode = 2
 size_flags_vertical = 8
 
+[node name="Notification" type="RichTextLabel" parent="ToolbarHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+bbcode_enabled = true
+
 [node name="HBoxContainer" type="HBoxContainer" parent="ToolbarHBox"]
 layout_mode = 2
-size_flags_horizontal = 10
+size_flags_horizontal = 8
 theme_override_constants/separation = 10
 
 [node name="CancelButton" type="Button" parent="ToolbarHBox/HBoxContainer"]

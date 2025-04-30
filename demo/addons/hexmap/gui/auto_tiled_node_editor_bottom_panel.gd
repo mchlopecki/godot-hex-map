@@ -26,6 +26,7 @@ var int_node: HexMapInt
 func _ready() -> void:
 	%RulesList.new_rule_pressed.connect(_on_new_rule_pressed)
 	%RulesList.rule_selected.connect(_on_rule_selected)
+	%RulesList.order_changed.connect(_on_rules_order_changed)
 	%RuleEditor.save_pressed.connect(_on_rule_editor_save)
 	%RuleEditor.cancel_pressed.connect(_on_rule_editor_cancel)
 	%HSplitContainer.split_offset *= EditorInterface.get_editor_scale()
@@ -37,13 +38,15 @@ func _process(delta: float) -> void:
 	pass
 
 func edit_rule(rule: HexMapTileRule) -> void:
+	%RulesList.selected_id = rule.id
 	%RuleEditor.clear()
 	%RuleEditor.set_hex_space(int_node.get_space())
 	%RuleEditor.cell_scale = int_node.get_space().cell_scale
 	%RuleEditor.cell_types = int_node.cell_types
 	%RuleEditor.mesh_library = node.mesh_library
-	%RuleEditor.visible = true
 	%RuleEditor.set_rule(rule, rule.id != HexMapTileRule.RuleIdNotSet)
+	%RuleEditor.visible = true
+	%Directions.visible = false
 
 func _on_new_rule_pressed():
 	edit_rule(HexMapTileRule.new())
@@ -51,14 +54,23 @@ func _on_new_rule_pressed():
 func _on_rule_selected(rule: HexMapTileRule) -> void:
 	edit_rule(rule)
 
+func _on_rules_order_changed(value: Array) -> void:
+	node.set_rules_order(value)
+
 func _on_rule_editor_save(rule: HexMapTileRule, is_update: bool):
 	if is_update:
 		node.update_rule(rule)
+		%RuleEditor.show_message("[b]Saved rule " + str(rule.id) + "[/b]")
 	else:
-		node.add_rule(rule)
+		var id = node.add_rule(rule)
+		%RulesList.selected_id = id
+		%RuleEditor.show_message("[b]Added rule " + str(id) + "[/b]")
 
 func _on_rule_editor_cancel():
-	print("reset rule editor")
+	%RuleEditor.clear()
+	%RulesList.selected_id = -1
+	%RuleEditor.visible = false
+	%Directions.visible = true
 	pass
 
 func _on_mesh_library_changed():
@@ -66,9 +78,7 @@ func _on_mesh_library_changed():
 	%RulesList.mesh_library = node.mesh_library
 
 func _on_rules_changed():
+	print("rules changed")
 	var rules = node.get_rules()
-	var ordered = []
-	for id in node.get_rules_order():
-		ordered.push_back(rules[id])
-	%RulesList.rules = ordered
-
+	%RulesList.rules = node.get_rules()
+	%RulesList.order = node.get_rules_order()

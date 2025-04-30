@@ -1,29 +1,86 @@
-[gd_scene load_steps=3 format=3 uid="uid://dyd26wbqhm8km"]
+[gd_scene load_steps=9 format=3 uid="uid://dyd26wbqhm8km"]
 
 [ext_resource type="Script" path="res://addons/hexmap/gui/auto_tiled_node_rule_list_item.gd" id="1_qap2u"]
+[ext_resource type="Texture2D" uid="uid://csntk1y1u4fdx" path="res://addons/hexmap/icons/GuiVisibilityVisible.svg" id="2_b565i"]
+[ext_resource type="Texture2D" uid="uid://d21ao7ljiaii6" path="res://addons/hexmap/icons/drag_handle.svg" id="2_l43xc"]
+[ext_resource type="Texture2D" uid="uid://bvk0ax5vwg0j7" path="res://addons/hexmap/icons/GuiVisibilityHidden.svg" id="3_1uw5i"]
+[ext_resource type="Texture2D" uid="uid://dew2xbw2uvpy2" path="res://addons/hexmap/icons/Paint.svg" id="3_icf6i"]
+[ext_resource type="Theme" uid="uid://hmpeb1yvo8yj" path="res://addons/hexmap/hex_map_theme.tres" id="4_g73pa"]
+[ext_resource type="Texture2D" uid="uid://khe663y3ndwa" path="res://addons/hexmap/icons/Remove.svg" id="4_sv746"]
 
 [sub_resource type="Texture2D" id="Texture2D_7vbn3"]
 resource_local_to_scene = false
 resource_name = ""
 
-[node name="RuleListItem" type="Button"]
-custom_minimum_size = Vector2(0, 64)
-offset_right = 50.0
-offset_bottom = 40.0
+[node name="RuleListItem" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 size_flags_horizontal = 3
-size_flags_vertical = 2
+size_flags_vertical = 4
+theme = ExtResource("4_g73pa")
 script = ExtResource("1_qap2u")
-preview = SubResource("Texture2D_7vbn3")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
-layout_mode = 0
-offset_right = 5.0
-offset_bottom = 23.0
+layout_mode = 2
+size_flags_horizontal = 3
 
-[node name="TilePreview" type="TextureRect" parent="HBoxContainer"]
+[node name="DragHandle" type="TextureRect" parent="HBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 6
+texture = ExtResource("2_l43xc")
+stretch_mode = 3
 
-[node name="RuleId" type="Label" parent="HBoxContainer"]
+[node name="VSeparator" type="VSeparator" parent="HBoxContainer"]
+layout_mode = 2
+
+[node name="RulePanel" type="PanelContainer" parent="HBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/RulePanel"]
+layout_mode = 2
+
+[node name="TilePreview" type="TextureRect" parent="HBoxContainer/RulePanel/HBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+texture = SubResource("Texture2D_7vbn3")
+
+[node name="RuleId" type="Label" parent="HBoxContainer/RulePanel/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TextureButton" type="TextureButton" parent="HBoxContainer/RulePanel/HBoxContainer"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+toggle_mode = true
+texture_normal = ExtResource("2_b565i")
+texture_pressed = ExtResource("3_1uw5i")
+
+[node name="CheckButton" type="CheckButton" parent="HBoxContainer/RulePanel/HBoxContainer"]
+layout_mode = 2
+button_pressed = true
+flat = true
+
+[node name="Button2" type="Button" parent="HBoxContainer/RulePanel/HBoxContainer"]
+layout_mode = 2
+icon = ExtResource("4_sv746")
+
+[node name="Button" type="Button" parent="HBoxContainer"]
+unique_name_in_owner = true
+visible = false
+clip_contents = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+size_flags_horizontal = 3
+icon = ExtResource("3_icf6i")

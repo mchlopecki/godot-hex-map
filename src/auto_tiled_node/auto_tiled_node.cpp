@@ -41,6 +41,19 @@ Array HexMapAutoTiledNode::get_rules_order() const {
     return out;
 }
 
+void HexMapAutoTiledNode::set_rules_order(Array value) {
+    rules_order.clear();
+    size_t size = value.size();
+    rules_order.resize(size);
+    for (size_t i = 0; i < size; i++) {
+        rules_order.set(i, value[i]);
+    }
+    if (int_node) {
+        apply_rules();
+    }
+    emit_signal("rules_changed");
+}
+
 unsigned HexMapAutoTiledNode::add_rule(const Rule &rule) {
     unsigned id = 0;
     for (int v : rules_order) {
@@ -224,6 +237,8 @@ void HexMapAutoTiledNode::_bind_methods() {
             D_METHOD("get_rules"), &HexMapAutoTiledNode::get_rules);
     ClassDB::bind_method(D_METHOD("get_rules_order"),
             &HexMapAutoTiledNode::get_rules_order);
+    ClassDB::bind_method(D_METHOD("set_rules_order", "order"),
+            &HexMapAutoTiledNode::set_rules_order);
     ClassDB::bind_method(D_METHOD("add_rule", "rule"),
             static_cast<unsigned (HexMapAutoTiledNode::*)(
                     const Ref<HexMapTileRule> &)>(

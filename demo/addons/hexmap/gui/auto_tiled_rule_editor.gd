@@ -48,14 +48,19 @@ func set_hex_space(value: HexMapSpace) -> void:
 
 func clear() -> void:
     %CellTypePalette.clear()
+    %MeshPalette.clear()
     %RulePainter3D.reset()
     rule = HexMapTileRule.new()
+
+func show_message(text: String) -> void:
+    %Notification.text = "[center]" + text + "[/center]"
 
 func set_rule(value: HexMapTileRule, update: bool) -> void:
     rule = value 
 
     # reset the painter
     %RulePainter3D.reset()
+    %Notification.text = ""
 
     # update the painter cell state, and for _on_painter_cell_clicked, create
     # a dictionary to look up cell state by cell id
@@ -158,6 +163,8 @@ func _on_cell_type_palette_selected(id: int) -> void:
     pass
 
 func _on_mesh_palette_selected(id: int) -> void:
+    if rule == null:
+        return
     rule.tile = id
     if id != -1:
         %RulePainter3D.tile_mesh = mesh_library.get_item_mesh(id)
