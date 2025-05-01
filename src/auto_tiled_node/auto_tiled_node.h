@@ -65,6 +65,9 @@ public:
 
             /// return this class as a Dictionary
             Dictionary to_dict() const;
+
+            /// get an instance of Cell from a Dictonary returned by to_dict()
+            static Cell from_dict(const Dictionary);
         };
 
         inline operator Ref<HexMapTileRule>() const;
@@ -200,6 +203,10 @@ public:
         };
         // clang-format on
 
+        /// get the pattern index for a given cell offset
+        /// @returns [int] index, or -1 for invalid offset
+        int get_pattern_index(HexMapCellId offset) const;
+
         /// get the number of cells that are needed to match the pattern
         void update_internal();
 
@@ -308,9 +315,9 @@ protected:
     void _notification(int p_what);
 
     // save/load support
-    // void _get_property_list(List<PropertyInfo> *p_list) const;
-    // bool _get(const StringName &p_name, Variant &r_ret) const;
-    // bool _set(const StringName &p_name, const Variant &p_value);
+    void _get_property_list(List<PropertyInfo> *p_list) const;
+    bool _get(const StringName &p_name, Variant &r_ret) const;
+    bool _set(const StringName &p_name, const Variant &p_value);
 
 private:
     void on_int_node_cells_changed(Array);

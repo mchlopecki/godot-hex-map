@@ -10,9 +10,126 @@
 #include "godot_cpp/variant/callable_method_pointer.hpp"
 #include "godot_cpp/variant/utility_functions.hpp"
 #include "godot_cpp/variant/variant.hpp"
-#include <climits>
 
 using namespace godot;
+
+void HexMapAutoTiledNode::_get_property_list(
+        List<PropertyInfo> *p_list) const {
+    p_list->push_back(PropertyInfo(Variant::ARRAY,
+            "rules_order",
+            PROPERTY_HINT_NONE,
+            "",
+            PROPERTY_USAGE_STORAGE));
+    p_list->push_back(PropertyInfo(Variant::DICTIONARY,
+            "rules",
+            PROPERTY_HINT_NONE,
+            "",
+            PROPERTY_USAGE_STORAGE));
+}
+
+bool HexMapAutoTiledNode::_get(const StringName &p_name,
+        Variant &r_ret) const {
+    String name = p_name;
+
+    if (name == "rules_order") {
+        // saving the rules order is straight forward
+        r_ret = get_rules_order();
+        return true;
+
+    } else if (name == "rules") {
+        // saving rules is more complicated, create a dictionary of the rule id
+        // to a dictionary defining the rule.
+        Dictionary out;
+        for (const auto &iter : rules) {
+            Dictionary value;
+            value["id"] = iter.value.id;
+            value["tile"] = iter.value.tile;
+            value["enabled"] = iter.value.enabled;
+
+            // create a cells dictionary, mapping cell offset (as Vector3i) to
+            // a dictionary for the cell value.
+            Dictionary cells;
+            for (int i = 0; i < Rule::PatternCells; i++) {
+                const Rule::Cell &cell = iter.value.pattern[i];
+                if (cell.state == Rule::RULE_CELL_STATE_DISABLED) {
+                    continue;
+                }
+
+                Vector3i key = Rule::CellOffsets[i];
+                cells[key] = cell.to_dict();
+            }
+            value["cells"] = cells;
+
+            out[iter.key] = value;
+        }
+        r_ret = out;
+        return true;
+    }
+
+    return false;
+}
+bool HexMapAutoTiledNode::_set(const StringName &p_name,
+        const Variant &p_value) {
+    String name = p_name;
+
+    if (name == "rules_order") {
+        // manually copy over the rules order
+        const Array value = p_value;
+        int count = value.size();
+        rules_order.clear();
+        rules_order.resize(count);
+        for (int i = 0; i < count; i++) {
+            rules_order.set(i, value[i]);
+        }
+
+        return true;
+    } else if (name == "rules") {
+        // iterate through the rules dictionary
+        Dictionary value = p_value;
+        Array keys = value.keys();
+        size_t count = keys.size();
+        for (size_t i = 0; i < count; i++) {
+            int id = keys[i];
+            Dictionary rule_dict = value[id];
+
+            // create a new rule fron the rule dictionary
+            Rule rule{};
+            rule.id = id;
+            rule.tile = rule_dict["tile"];
+            rule.enabled = rule_dict["enabled"];
+
+            // iterate through the cells dictionary within the rule dictionary
+            Dictionary cells_dict = rule_dict["cells"];
+            Array cells_keys = cells_dict.keys();
+            size_t cell_count = cells_keys.size();
+            for (size_t c = 0; c < cell_count; c++) {
+                Vector3i offset = cells_keys[c];
+
+                // convert the cell dictionary into a Cell instance
+                Rule::Cell cell = Rule::Cell::from_dict(cells_dict[offset]);
+
+                // look up the pattern index for the cell offset
+                int index = rule.get_pattern_index(offset);
+                if (index == -1) {
+                    ERR_PRINT("invalid HexMapAutoTiledNode::Rule cell offset");
+                    continue;
+                }
+
+                // set the cell into the pattern
+                rule.pattern[index] = cell;
+            }
+
+            // now that we have a complete rule, update its internal state,
+            // then add it to the rules hash.
+            rule.update_internal();
+            rules.insert(id, rule);
+        }
+
+        // apply the rules we just loaded.
+        return true;
+    }
+    return false;
+}
 
 Ref<MeshLibrary> HexMapAutoTiledNode::get_mesh_library() const {
     return mesh_library;
@@ -311,6 +428,15 @@ HexMapAutoTiledNode::~HexMapAutoTiledNode() {
     tiled_node = nullptr;
 }
 
+int HexMapAutoTiledNode::Rule::get_pattern_index(HexMapCellId offset) const {
+    for (int i = 0; i < PatternCells; i++) {
+        if (offset == CellOffsets[i]) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 void HexMapAutoTiledNode::Rule::clear_cell(HexMapCellId offset) {
     for (int i = 0; i < PatternCells; i++) {
         if (offset == CellOffsets[i]) {
@@ -497,6 +623,30 @@ Dictionary HexMapAutoTiledNode::Rule::Cell::to_dict() const {
     case RULE_CELL_INVALID_OFFSET:
         assert(false && "cannot create dictionary for invalid offset");
         break;
+    }
+
+    return out;
+}
+
+HexMapAutoTiledNode::Rule::Cell HexMapAutoTiledNode::Rule::Cell::from_dict(
+        const Dictionary value) {
+    Cell out{};
+
+    if (value["state"] == "empty") {
+        out.state = RULE_CELL_STATE_EMPTY;
+    } else if (value["state"] == "not_empty") {
+        out.state = RULE_CELL_STATE_NOT_EMPTY;
+    } else if (value["state"] == "disabled") {
+        out.state = RULE_CELL_STATE_DISABLED;
+    } else if (value["state"] == "type") {
+        out.state = RULE_CELL_STATE_TYPE;
+        out.type = value["type"];
+    } else if (value["state"] == "not_type") {
+        out.state = RULE_CELL_STATE_NOT_TYPE;
+        out.type = value["type"];
+    } else {
+        ERR_PRINT("invalid state in rule dictionary");
+        out.state = RULE_CELL_INVALID_OFFSET;
     }
 
     return out;
