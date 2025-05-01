@@ -26,6 +26,11 @@ signal new_rule_pressed()
 signal rule_selected(rule: HexMapTileRule)
 # emitted when the user changes the order of the rules in the list
 signal order_changed(order: Array)
+# emitted when user requests a rule be deleted
+signal delete_rule(id: int)
+# emitted when the user changes a rule from the list; only enable/disable at
+# the moment
+signal rule_changed(rule: HexMapTileRule)
 
 const rule_item: PackedScene = preload("auto_tiled_node_rule_list_item.tscn")
 
@@ -60,11 +65,20 @@ func _redraw_rules() -> void:
     for id in order:
         var rule = rules[id]
         var control = rule_item.instantiate()
-        control.pressed.connect(_on_rule_selected.bind(rule))
+
+        # set the control state
         control.set_rule(rule)
         control.preview = mesh_library.get_item_preview(rule.tile)
         control.selected = rule.id == selected_id
+
+        # forward some drag & drop to this class
         control.set_drag_forwarding(Callable(), _can_drop_in_child.bind(control), _drop_data)
+
+        # hook up the signals
+        control.pressed.connect(_on_rule_selected.bind(rule))
+        control.pressed_delete.connect(func(): delete_rule.emit(rule.id))
+        control.enabled_toggled.connect(_on_rule_enabled_toggled.bind(rule))
+
         %Rules.add_child(control)
 
 func _can_drop_in_child(at_position: Vector2, data: Variant, child: Control) -> bool:
@@ -94,3 +108,9 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 func _on_rule_selected(rule: HexMapTileRule) -> void:
     rule_selected.emit(rule)
 
+func _on_rule_enabled_toggled(value: bool, rule: HexMapTileRule) -> void:
+    if value == rule.enabled:
+        return
+    rule.enabled = value
+    rule_changed.emit(rule)
+    

@@ -1,16 +1,15 @@
-[gd_scene load_steps=9 format=3 uid="uid://dyd26wbqhm8km"]
+[gd_scene load_steps=7 format=3 uid="uid://dyd26wbqhm8km"]
 
 [ext_resource type="Script" path="res://addons/hexmap/gui/auto_tiled_node_rule_list_item.gd" id="1_qap2u"]
-[ext_resource type="Texture2D" uid="uid://csntk1y1u4fdx" path="res://addons/hexmap/icons/GuiVisibilityVisible.svg" id="2_b565i"]
 [ext_resource type="Texture2D" uid="uid://d21ao7ljiaii6" path="res://addons/hexmap/icons/drag_handle.svg" id="2_l43xc"]
-[ext_resource type="Texture2D" uid="uid://bvk0ax5vwg0j7" path="res://addons/hexmap/icons/GuiVisibilityHidden.svg" id="3_1uw5i"]
-[ext_resource type="Texture2D" uid="uid://dew2xbw2uvpy2" path="res://addons/hexmap/icons/Paint.svg" id="3_icf6i"]
 [ext_resource type="Theme" uid="uid://hmpeb1yvo8yj" path="res://addons/hexmap/hex_map_theme.tres" id="4_g73pa"]
 [ext_resource type="Texture2D" uid="uid://khe663y3ndwa" path="res://addons/hexmap/icons/Remove.svg" id="4_sv746"]
 
-[sub_resource type="Texture2D" id="Texture2D_7vbn3"]
+[sub_resource type="Texture2D" id="Texture2D_57a5r"]
 resource_local_to_scene = false
 resource_name = ""
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_v4c87"]
 
 [node name="RuleListItem" type="PanelContainer"]
 anchors_preset = 15
@@ -22,6 +21,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 4
 theme = ExtResource("4_g73pa")
 script = ExtResource("1_qap2u")
+preview = SubResource("Texture2D_57a5r")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -51,36 +51,37 @@ layout_mode = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
-texture = SubResource("Texture2D_7vbn3")
+texture = SubResource("Texture2D_57a5r")
 
 [node name="RuleId" type="Label" parent="HBoxContainer/RulePanel/HBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TextureButton" type="TextureButton" parent="HBoxContainer/RulePanel/HBoxContainer"]
-visible = false
-layout_mode = 2
-size_flags_horizontal = 8
-size_flags_vertical = 4
-toggle_mode = true
-texture_normal = ExtResource("2_b565i")
-texture_pressed = ExtResource("3_1uw5i")
-
-[node name="CheckButton" type="CheckButton" parent="HBoxContainer/RulePanel/HBoxContainer"]
+[node name="EnabledToggle" type="CheckButton" parent="HBoxContainer/RulePanel/HBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
 button_pressed = true
 flat = true
 
-[node name="Button2" type="Button" parent="HBoxContainer/RulePanel/HBoxContainer"]
+[node name="DeleteButton" type="Button" parent="HBoxContainer/RulePanel/HBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
+focus_mode = 0
 icon = ExtResource("4_sv746")
 
-[node name="Button" type="Button" parent="HBoxContainer"]
+[node name="DeletePopup" type="PopupPanel" parent="HBoxContainer/RulePanel/HBoxContainer/DeleteButton"]
 unique_name_in_owner = true
-visible = false
-clip_contents = true
-custom_minimum_size = Vector2(0, 64)
-layout_mode = 2
-size_flags_horizontal = 3
-icon = ExtResource("3_icf6i")
+transparent_bg = true
+size = Vector2i(135, 48)
+transparent = true
+theme_override_styles/panel = SubResource("StyleBoxEmpty_v4c87")
+
+[node name="DeleteConfirmButton" type="Button" parent="HBoxContainer/RulePanel/HBoxContainer/DeleteButton/DeletePopup"]
+unique_name_in_owner = true
+offset_right = 135.0
+offset_bottom = 48.0
+focus_mode = 0
+theme_type_variation = &"DangerButton"
+text = "Delete Rule"
+icon = ExtResource("4_sv746")

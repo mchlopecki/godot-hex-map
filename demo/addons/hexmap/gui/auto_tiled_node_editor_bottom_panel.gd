@@ -27,6 +27,9 @@ func _ready() -> void:
 	%RulesList.new_rule_pressed.connect(_on_new_rule_pressed)
 	%RulesList.rule_selected.connect(_on_rule_selected)
 	%RulesList.order_changed.connect(_on_rules_order_changed)
+	%RulesList.delete_rule.connect(_on_rules_list_delete)
+	%RulesList.rule_changed.connect(_on_rules_list_rule_changed)
+
 	%RuleEditor.save_pressed.connect(_on_rule_editor_save)
 	%RuleEditor.cancel_pressed.connect(_on_rule_editor_cancel)
 	%HSplitContainer.split_offset *= EditorInterface.get_editor_scale()
@@ -39,6 +42,7 @@ func _process(delta: float) -> void:
 
 func edit_rule(rule: HexMapTileRule) -> void:
 	%RulesList.selected_id = rule.id
+	%Directions.visible = false
 	%RuleEditor.clear()
 	%RuleEditor.set_hex_space(int_node.get_space())
 	%RuleEditor.cell_scale = int_node.get_space().cell_scale
@@ -46,7 +50,7 @@ func edit_rule(rule: HexMapTileRule) -> void:
 	%RuleEditor.mesh_library = node.mesh_library
 	%RuleEditor.set_rule(rule, rule.id != HexMapTileRule.RuleIdNotSet)
 	%RuleEditor.visible = true
-	%Directions.visible = false
+	%RuleEditor.focus_painter()
 
 func _on_new_rule_pressed():
 	edit_rule(HexMapTileRule.new())
@@ -82,3 +86,12 @@ func _on_rules_changed():
 	var rules = node.get_rules()
 	%RulesList.rules = node.get_rules()
 	%RulesList.order = node.get_rules_order()
+
+func _on_rules_list_delete(id: int):
+	print("delete rule ", id)
+	if %RulesList.selected_id == id:
+		_on_rule_editor_cancel()
+	node.delete_rule(id)
+
+func _on_rules_list_rule_changed(rule: HexMapTileRule):
+	node.update_rule(rule)

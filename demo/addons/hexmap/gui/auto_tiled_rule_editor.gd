@@ -97,6 +97,9 @@ func set_cell_state(offset: HexMapCellId, state: String, type) -> void:
         _:
             push_error("unsupported cell state ", state)
 
+func focus_painter() -> void:
+    %RulePainter3D.grab_focus()
+
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
     %CancelButton.pressed.connect(func(): cancel_pressed.emit())
@@ -133,7 +136,6 @@ func _rebuild_mesh_item_list() -> void:
         %MeshItemList.set_item_metadata(index, id)
 
     %MeshItemList.sort_items_by_text()
-
 
 func _on_cell_types_changed() -> void:
     cell_type_colors.clear()

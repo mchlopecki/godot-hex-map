@@ -1,6 +1,5 @@
-[gd_scene load_steps=11 format=3 uid="uid://p42lol2mxn4a"]
+[gd_scene load_steps=10 format=3 uid="uid://p42lol2mxn4a"]
 
-[ext_resource type="Theme" uid="uid://hmpeb1yvo8yj" path="res://addons/hexmap/hex_map_theme.tres" id="1_2dvln"]
 [ext_resource type="Script" path="res://addons/hexmap/gui/auto_tiled_rule_editor.gd" id="1_hjusd"]
 [ext_resource type="Script" path="res://addons/hexmap/gui/grid_painter_3d.gd" id="2_sqqto"]
 [ext_resource type="PackedScene" uid="uid://dut4042ogc1kq" path="res://addons/hexmap/gui/palette.tscn" id="3_ndemm"]
@@ -43,7 +42,6 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme = ExtResource("1_2dvln")
 script = ExtResource("1_hjusd")
 cell_types = []
 

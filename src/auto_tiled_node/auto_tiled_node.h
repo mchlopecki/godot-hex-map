@@ -209,6 +209,9 @@ public:
         /// tile to set when rule matches
         int16_t tile = -1;
 
+        /// bit to denote whether the rule is enabled
+        bool enabled = true;
+
         /// cell pattern to match against
         /// @see CellOffsets
         Cell pattern[PatternCells];
@@ -245,6 +248,8 @@ public:
         void set_tile(int value);
         unsigned get_id() const;
         void set_id(unsigned value);
+        bool get_enabled() const;
+        void set_enabled(bool value);
 
         void clear_cell(const Ref<hex_bind::HexMapCellId> &);
         void set_cell_type(const Ref<hex_bind::HexMapCellId> &,

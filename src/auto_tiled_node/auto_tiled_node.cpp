@@ -93,7 +93,14 @@ void HexMapAutoTiledNode::update_rule(const Ref<HexMapTileRule> &ref) {
     return update_rule(ref->inner);
 }
 
-void HexMapAutoTiledNode::delete_rule(uint16_t id) { rules.erase(id); }
+void HexMapAutoTiledNode::delete_rule(uint16_t id) {
+    rules.erase(id);
+    rules_order.erase(id);
+    if (int_node) {
+        apply_rules();
+    }
+    emit_signal("rules_changed");
+}
 
 void HexMapAutoTiledNode::cell_scale_changed() {
     ERR_FAIL_NULL(int_node);
@@ -181,6 +188,10 @@ void HexMapAutoTiledNode::apply_rules() {
         }
         for (int id : rules_order) {
             Rule &rule = rules[id];
+
+            if (!rule.enabled) {
+                continue;
+            }
 
             for (int o = 0; o < 6; o++) {
                 int matched = rule.match(cells, o);
@@ -508,6 +519,15 @@ void HexMapAutoTiledNode::HexMapTileRule::_bind_methods() {
     BIND_CONSTANT(RuleIdNotSet);
 
     ClassDB::bind_method(
+            D_METHOD("set_enabled", "enabled"), &HexMapTileRule::set_enabled);
+    ClassDB::bind_method(
+            D_METHOD("get_enabled"), &HexMapTileRule::get_enabled);
+    ADD_PROPERTY(
+            PropertyInfo(Variant::BOOL, "enabled", PROPERTY_HINT_NONE, ""),
+            "set_enabled",
+            "get_enabled");
+
+    ClassDB::bind_method(
             D_METHOD("get_cell", "offset"), &HexMapTileRule::get_cell);
     ClassDB::bind_method(D_METHOD("get_cells"), &HexMapTileRule::get_cells);
     ClassDB::bind_method(
@@ -531,6 +551,12 @@ unsigned HexMapAutoTiledNode::HexMapTileRule::get_id() const {
 }
 void HexMapAutoTiledNode::HexMapTileRule::set_id(unsigned value) {
     inner.id = value;
+}
+bool HexMapAutoTiledNode::HexMapTileRule::get_enabled() const {
+    return inner.enabled;
+}
+void HexMapAutoTiledNode::HexMapTileRule::set_enabled(bool value) {
+    inner.enabled = value;
 }
 void HexMapAutoTiledNode::HexMapTileRule::clear_cell(
         const Ref<hex_bind::HexMapCellId> &offset) {

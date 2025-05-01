@@ -180,7 +180,6 @@ func _ready() -> void:
     mouse_entered.connect(func(): grab_focus())
     _orbit_camera(Vector2())
     _on_active_layer_changed()
-    pass # Replace with function body.
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
