@@ -100,14 +100,14 @@ void HexMapNodeEditorPlugin::_deselect_cells() {
     ERR_FAIL_COND_MSG(selection_manager == nullptr,
             "HexMap: SelectionManager not present");
     selection_manager->clear();
-    bottom_panel->set("selection_active", false);
+    set_editor_state("selection_active", false);
 }
 
 void HexMapNodeEditorPlugin::_select_cell(Vector3i cell) {
     ERR_FAIL_COND_MSG(selection_manager == nullptr,
             "HexMap: SelectionManager not present");
     selection_manager->add_cell(cell);
-    bottom_panel->set("selection_active", true);
+    set_editor_state("selection_active", true);
 }
 
 void HexMapNodeEditorPlugin::_set_selection_v(Array cells) {
@@ -115,7 +115,7 @@ void HexMapNodeEditorPlugin::_set_selection_v(Array cells) {
             "HexMap: SelectionManager not present");
 
     selection_manager->set_cells(cells);
-    bottom_panel->set("selection_active", !cells.is_empty());
+    set_editor_state("selection_active", !cells.is_empty());
 }
 
 void HexMapNodeEditorPlugin::selection_clear() {
@@ -134,7 +134,7 @@ void HexMapNodeEditorPlugin::selection_clear() {
     for (int i = 0; i < cell_count; i++) {
         int base = i * 3;
         do_list[base] = cells[i];
-        do_list[base + 1] = HexMapNode::INVALID_CELL_ITEM;
+        do_list[base + 1] = HexMapNode::INVALID_CELL_VALUE;
         do_list[base + 2] = 0;
     }
 
@@ -195,13 +195,13 @@ void HexMapNodeEditorPlugin::copy_selection_to_cursor() {
 
     for (const HexMapCellId &cell_id : cells) {
         auto [value, orientation] = hex_map->get_cell(cell_id);
-        if (value == HexMapNode::INVALID_CELL_ITEM) {
+        if (value == HexMapNode::INVALID_CELL_VALUE) {
             continue;
         }
         editor_cursor->set_tile(cell_id - center, value, orientation);
     }
     editor_cursor->update(true);
-    bottom_panel->set("cursor_active", true);
+    set_editor_state("cursor_active", true);
     input_state = INPUT_STATE_MOVING;
 }
 
@@ -270,7 +270,7 @@ void HexMapNodeEditorPlugin::selection_move() {
     for (const HexMapCellId &cell_id : selection_manager->get_cells()) {
         size_t base = index * HexMapNode::CellArrayWidth;
         cells[base] = cell_id;
-        cells[base + 1] = HexMapNode::INVALID_CELL_ITEM;
+        cells[base + 1] = HexMapNode::INVALID_CELL_VALUE;
         index++;
     }
     hex_map->set_cells(cells);
@@ -299,7 +299,7 @@ void HexMapNodeEditorPlugin::selection_move_apply() {
     for (int i = 0; i < count; i++) {
         int base = i * HexMapNode::CellArrayWidth;
         do_set_cells[base] = move_source_cells[i];
-        do_set_cells[base + 1] = HexMapNode::INVALID_CELL_ITEM;
+        do_set_cells[base + 1] = HexMapNode::INVALID_CELL_VALUE;
     }
     // second phase is to set the destination cells
     do_set_cells.append_array(editor_cursor->get_cells_v());
@@ -331,14 +331,32 @@ void HexMapNodeEditorPlugin::selection_move_apply() {
 void HexMapNodeEditorPlugin::rebuild_cursor() {
     ERR_FAIL_COND(bottom_panel == nullptr);
     editor_cursor->clear_tiles();
-    int tile = bottom_panel->get("selected_tile");
-    if (tile != HexMapNode::INVALID_CELL_ITEM) {
+    int tile = get_editor_state("cursor_mesh_index");
+    if (tile != HexMapNode::INVALID_CELL_VALUE) {
         editor_cursor->set_tile(HexMapCellId(), tile);
     }
 
     cursor_set_orientation(HexMapTileOrientation());
     editor_cursor->update(true);
-    bottom_panel->set("cursor_active", editor_cursor->size() > 0);
+    set_editor_state("cursor_active", editor_cursor->size() > 0);
+}
+
+Variant HexMapNodeEditorPlugin::get_editor_state(const String &key) const {
+    Variant v = bottom_panel->get("editor_state");
+    ERR_FAIL_COND_V_MSG(v.get_type() != Variant::DICTIONARY,
+            Variant::NIL,
+            "bottom panel @export editor_state must be a Dictionary");
+    Dictionary state = v;
+    return state[key];
+}
+void HexMapNodeEditorPlugin::set_editor_state(const String &key,
+        const Variant value) {
+    Variant v = bottom_panel->get("editor_state");
+    ERR_FAIL_COND_MSG(v.get_type() != Variant::DICTIONARY,
+            "bottom panel @export editor_state must be a Dictionary");
+    Dictionary state = v;
+    state[key] = value;
+    bottom_panel->set("editor_state", state);
 }
 
 void HexMapNodeEditorPlugin::_make_visible(bool p_visible) {
@@ -439,8 +457,8 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
             if (!selection_manager->is_empty()) {
                 deselect_cells();
             } else {
-                bottom_panel->set(
-                        "selected_tile", HexMapNode::INVALID_CELL_ITEM);
+                set_editor_state(
+                        "cursor_mesh_index", HexMapNode::INVALID_CELL_VALUE);
             }
             return AFTER_GUI_INPUT_STOP;
         }
@@ -536,7 +554,7 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
 
             selection_manager->clear();
             selection_manager->set_cells(cells);
-            bottom_panel->set("selection_active", true);
+            set_editor_state("selection_active", true);
         }
         if (mouse_left_released) {
             auto profile = profiling_begin("complete selection");
@@ -602,22 +620,6 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
     return EditorPlugin::AFTER_GUI_INPUT_PASS;
 }
 
-// XXX subclass needs to update editor_cursor MeshLibrary when changes happen
-// void HexMapNodeEditorPlugin::update_mesh_library() {
-//     ERR_FAIL_NULL(hex_map);
-//
-//     mesh_library = hex_map->get_mesh_library();
-//     bottom_panel->set("mesh_library", mesh_library);
-//
-//     if (editor_cursor) {
-//         editor_cursor->clear_tiles();
-//         editor_cursor->set_mesh_library(mesh_library);
-//         editor_control->reset_orientation();
-//         bottom_panel->call("clear_selection");
-//         bottom_panel->call("update_mesh_list");
-//     }
-// }
-
 void HexMapNodeEditorPlugin::_edit(Object *p_object) {
     if (hex_map) {
         // save off the editor state to the current node
@@ -628,11 +630,6 @@ void HexMapNodeEditorPlugin::_edit(Object *p_object) {
                 callable_mp(this, &HexMapNodeEditorPlugin::hex_space_changed));
         hex_map->disconnect("mesh_offset_changed",
                 callable_mp(this, &HexMapNodeEditorPlugin::hex_space_changed));
-        // XXX subclass must handle all MeshLibrary work
-        // hex_map->disconnect("mesh_library_changed",
-        //         callable_mp(
-        //                 this,
-        //                 &HexMapNodeEditorPlugin::update_mesh_library));
 
         // clear a couple of other state tracking variables
         last_selection.clear();
@@ -753,8 +750,8 @@ void HexMapNodeEditorPlugin::edit_plane_set_axis(EditorCursor::EditAxis axis) {
     edit_axis = axis;
     editor_cursor->set_axis(axis);
     editor_cursor->set_depth(edit_axis_depth[axis]);
-    bottom_panel->set("edit_plane_axis", axis);
-    bottom_panel->set("edit_plane_depth", edit_axis_depth[axis]);
+    set_editor_state("edit_plane_axis", axis);
+    set_editor_state("edit_plane_depth", edit_axis_depth[axis]);
 }
 
 void HexMapNodeEditorPlugin::edit_plane_set_depth(int depth) {
@@ -762,7 +759,7 @@ void HexMapNodeEditorPlugin::edit_plane_set_depth(int depth) {
     ERR_FAIL_COND(bottom_panel == nullptr);
     edit_axis_depth[edit_axis] = depth;
     editor_cursor->set_depth(depth);
-    bottom_panel->set("edit_plane_depth", depth);
+    set_editor_state("edit_plane_depth", depth);
 }
 
 void HexMapNodeEditorPlugin::hex_space_changed() {

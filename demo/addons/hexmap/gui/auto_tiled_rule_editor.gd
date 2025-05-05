@@ -211,7 +211,6 @@ func _on_layer_select(node: TextureButton, layer: int):
         node.button_pressed = true
         return
     %RulePainter3D.active_layer = layer
-    # %RulePainter3D.grab_focus()
 
 func _on_painter_layer_changed(layer: int):
     var count := 2

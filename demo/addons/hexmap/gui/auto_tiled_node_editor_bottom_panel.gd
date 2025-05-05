@@ -20,6 +20,7 @@ extends VBoxContainer
 		_on_rules_changed()
 
 
+# local copy of the AutoTiledNode's parent IntNode
 var int_node: HexMapInt
 
 # Called when the node enters the scene tree for the first time.
@@ -82,8 +83,6 @@ func _on_mesh_library_changed():
 	%RulesList.mesh_library = node.mesh_library
 
 func _on_rules_changed():
-	print("rules changed")
-	var rules = node.get_rules()
 	%RulesList.rules = node.get_rules()
 	%RulesList.order = node.get_rules_order()
 

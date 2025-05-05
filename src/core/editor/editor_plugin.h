@@ -79,6 +79,13 @@ protected:
     /// add setting entry for a keyboard shortcut
     void add_editor_shortcut(const String &path, const String &name, Key);
 
+    /// get editor state from bottom panel gui
+    Variant get_editor_state(const String &key) const;
+
+    /// update editor state; used by bottom panel to keep in sync with the
+    /// EditorPlugin internal state
+    void set_editor_state(const String &key, const Variant value);
+
     /// set cursor orientation
     void cursor_set_orientation(HexMapTileOrientation);
 
@@ -148,9 +155,9 @@ private:
     // So we have to track updated tiles ourselves.
     struct CellChange {
         HexMapCellId cell_id;
-        int orig_tile = HexMapNode::INVALID_CELL_ITEM;
+        int orig_tile = HexMapNode::INVALID_CELL_VALUE;
         HexMapTileOrientation orig_orientation;
-        int new_tile = HexMapNode::INVALID_CELL_ITEM;
+        int new_tile = HexMapNode::INVALID_CELL_VALUE;
         HexMapTileOrientation new_orientation;
     };
     Vector<CellChange> cells_changed;

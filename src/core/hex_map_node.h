@@ -34,11 +34,11 @@ protected:
     void _notification(int p_what);
 
 public:
-    enum { INVALID_CELL_ITEM = -1 };
+    enum { INVALID_CELL_VALUE = -1 };
 
     /// common contents for any cell in a hex node
     struct CellInfo {
-        int value = INVALID_CELL_ITEM;
+        int value = INVALID_CELL_VALUE;
         HexMapTileOrientation orientation;
     };
 
@@ -103,7 +103,14 @@ public:
     Array get_cells(const Array p_cells);
 
     /// get the list of CellIds as Vector3i occupied in this node
-    virtual Array get_cell_ids_v() const = 0;
+    virtual Array get_cell_vecs() const = 0;
+
+    /// return an Array of Vector3i cell ids for those cells with the supplied
+    /// value
+    ///
+    /// @param value cell value
+    /// @return Array array of Vector3i encoded cell IDs
+    virtual Array find_cell_vecs_by_value(int value) const = 0;
 
     /// number of elements that are used to represent a cell in the Array
     /// returned by `_get_cells()`

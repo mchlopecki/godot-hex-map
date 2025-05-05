@@ -161,7 +161,8 @@ public:
             int tile,
             HexMapTileOrientation orientation = 0) override;
     CellInfo get_cell(const HexMapCellId &) const override;
-    Array get_cell_ids_v() const override;
+    Array get_cell_vecs() const override;
+    Array find_cell_vecs_by_value(int value) const override;
 
     void set_cell_item(const HexMapCellId &cell_id, int p_item, int p_rot = 0);
     void _set_cell_item(const Ref<hex_bind::HexMapCellId> cell_id,

@@ -3,6 +3,12 @@ extends VBoxContainer
 
 signal selected(id)
 
+@export var hide_toolbar := false :
+    set(value):
+        hide_toolbar = value
+        if not is_node_ready():
+            await ready
+        %Toolbar.visible = !value
 @export var selected_id := -1 :
     set(value):
         selected_id = value
@@ -17,6 +23,12 @@ signal selected(id)
             return items[selected_id]
         else:
             return {}
+@export var filter := "":
+    set(value):
+        if not is_node_ready():
+            await ready
+        filter = value
+        rebuild_palette()
 
 var items := {}
 # faux button, displays a color in a square, and optionally highlights it with
@@ -94,14 +106,15 @@ class PaletteEntry:
             child.queue_free()
         remove_theme_stylebox_override("panel")
 
-        var label = Label.new()
+        var label := Label.new()
         label.text = desc
 
-        var hbox = HBoxContainer.new()
+        var hbox := HBoxContainer.new()
         hbox.add_child(preview)
         hbox.add_child(label)
         add_child(hbox)
-    
+   
+        # XXX pull stylebox from theme
         var stylebox = get_theme_stylebox("panel").duplicate()
         if selected: 
             stylebox.bg_color = Color.hex(0x363D4Aff)
@@ -136,7 +149,6 @@ func add_item(item: Dictionary) -> void:
 func filtered_item_keys() -> Array:
     var keys = items.keys()
 
-    var filter = %Filter.text
     if not filter.is_empty():
         keys = keys.filter(func(key):
             return items[key].desc.containsn(filter)
@@ -212,16 +224,19 @@ func populate_full_palette() -> void:
         entry.desc = item.desc
         entry.selected = id == selected_id
         entry.pressed.connect(func(): selected_id = id)
+        # entry.size_flags_horizontal = SIZE_SHRINK_BEGIN
 
         %FullPalette.add_child(entry)
+        entry.custom_minimum_size.x = 400
 
     pass
     
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+    %Toolbar.visible = !hide_toolbar
     %CompactViewButton.pressed.connect(func(): rebuild_palette())
-    %Filter.text_changed.connect(func(t): rebuild_palette())
+    %Filter.text_changed.connect(func(t): filter = t)
     rebuild_palette()
     pass # Replace with function body.
 

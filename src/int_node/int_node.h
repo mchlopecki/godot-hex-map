@@ -43,11 +43,16 @@ public:
     /// return an Array of Dictionary with value, name, color keys
     Array _get_cell_types() const;
 
+    /// Look up a specific cell type
+    Variant get_cell_type(unsigned id) const;
+
+    /// all of the required override functions
     void set_cell(const HexMapCellId &,
             int tile,
             HexMapTileOrientation orientation = 0) override;
     CellInfo get_cell(const HexMapCellId &) const override;
-    Array get_cell_ids_v() const override;
+    Array get_cell_vecs() const override;
+    Array find_cell_vecs_by_value(int value) const override;
     void set_cell_visibility(const HexMapCellId &cell_id,
             bool visibility) override {};
 

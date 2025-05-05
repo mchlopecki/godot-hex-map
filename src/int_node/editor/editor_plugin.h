@@ -41,7 +41,7 @@ private:
     void update_mesh_library();
 
     /// update the `HexMapTiledNode` based on a cell change
-    void update_tiled_node(Vector3i cell_id_v, int type);
+    void on_int_node_cells_changed(Array cells);
 
     // signal handlers
     void cell_scale_changed();

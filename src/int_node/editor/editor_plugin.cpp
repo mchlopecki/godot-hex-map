@@ -17,6 +17,12 @@ bool HexMapIntNodeEditorPlugin::_handles(Object *p_object) const {
 }
 
 void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
+    if (bottom_panel != nullptr) {
+        remove_control_from_bottom_panel(bottom_panel);
+        memfree(bottom_panel);
+        bottom_panel = nullptr;
+    }
+
     HexMapNodeEditorPlugin::_edit(p_object);
 
     if (hex_map) {
@@ -31,14 +37,9 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
         bottom_panel = (Control *)panel_scene->instantiate();
 
         // connect the signals
-        bottom_panel->connect("type_changed",
+        bottom_panel->connect("type_selected",
                 callable_mp((HexMapNodeEditorPlugin *)this,
                         &HexMapNodeEditorPlugin::rebuild_cursor));
-        bottom_panel->connect("update_type",
-                callable_mp(this, &HexMapIntNodeEditorPlugin::set_cell_type));
-        bottom_panel->connect("delete_type",
-                callable_mp(
-                        this, &HexMapIntNodeEditorPlugin::delete_cell_type));
         bottom_panel->connect("edit_plane_changed",
                 callable_mp(this, &HexMapIntNodeEditorPlugin::set_edit_plane));
         bottom_panel->connect("rotate_cursor",
@@ -61,7 +62,8 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
                         &HexMapIntNodeEditorPlugin::set_tiled_map_visibility));
 
         // set known state
-        bottom_panel->set("cell_types", int_node->_get_cell_types());
+        bottom_panel->set("editor_plugin", this);
+        bottom_panel->set("node", int_node);
         bottom_panel->set("edit_plane_axis", (int)edit_axis);
         bottom_panel->set("edit_plane_depth", edit_axis_depth[edit_axis]);
         bool show_cells = int_node->get_meta("_show_cells_", true);
@@ -95,10 +97,11 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
         int_node->connect("cell_scale_changed",
                 callable_mp(
                         this, &HexMapIntNodeEditorPlugin::cell_scale_changed));
-        int_node->connect("editor_plugin_cell_changed",
-                callable_mp(
-                        this, &HexMapIntNodeEditorPlugin::update_tiled_node));
-        int_node->connect("editor_plugin_types_changed",
+        int_node->connect("cells_changed",
+                callable_mp(this,
+                        &HexMapIntNodeEditorPlugin::
+                                on_int_node_cells_changed));
+        int_node->connect("cell_types_changed",
                 callable_mp(this,
                         &HexMapIntNodeEditorPlugin::update_mesh_library));
 
@@ -113,9 +116,10 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
                 callable_mp(
                         this, &HexMapIntNodeEditorPlugin::cell_scale_changed));
         int_node->disconnect("editor_plugin_cell_changed",
-                callable_mp(
-                        this, &HexMapIntNodeEditorPlugin::update_tiled_node));
-        int_node->disconnect("editor_plugin_types_changed",
+                callable_mp(this,
+                        &HexMapIntNodeEditorPlugin::
+                                on_int_node_cells_changed));
+        int_node->disconnect("cell_types_changed",
                 callable_mp(this,
                         &HexMapIntNodeEditorPlugin::update_mesh_library));
         int_node = nullptr;
@@ -181,99 +185,14 @@ void HexMapIntNodeEditorPlugin::update_mesh_library() {
     }
 }
 
-void HexMapIntNodeEditorPlugin::update_tiled_node(Vector3i cell_id_v,
-        int type) {
+void HexMapIntNodeEditorPlugin::on_int_node_cells_changed(Array cells) {
     ERR_FAIL_COND_MSG(tiled_node == nullptr, "tiled node not allocated");
-    tiled_node->set_cell(cell_id_v, type);
+    tiled_node->set_cells(cells);
 }
 
 void HexMapIntNodeEditorPlugin::cell_scale_changed() {
     tiled_node->set_space(int_node->get_space());
     update_mesh_library();
-}
-
-void HexMapIntNodeEditorPlugin::set_cell_type(int id,
-        String name,
-        Color color) {
-    ERR_FAIL_COND(int_node == nullptr);
-    ERR_FAIL_COND(bottom_panel == nullptr);
-    bool is_adding = id == HexMapIntNode::TypeIdNext;
-
-    EditorUndoRedoManager *undo_redo = get_undo_redo();
-
-    if (id == HexMapIntNode::TypeIdNext) {
-        // This is a request to add a new type.
-        //
-        // work-around for dynamic assignment; if they didn't provide an id,
-        // make the change directly now to get the id.  The do_method will just
-        // repeat the same action with the fixed id we get here.
-        //
-        // We need a valid id here to be able to add the undo method.
-        id = int_node->set_cell_type(id, name, color);
-        undo_redo->create_action("HexMapInt: add cell type");
-        undo_redo->add_undo_method(int_node, "remove_cell_type", id);
-    } else {
-        // To update an existing type, we need to get the current values for
-        // undo
-        const auto cell_type = int_node->cell_types.find(id);
-        ERR_FAIL_COND_MSG(cell_type == int_node->cell_types.end(),
-                "cell type id not found");
-        undo_redo->create_action("HexMapInt: update cell type");
-        undo_redo->add_undo_method(int_node,
-                "set_cell_type",
-                cell_type->key,
-                cell_type->value.name,
-                cell_type->value.color);
-    }
-
-    undo_redo->add_do_method(int_node, "set_cell_type", id, name, color);
-    undo_redo->commit_action();
-}
-
-void HexMapIntNodeEditorPlugin::delete_cell_type(int id) {
-    ERR_FAIL_COND_MSG(int_node == nullptr, "int_node not set");
-
-    // look up the name & color for the cell type; if it doesn't exist, nothing
-    // to be done here.
-    const auto cell_type = int_node->cell_types.find(id);
-    if (cell_type == int_node->cell_types.end()) {
-        return;
-    }
-
-    // find the cells in the map to delete
-    Vector<HexMapCellId::Key> cells;
-    for (auto &iter : int_node->cell_map) {
-        if (iter.value == id) {
-            cells.push_back(iter.key);
-        }
-    }
-
-    // create do and undo arrays for deleting the cells with this value
-    Array do_list, undo_list;
-    do_list.resize(cells.size() * HexMapNode::CellArrayWidth);
-    undo_list.resize(cells.size() * HexMapNode::CellArrayWidth);
-    int count = 0;
-    for (const auto key : cells) {
-        int base = count * HexMapNode::CellArrayWidth;
-        Vector3i cell = static_cast<Vector3i>(key);
-        do_list[base] = cell;
-        do_list[base + 1] = HexMapNode::INVALID_CELL_ITEM;
-        undo_list[base] = cell;
-        undo_list[base + 1] = id;
-        count++;
-    }
-
-    EditorUndoRedoManager *undo_redo = get_undo_redo();
-    undo_redo->create_action("HexMapInt: remove cell type");
-    undo_redo->add_do_method(int_node, "set_cells", do_list);
-    undo_redo->add_do_method(int_node, "remove_cell_type", id);
-    undo_redo->add_undo_method(int_node,
-            "set_cell_type",
-            id,
-            cell_type->value.name,
-            cell_type->value.color);
-    undo_redo->add_undo_method(int_node, "set_cells", undo_list);
-    undo_redo->commit_action();
 }
 
 void HexMapIntNodeEditorPlugin::set_edit_plane(int axis, int depth) {

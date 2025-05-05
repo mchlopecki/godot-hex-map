@@ -36,6 +36,14 @@ void HexMapNode::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_cells", "cells"),
             static_cast<Array (HexMapNode::*)(const Array)>(
                     &HexMapNode::get_cells));
+
+    ClassDB::bind_method(D_METHOD("get_cell_vecs"),
+            static_cast<Array (HexMapNode::*)() const>(
+                    &HexMapNode::get_cell_vecs));
+    ClassDB::bind_method(D_METHOD("find_cell_vecs_by_value", "value"),
+            static_cast<Array (HexMapNode::*)(int) const>(
+                    &HexMapNode::find_cell_vecs_by_value));
+
     ClassDB::bind_method(D_METHOD("get_cell_center", "cell_id"),
             static_cast<Vector3 (HexMapNode::*)(
                     const Ref<hex_bind::HexMapCellId>) const>(
@@ -70,6 +78,9 @@ void HexMapNode::_bind_methods() {
     ADD_SIGNAL(MethodInfo(
             "cells_changed", PropertyInfo(Variant::ARRAY, "cells")));
     // XXX add signal cell_changed; connect in auto-tiled node, apply rules
+
+    BIND_CONSTANT(CellArrayWidth);
+    BIND_CONSTANT(INVALID_CELL_VALUE);
 }
 
 void HexMapNode::_notification(int p_what) {

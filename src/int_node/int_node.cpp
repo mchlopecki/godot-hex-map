@@ -85,11 +85,20 @@ bool HexMapIntNode::_set(const StringName &p_name, const Variant &p_value) {
     return false;
 }
 
+Variant HexMapIntNode::get_cell_type(unsigned id) const {
+    Dictionary out;
+    const auto cell_type = cell_types.find(id);
+    ERR_FAIL_COND_V_MSG(
+            cell_type == cell_types.end(), false, "cell type id not found");
+    out["value"] = id;
+    out["name"] = cell_type->value.name;
+    out["color"] = cell_type->value.color;
+    return out;
+}
+
 void HexMapIntNode::remove_cell_type(unsigned id) {
     cell_types.erase(id);
-#ifdef TOOLS_ENABLED
-    emit_signal("editor_plugin_types_changed");
-#endif // TOOLS_ENABLED
+    emit_signal("cell_types_changed");
 }
 
 unsigned HexMapIntNode::set_cell_type(unsigned id,
@@ -110,9 +119,7 @@ unsigned HexMapIntNode::set_cell_type(unsigned id,
         cell_types.insert(id, CellType{ .name = name, .color = color });
     }
 
-#ifdef TOOLS_ENABLED
-    emit_signal("editor_plugin_types_changed");
-#endif // TOOLS_ENABLED
+    emit_signal("cell_types_changed");
     return id;
 }
 
@@ -131,49 +138,52 @@ Array HexMapIntNode::_get_cell_types() const {
 void HexMapIntNode::_bind_methods() {
     ClassDB::bind_method(
             D_METHOD("get_cell_types"), &HexMapIntNode::_get_cell_types);
+    ClassDB::bind_method(
+            D_METHOD("get_cell_type", "id"), &HexMapIntNode::get_cell_type);
     ClassDB::bind_method(D_METHOD("remove_cell_type", "id"),
             &HexMapIntNode::remove_cell_type);
     ClassDB::bind_method(D_METHOD("set_cell_type", "id", "name", "color"),
             &HexMapIntNode::set_cell_type);
     BIND_CONSTANT(TypeIdNext);
 
-#ifdef TOOLS_ENABLED
-    // XXX remove these, use non-editor specific signals
-    ADD_SIGNAL(MethodInfo("editor_plugin_cell_changed",
-            PropertyInfo(Variant::VECTOR3I, "cell"),
-            PropertyInfo(Variant::INT, "type")));
-    ADD_SIGNAL(MethodInfo("editor_plugin_types_changed"));
-#endif // TOOLS_ENABLED
+    ADD_SIGNAL(MethodInfo("cell_types_changed"));
 }
 
 void HexMapIntNode::set_cell(const HexMapCellId &cell_id,
         int value,
         HexMapTileOrientation _) {
-    if (value == HexMapNode::INVALID_CELL_ITEM) {
+    if (value == HexMapNode::INVALID_CELL_VALUE) {
         cell_map.erase(cell_id);
     } else if (value >= 0 && value < (1 << 16)) {
         cell_map.insert(cell_id, value);
     } else {
         ERR_FAIL_MSG("cell value must be in 0..65535");
     }
-#ifdef TOOLS_ENABLED
-    emit_signal("editor_plugin_cell_changed", (Vector3i)cell_id, value);
-#endif // TOOLS_ENABLED
 }
 
 HexMapNode::CellInfo HexMapIntNode::get_cell(
         const HexMapCellId &cell_id) const {
     const uint16_t *current_cell = cell_map.getptr(cell_id);
     if (current_cell == nullptr) {
-        return CellInfo{ .value = INVALID_CELL_ITEM };
+        return CellInfo{ .value = INVALID_CELL_VALUE };
     }
     return CellInfo{ .value = *current_cell };
 }
 
-Array HexMapIntNode::get_cell_ids_v() const {
+Array HexMapIntNode::get_cell_vecs() const {
     Array out;
     for (const auto &iter : cell_map) {
         out.push_back((Vector3i)iter.key);
+    }
+    return out;
+}
+
+Array HexMapIntNode::find_cell_vecs_by_value(int value) const {
+    Array out;
+    for (const auto &iter : cell_map) {
+        if (iter.value == value) {
+            out.push_back(static_cast<Vector3i>(iter.key));
+        }
     }
     return out;
 }

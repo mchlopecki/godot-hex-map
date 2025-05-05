@@ -398,10 +398,20 @@ void HexMapTiledNode::_set_cell_item_v(const Vector3i &cell_id,
     set_cell_item(cell_id, p_item, p_rot);
 }
 
-Array HexMapTiledNode::get_cell_ids_v() const {
+Array HexMapTiledNode::get_cell_vecs() const {
     Array out;
     for (const auto &iter : cell_map) {
         out.push_back((Vector3i)iter.key);
+    }
+    return out;
+}
+
+Array HexMapTiledNode::find_cell_vecs_by_value(int value) const {
+    Array out;
+    for (const auto &iter : cell_map) {
+        if (iter.value.item == value) {
+            out.push_back(static_cast<Vector3i>(iter.key));
+        }
     }
     return out;
 }
@@ -410,7 +420,7 @@ HexMapNode::CellInfo HexMapTiledNode::get_cell(
         const HexMapCellId &cell_id) const {
     const Cell *current_cell = cell_map.getptr(cell_id);
     if (current_cell == nullptr) {
-        return CellInfo{ .value = INVALID_CELL_ITEM };
+        return CellInfo{ .value = INVALID_CELL_VALUE };
     }
     return CellInfo{ .value = static_cast<int>(current_cell->item),
         .orientation = HexMapTileOrientation(current_cell->rot) };
@@ -418,13 +428,13 @@ HexMapNode::CellInfo HexMapTiledNode::get_cell(
 
 int HexMapTiledNode::get_cell_item(const HexMapCellId &cell_id) const {
     ERR_FAIL_COND_V_MSG(!cell_id.in_bounds(),
-            INVALID_CELL_ITEM,
+            INVALID_CELL_VALUE,
             "cell id not in bounds: " + cell_id);
 
     CellKey key(cell_id);
 
     if (!cell_map.has(key)) {
-        return INVALID_CELL_ITEM;
+        return INVALID_CELL_VALUE;
     }
     return cell_map[key].item;
 }
@@ -958,7 +968,7 @@ void HexMapTiledNode::_bind_methods() {
             "set_navigation_bake_only_navmesh_tiles",
             "get_navigation_bake_only_navmesh_tiles");
 
-    BIND_CONSTANT(INVALID_CELL_ITEM);
+    BIND_CONSTANT(INVALID_CELL_VALUE);
 
     ADD_SIGNAL(MethodInfo(
             "cell_changed", PropertyInfo(Variant::VECTOR3I, "cell")));
