@@ -1,6 +1,3 @@
-#include "godot_cpp/classes/input.hpp"
-#include "godot_cpp/classes/sub_viewport.hpp"
-#include "godot_cpp/variant/dictionary.hpp"
 #ifdef TOOLS_ENABLED
 
 #include <cassert>
@@ -15,6 +12,7 @@
 #include <godot_cpp/classes/editor_settings.hpp>
 #include <godot_cpp/classes/editor_undo_redo_manager.hpp>
 #include <godot_cpp/classes/global_constants.hpp>
+#include <godot_cpp/classes/input.hpp>
 #include <godot_cpp/classes/input_event_key.hpp>
 #include <godot_cpp/classes/input_event_mouse.hpp>
 #include <godot_cpp/classes/input_event_mouse_button.hpp>
@@ -30,6 +28,7 @@
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/scene_tree.hpp>
 #include <godot_cpp/classes/shortcut.hpp>
+#include <godot_cpp/classes/sub_viewport.hpp>
 #include <godot_cpp/classes/theme.hpp>
 #include <godot_cpp/classes/undo_redo.hpp>
 #include <godot_cpp/classes/v_separator.hpp>
@@ -39,6 +38,7 @@
 #include <godot_cpp/core/math.hpp>
 #include <godot_cpp/core/object.hpp>
 #include <godot_cpp/variant/callable_method_pointer.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
 #include <godot_cpp/variant/packed_vector3_array.hpp>
 #include <godot_cpp/variant/transform3d.hpp>

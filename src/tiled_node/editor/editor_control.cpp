@@ -1,7 +1,5 @@
 #ifdef TOOLS_ENABLED
 
-#include "editor_control.h"
-
 #include <godot_cpp/classes/box_container.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/editor_settings.hpp>
@@ -17,6 +15,8 @@
 #include <godot_cpp/core/memory.hpp>
 #include <godot_cpp/core/object.hpp>
 #include <godot_cpp/variant/callable_method_pointer.hpp>
+
+#include "editor_control.h"
 
 Ref<Shortcut> EditorControl::editor_shortcut(const String &p_path,
         const String &p_name,

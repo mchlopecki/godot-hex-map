@@ -1,4 +1,3 @@
-#include "core/hex_map_node.h"
 #ifdef TOOLS_ENABLED
 
 #include <cassert>
@@ -20,6 +19,7 @@
 #include <godot_cpp/variant/vector3.hpp>
 
 #include "core/cell_id.h"
+#include "core/hex_map_node.h"
 #include "core/iter_radial.h"
 #include "core/math.h"
 #include "editor_cursor.h"

@@ -1,16 +1,16 @@
 #ifdef TOOLS_ENABLED
-
-#include "../tiled_node.h"
-#include "core/editor/editor_cursor.h"
-#include "godot_cpp/classes/h_box_container.hpp"
-#include "godot_cpp/classes/input_event_key.hpp"
-#include "godot_cpp/classes/label.hpp"
-#include "godot_cpp/classes/menu_button.hpp"
-#include "godot_cpp/classes/spin_box.hpp"
-#include "godot_cpp/variant/array.hpp"
-#include <godot_cpp/classes/control.hpp>
-
 #pragma once
+
+#include <godot_cpp/classes/control.hpp>
+#include <godot_cpp/classes/h_box_container.hpp>
+#include <godot_cpp/classes/input_event_key.hpp>
+#include <godot_cpp/classes/label.hpp>
+#include <godot_cpp/classes/menu_button.hpp>
+#include <godot_cpp/classes/spin_box.hpp>
+#include <godot_cpp/variant/array.hpp>
+
+#include "core/editor/editor_cursor.h"
+#include "tiled_node/tiled_node.h"
 
 using namespace godot;
 

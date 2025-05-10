@@ -1,14 +1,12 @@
 @tool
 extends VBoxContainer
 
+# signal emitted when save button is pressed
 signal save_pressed(rule: HexMapTileRule, is_update: bool)
+# signal emitted when cancel pressed to discard edits
 signal cancel_pressed
 
-@export var cell_types := [
-    { "value": 0, "name": "land", "color": Color.LAWN_GREEN },
-    { "value": 1, "name": "sea", "color": Color.DEEP_SKY_BLUE },
-    { "value": 2, "name": "river", "color": Color.LIGHT_BLUE },
-] : 
+@export var cell_types : Array :
     set(value):
         cell_types = value
         if not is_node_ready():
@@ -21,10 +19,10 @@ signal cancel_pressed
         if not is_node_ready():
             await ready
         _on_mesh_library_changed()
-        # %RulePainter3D.mesh_library = value
-        # _rebuild_mesh_item_list()
 
-# cell radius & height used for building cell meshes in the preview
+# cell radius & height used for building cell meshes in the preview.  We don't
+# need to react to changes here because the HexMapInt cell scale cannot be
+# changed while editing a HexMapAutoTiledNode.
 @export var cell_scale := Vector3(1, 1, 1)
 
 # rule being edited
@@ -77,7 +75,6 @@ func set_cell_state(offset: HexMapCellId, state: String, type) -> void:
     if type != null:
         color = cell_type_colors[type].color
 
-    # print("set_cell_state() ", state, ", type ", type, ", color ", color)
     match state:
         "empty":
             rule.set_cell_empty(offset)
@@ -111,37 +108,18 @@ func _ready() -> void:
     %CellTypePalette.selected.connect(_on_cell_type_palette_selected)
     %MeshPalette.selected.connect(_on_mesh_palette_selected)
 
-    var layer = 2
-    for child in %LayerSelector.get_children():
-        child.pressed.connect(_on_layer_select.bind(child, layer))
-        layer -= 1
-
+    _on_painter_layer_changed(2)
     _on_cell_types_changed()
-    pass # Replace with function body.
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-    pass
-
-func _rebuild_mesh_item_list() -> void:
-    %MeshItemList.clear()
-
-    for id in mesh_library.get_item_list():
-        var name = mesh_library.get_item_name(id)
-        if name.is_empty():
-            name = "id_%d" % id
-        var icon = mesh_library.get_item_preview(id)
-        var index = %MeshItemList.add_item(name, icon)
-        %MeshItemList.set_item_tooltip(index, name)
-        %MeshItemList.set_item_metadata(index, id)
-
-    %MeshItemList.sort_items_by_text()
 
 func _on_cell_types_changed() -> void:
     cell_type_colors.clear()
+    %CellTypePalette.clear()
+
+    # add some support for invalid values for cell type: null and -1
     cell_type_colors[null] = null
     cell_type_colors[-1] = null
-    %CellTypePalette.clear()
+
+    # populate the rest of the cell types
     for type in cell_types:
         cell_type_colors[type.value] = type.color
         %CellTypePalette.add_item({
@@ -149,7 +127,6 @@ func _on_cell_types_changed() -> void:
             "preview": type.color,
             "desc": type.name,
         })
-    %RulePainter3D.cell_types = cell_types
 
 func _on_mesh_library_changed() -> void:
     %MeshPalette.clear()

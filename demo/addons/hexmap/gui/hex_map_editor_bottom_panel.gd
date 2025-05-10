@@ -33,9 +33,6 @@ func _ready() -> void:
 
 	set_display_mode(DisplayMode.THUMBNAIL)
 
-	pass # Replace with function body.
-
-
 func set_display_mode(mode: DisplayMode) -> void:
 	var ed_scale := EditorInterface.get_editor_scale()
 	match mode:
@@ -69,6 +66,7 @@ func set_tool(tool: Tool) -> void:
 			%EraseButton.set_pressed(false)
 
 func rotate_tile(dir: int) -> void:
+	# XXX implement this
 	print("rotate tile: ", dir)
 
 func set_mesh_filter(filter: String) -> void:

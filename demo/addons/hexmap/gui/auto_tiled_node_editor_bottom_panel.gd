@@ -1,8 +1,6 @@
 @tool
 extends VBoxContainer
 
-# XXX this may the the route we need to go in, expose the node fully so we can
-# do everything with minimal fuckery with the c++ code
 @export var node: HexMapAutoTiled :
 	set(value) :
 		if value == node:
@@ -34,12 +32,6 @@ func _ready() -> void:
 	%RuleEditor.save_pressed.connect(_on_rule_editor_save)
 	%RuleEditor.cancel_pressed.connect(_on_rule_editor_cancel)
 	%HSplitContainer.split_offset *= EditorInterface.get_editor_scale()
-
-	pass # Replace with function body.
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass
 
 func edit_rule(rule: HexMapTileRule) -> void:
 	%RulesList.selected_id = rule.id
@@ -87,7 +79,7 @@ func _on_rules_changed():
 	%RulesList.order = node.get_rules_order()
 
 func _on_rules_list_delete(id: int):
-	print("delete rule ", id)
+	# close out the editor if we're deleting the rule being edited
 	if %RulesList.selected_id == id:
 		_on_rule_editor_cancel()
 	node.delete_rule(id)

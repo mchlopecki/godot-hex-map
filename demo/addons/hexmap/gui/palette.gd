@@ -219,6 +219,9 @@ func populate_full_palette() -> void:
         else:
             push_error("invalid type for item.preview: ", item)
 
+        # pass the mouse events through
+        preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
         var entry = PaletteEntry.new()
         entry.preview = preview
         entry.desc = item.desc
@@ -238,9 +241,3 @@ func _ready() -> void:
     %CompactViewButton.pressed.connect(func(): rebuild_palette())
     %Filter.text_changed.connect(func(t): filter = t)
     rebuild_palette()
-    pass # Replace with function body.
-
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-    pass

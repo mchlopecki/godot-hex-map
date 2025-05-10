@@ -1,4 +1,3 @@
-#include "tiled_node/tiled_node.h"
 #ifdef TOOLS_ENABLED
 
 #pragma once
@@ -7,8 +6,9 @@
 #include <godot_cpp/classes/editor_plugin.hpp>
 #include <godot_cpp/classes/mesh_library.hpp>
 
-#include "../int_node.h"
 #include "core/editor/editor_plugin.h"
+#include "int_node/int_node.h"
+#include "tiled_node/tiled_node.h"
 
 using namespace godot;
 

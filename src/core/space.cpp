@@ -1,16 +1,15 @@
-
-#include "space.h"
-#include "cell_id.h"
-#include "godot_cpp/classes/global_constants.hpp"
-#include "iter_cube.h"
-#include "math.h"
-#include "profiling.h"
-
 #include <godot_cpp/classes/geometry2d.hpp>
+#include <godot_cpp/classes/global_constants.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
 #include <godot_cpp/variant/packed_vector3_array.hpp>
+
+#include "cell_id.h"
+#include "iter_cube.h"
+#include "math.h"
+#include "profiling.h"
+#include "space.h"
 
 void HexMapSpace::set_transform(Transform3D value) { transform = value; }
 

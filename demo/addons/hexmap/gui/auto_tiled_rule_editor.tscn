@@ -1,7 +1,7 @@
 [gd_scene load_steps=10 format=3 uid="uid://p42lol2mxn4a"]
 
 [ext_resource type="Script" path="res://addons/hexmap/gui/auto_tiled_rule_editor.gd" id="1_hjusd"]
-[ext_resource type="Script" path="res://addons/hexmap/gui/grid_painter_3d.gd" id="2_sqqto"]
+[ext_resource type="Script" path="res://addons/hexmap/gui/auto_tiled_rule_painter_3d.gd" id="2_sqqto"]
 [ext_resource type="PackedScene" uid="uid://dut4042ogc1kq" path="res://addons/hexmap/gui/palette.tscn" id="3_ndemm"]
 [ext_resource type="Texture2D" uid="uid://b0t2we5vilohg" path="res://addons/hexmap/icons/layer_selected.svg" id="4_6au4l"]
 [ext_resource type="Texture2D" uid="uid://dd5c46r7o1ek" path="res://addons/hexmap/icons/layer_dot.svg" id="4_qsc82"]

@@ -1,16 +1,16 @@
-#include "core/space.h"
-#include "godot_cpp/classes/editor_undo_redo_manager.hpp"
-#include "godot_cpp/classes/standard_material3d.hpp"
-#include "godot_cpp/variant/callable_method_pointer.hpp"
-#include "tiled_node/tiled_node.h"
 #ifdef TOOLS_ENABLED
 
+#include <godot_cpp/classes/editor_undo_redo_manager.hpp>
 #include <godot_cpp/classes/packed_scene.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
+#include <godot_cpp/classes/standard_material3d.hpp>
 #include <godot_cpp/classes/undo_redo.hpp>
+#include <godot_cpp/variant/callable_method_pointer.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 
+#include "core/space.h"
 #include "editor_plugin.h"
+#include "tiled_node/tiled_node.h"
 
 bool HexMapIntNodeEditorPlugin::_handles(Object *p_object) const {
     return p_object->is_class("HexMapInt");
@@ -115,7 +115,7 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
         int_node->disconnect("cell_scale_changed",
                 callable_mp(
                         this, &HexMapIntNodeEditorPlugin::cell_scale_changed));
-        int_node->disconnect("editor_plugin_cell_changed",
+        int_node->disconnect("cells_changed",
                 callable_mp(this,
                         &HexMapIntNodeEditorPlugin::
                                 on_int_node_cells_changed));

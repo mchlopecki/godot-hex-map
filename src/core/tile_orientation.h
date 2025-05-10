@@ -1,8 +1,8 @@
 #pragma once
 
-#include "godot_cpp/variant/variant.hpp"
 #include <cstdint>
 #include <godot_cpp/variant/basis.hpp>
+#include <godot_cpp/variant/variant.hpp>
 
 using namespace godot;
 

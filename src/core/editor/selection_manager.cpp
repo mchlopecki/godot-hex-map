@@ -1,6 +1,6 @@
-#include <cassert>
 #ifdef TOOLS_ENABLED
 
+#include <cassert>
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/scene_tree.hpp>

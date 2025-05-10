@@ -1,4 +1,3 @@
-#include "godot_cpp/classes/input_event_key.hpp"
 #ifdef TOOLS_ENABLED
 
 #pragma once
@@ -10,6 +9,7 @@
 #include <godot_cpp/classes/h_box_container.hpp>
 #include <godot_cpp/classes/h_slider.hpp>
 #include <godot_cpp/classes/input_event.hpp>
+#include <godot_cpp/classes/input_event_key.hpp>
 #include <godot_cpp/classes/item_list.hpp>
 #include <godot_cpp/classes/label.hpp>
 #include <godot_cpp/classes/menu_button.hpp>

@@ -1,9 +1,12 @@
-#include "hex_map_node.h"
+#include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/core/error_macros.hpp>
+#include <godot_cpp/core/math.hpp>
+#include <godot_cpp/core/object.hpp>
+#include <godot_cpp/variant/array.hpp>
+#include <godot_cpp/variant/utility_functions.hpp>
+
 #include "cell_id.h"
-#include "godot_cpp/core/error_macros.hpp"
-#include "godot_cpp/core/object.hpp"
-#include "godot_cpp/variant/array.hpp"
-#include "godot_cpp/variant/utility_functions.hpp"
+#include "hex_map_node.h"
 
 void HexMapNode::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_space"), &HexMapNode::_get_space);

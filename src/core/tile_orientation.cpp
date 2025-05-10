@@ -1,5 +1,6 @@
+#include <godot_cpp/variant/string.hpp>
+
 #include "tile_orientation.h"
-#include "godot_cpp/variant/string.hpp"
 
 #define Math_PI_3 (Math_PI / 3.0)
 

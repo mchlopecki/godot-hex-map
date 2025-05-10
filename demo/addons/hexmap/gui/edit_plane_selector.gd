@@ -21,7 +21,6 @@ func _ready() -> void:
 	%AxisDropdown.item_selected.connect(func(v): emit_changed())
 	%DepthSpinBox.value_changed.connect(func(v): emit_changed())
 	%DepthLabelButton.pressed.connect(func(): %DepthSpinBox.value = 0)
-	pass # Replace with function body.
 
 func emit_changed() -> void:
 	changed.emit(%AxisDropdown.selected, %DepthSpinBox.value)

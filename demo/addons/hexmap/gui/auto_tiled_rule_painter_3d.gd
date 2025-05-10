@@ -2,14 +2,13 @@
 @static_unload
 extends SubViewportContainer
 
+# emitted when a cell in the painter is clicked; drag indicates that an active
+# drag action is causing the click action
 signal cell_clicked(cell_id: HexMapCellId, mouse_button: int, drag: bool)
+# emitted when the user uses shortcuts to request a change in the layer being
+# edited
 signal layer_changed(layer: int)
 
-@export var cell_types := [] :
-    set(value):
-        cell_type_color.clear()
-        for type in cell_types:
-            cell_type_color[type.value] = type.color
 @export var active_layer := 0 :
     set(value):
         if value == active_layer:
@@ -25,45 +24,58 @@ signal layer_changed(layer: int)
         tile_mesh_transform = value
         %TileMeshInstance3D.transform = value
 
-# map cell_type to color
-var cell_type_color := {}
 var cell_instances := {}
 
 class HexCell:
     extends Node3D
     const Math_SQRT3_2 = 0.8660254037844386
-    const BOTTOM_OFFSET = Vector3(0, -0.5, 0)
-    
+   
+    # state for a given cell
+    # This is an array of `state: String`, followed by `type: Integer`.  The
+    # type is only required when `state` is set to "type" or "not_type".
+    #
+    # @see _on_state_changed for supported state values
     @export var state : Array :
         set(value):
             state = value
             _on_state_changed()
+
+    # toggle whether the cell grid is displayed for this cell
     @export var show_grid := true :
         set(value):
             show_grid = value
             if is_node_ready():
                 floor_mesh_instance.visible = value
+
+    # toggle when the cell is being hovered; changes the cell grid color
     @export var hovered := false :
         set(value):
             hovered = value
-            if is_node_ready():
-                if hovered:
-                    floor_mesh_instance \
-                        .material_override = sharedx.grid_mat_hover
-                else:
-                    floor_mesh_instance.material_override = null
+            if not is_node_ready():
+                return
+            if hovered:
+                floor_mesh_instance \
+                    .material_override = grid_mat_hover
+            else:
+                floor_mesh_instance.material_override = null
 
+    # track the child node we add that shows the floor grid for this cell
     var floor_mesh_instance: MeshInstance3D
+
+    # track the child node that displays the state of this cell
     var state_node: Node3D
 
+    # meshes we use for displaying the various states of a cell
     static var tile_mesh: Mesh = preload("../models/autotiled_rule_tile.obj")
     static var tile_not_mesh: Mesh = preload("../models/autotiled_rule_tile_not.obj")
     static var tile_any_mesh: Mesh = preload("../models/autotiled_rule_tile_any.obj")
-
-    # storing all statics in a Dictionary because hot-reload doesn't work
-    # properly for static variables.
+    # hot-reload doesn't work properly for static variables.
     # see https://github.com/godotengine/godot/issues/105667
-    static var sharedx = {}
+    #
+    # rename any one of these to trigger a real reload
+    static var grid_mesh: Mesh
+    static var grid_mat: StandardMaterial3D
+    static var grid_mat_hover: StandardMaterial3D
 
     static func _static_init() -> void:
         # Grid material 
@@ -72,7 +84,7 @@ class HexCell:
         mat.disable_fog = true
         mat.disable_receive_shadows = true
         mat.albedo_color = Color.GOLD
-        sharedx["grid_mat"] = mat
+        grid_mat = mat
 
         # hovered
         mat = StandardMaterial3D.new()
@@ -81,12 +93,12 @@ class HexCell:
         mat.disable_receive_shadows = true
         mat.albedo_color = Color.WHITE
         mat.no_depth_test = true
-        sharedx["grid_mat_hover"] = mat
+        grid_mat_hover = mat
 
         # grid mesh
         var st = SurfaceTool.new()
         st.begin(Mesh.PRIMITIVE_LINE_STRIP)
-        st.set_material(sharedx.grid_mat)
+        st.set_material(grid_mat)
         st.add_vertex(Vector3(0.0, 0, -1.0))
         st.add_vertex(Vector3(-Math_SQRT3_2, 0, -0.5))
         st.add_vertex(Vector3(-Math_SQRT3_2, 0, 0.5))
@@ -94,12 +106,11 @@ class HexCell:
         st.add_vertex(Vector3(Math_SQRT3_2, 0, 0.5))
         st.add_vertex(Vector3(Math_SQRT3_2, 0, -0.5))
         st.add_vertex(Vector3(0.0, 0, -1.0))
-        sharedx["grid_mesh"] = st.commit()
+        grid_mesh = st.commit()
 
-    # just keep track of our children
     func _ready() -> void:
         floor_mesh_instance = MeshInstance3D.new()
-        floor_mesh_instance.mesh = sharedx.grid_mesh
+        floor_mesh_instance.mesh = grid_mesh
         floor_mesh_instance.visible = show_grid
         add_child(floor_mesh_instance)
 
@@ -144,10 +155,8 @@ class HexCell:
             _:
                 push_error("unsupported cell state ", state)
 
-
-
 # camera controls
-var y_rot := 0.0
+var y_rot := deg_to_rad(15)
 var x_rot := deg_to_rad(45)
 var distance := 15.0
 var edit_plane := Plane(Vector3.UP)
@@ -159,6 +168,7 @@ var hex_space := HexMapSpace.new()
 func set_hex_space(value: HexMapSpace) -> void:
     hex_space = value
 
+# @param state [Array] see HexCell.state for content description
 func set_cell(cell_id: HexMapCellId, state: Array) -> void:
     var cell = cell_instances.get_or_add(cell_id.as_int(), HexCell.new())
     cell.state = state
@@ -170,7 +180,6 @@ func set_cell(cell_id: HexMapCellId, state: Array) -> void:
         %CellMeshes.add_child(cell)
 
 func reset() -> void:
-    cell_types.clear()
     tile_mesh = null
     tile_mesh_transform = Transform3D()
     active_layer = 0
@@ -180,10 +189,6 @@ func _ready() -> void:
     mouse_entered.connect(func(): grab_focus())
     _orbit_camera(Vector2())
     _on_active_layer_changed()
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-    pass
 
 func _gui_input(event: InputEvent) -> void:
     var cell_changed = false
@@ -295,6 +300,4 @@ func _on_active_layer_changed() -> void:
         var cell_id = HexMapCellId.from_int(key)
         cell_instances[key].show_grid = cell_id.y == active_layer
     edit_plane.d = active_layer
-    print("edit_plane ", edit_plane)
     layer_changed.emit(active_layer)
-

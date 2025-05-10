@@ -1,5 +1,40 @@
 extends HexMapTest
 
+# Parse a human-readable hex grid map, and return an Array of Dictionaries of
+# the form `{ "cell": HexMapCellId, "text": String }`.  This function is used
+# throughout the test cases to create a hex map to test & verify.
+#
+# See tests below for example usage for this function.
+#
+# Note: prefixing the cell layout with `y=<n>` will place all cells in that
+# layer at the given y value; see tests below.
+#
+# Note: the token `_O` in any cell, denotes that cell is at q = 0, r = 0 for
+# that layer of the cell map.
+func parse_cell_map(buf: String) -> Array:
+    # split the buffer into lines, stripping common indent, comments, and blank
+    # lines
+    var lines:= []
+    for line in buf.dedent().split("\n"):
+        if line.begins_with("#") or line.is_empty():
+            continue
+        lines.append(line)
+
+    var out := []
+    var y := 0
+
+    while not lines.is_empty():
+        # if the next line is y=, parse it and pop the line
+        if lines[0][0] == "y":
+            var line = lines.pop_front()
+            y = int(line.get_slice("=", 1))
+
+        # parse the remaining lines as a layer
+        out.append_array(parse_cell_map_layer(lines, y))
+
+    return out
+
+# parses a single layer of a cell map; called by parse_cell_map()
 func parse_cell_map_layer(lines: Array, y: int) -> Array:
     # split the buffer into lines, stripping common indent, comments, and blank
     # lines
@@ -39,30 +74,8 @@ func parse_cell_map_layer(lines: Array, y: int) -> Array:
 
     return out
 
-func parse_cell_map(buf: String) -> Array:
-    # split the buffer into lines, stripping common indent, comments, and blank
-    # lines
-    var lines:= []
-    for line in buf.dedent().split("\n"):
-        if line.begins_with("#") or line.is_empty():
-            continue
-        lines.append(line)
-
-    var out := []
-    var y := 0
-
-    while not lines.is_empty():
-        # if the next line is y=, parse it and pop the line
-        if lines[0][0] == "y":
-            var line = lines.pop_front()
-            y = int(line.get_slice("=", 1))
-
-        # parse the remaining lines as a layer
-        out.append_array(parse_cell_map_layer(lines, y))
-
-    return out
-
-
+# Before we start using parse_cell_map() in our tests, here are a set of tests
+# that verify that the function works properly.
 var cell_parser_params = ParameterFactory.named_parameters(
     ["desc", "map", "results"], [
     [
@@ -230,6 +243,7 @@ func test_cell_parser(params=use_parameters(cell_parser_params)):
         assert_cell_eq(found["cell"], expected["cell"])
     pass
 
+# This is the start of the tests for HexMapAutoTiled node.
 var rules_params = ParameterFactory.named_parameters(
     ["desc", "int_node", "rules", "expected"], [
     ["single cell replacement rules", "
@@ -709,7 +723,6 @@ func test_auto_tiled_rules(params=use_parameters(rules_params)):
     var int_node := HexMapInt.new()
     for cell in parse_cell_map(params.int_node):
         if !cell["text"].is_empty():
-            print("set_cell(", cell, ")")
             int_node.set_cell(cell["cell"], int(cell["text"]))
 
     # create the auto tiled node, add it as a child of the int node, then add
@@ -726,12 +739,9 @@ func test_auto_tiled_rules(params=use_parameters(rules_params)):
                 rule.set_cell_empty(cell["cell"], true)
             elif cell["text"].begins_with("!"):
                 var tile = int(cell["text"].substr(1, -1))
-                print("set_cell_type(", cell["cell"], ")")
                 rule.set_cell_type(cell["cell"], tile, true)
             elif cell["text"] != "":
-                print("set_cell_type(", cell["cell"], ", ", cell["text"], ")")
                 rule.set_cell_type(cell["cell"], int(cell["text"]))
-        print(rule)
         auto_node.add_rule(rule)
     print("expected:\n", params.expected.dedent());
 

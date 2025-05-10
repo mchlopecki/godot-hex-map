@@ -2,15 +2,15 @@
 
 #include <cassert>
 #include <climits>
+#include <godot_cpp/classes/mesh_library.hpp>
+#include <godot_cpp/classes/node3d.hpp>
 #include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/classes/wrapped.hpp>
 #include <godot_cpp/core/property_info.hpp>
 #include <godot_cpp/templates/hash_map.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
 
 #include "core/tile_orientation.h"
-#include "godot_cpp/classes/mesh_library.hpp"
-#include "godot_cpp/classes/node3d.hpp"
-#include "godot_cpp/variant/dictionary.hpp"
 #include "int_node/int_node.h"
 #include "tiled_node/tiled_node.h"
 
@@ -224,7 +224,7 @@ public:
         Cell pattern[PatternCells];
 
         /// bitmask of cells that are needed to match this rule with rotation
-        uint64_t cell_mask;
+        uint64_t cell_mask = 0;
 
         /// padding needed for existing cells to match this rule
         ///
@@ -241,7 +241,7 @@ public:
         struct {
             int8_t delta_y : 4;
             int8_t radius : 4;
-        } cell_pad;
+        } cell_pad = { 0, 0 };
     };
 
     /// GDScript wrapper for Rule class

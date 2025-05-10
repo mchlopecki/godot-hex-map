@@ -1,6 +1,5 @@
 @tool
 extends PanelContainer
-class_name HexMapAutoTiledNodeRuleListItem
 
 # emitted when the user clicks on the rule description to select the rule
 signal pressed
@@ -47,11 +46,6 @@ func _ready() -> void:
     %DeleteButton.pressed.connect(_on_delete_pressed)
     %DeleteConfirmButton.pressed.connect(_on_delete_confirmed)
     %EnabledToggle.toggled.connect(_on_enabled_toggle_toggled)
-
-func _notification(what: int) -> void:
-    if what == NOTIFICATION_DRAG_END:
-        # All of our siblings get this signal when 
-        remove_theme_stylebox_override("panel")
 
 func _gui_input(event: InputEvent) -> void:
     # only select when we left-click within the %RulePanel; we don't want to

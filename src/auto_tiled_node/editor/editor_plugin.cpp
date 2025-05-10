@@ -1,4 +1,3 @@
-#include "core/editor/editor_plugin.h"
 #ifdef TOOLS_ENABLED
 #include <godot_cpp/classes/packed_scene.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>

@@ -44,19 +44,16 @@ func _queue_rebuild_list() -> void:
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
     %NewRuleButton.pressed.connect(func(): new_rule_pressed.emit())
-    pass # Replace with function body.
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-    pass
 
 func _notification(what: int) -> void:
     if what == NOTIFICATION_DRAG_END:
+        # if the drag wasn't successful (rule dropped someplace outside of the
+        # list), we need to rebuild the rules list because we shuffled it
+        # while dragging.
         if not is_drag_successful():
             _queue_rebuild_list()
 
 func _redraw_rules() -> void:
-    print("redraw rules ", _redraw_queued)
     _redraw_queued = false
     for child in %Rules.get_children():
         %Rules.remove_child(child)
@@ -85,7 +82,7 @@ func _can_drop_in_child(at_position: Vector2, data: Variant, child: Control) -> 
     return _can_drop_data(child.get_rect().position + at_position, data)
 
 func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
-    if not data is HexMapAutoTiledNodeRuleListItem:
+    if data.get_parent() != %Rules:
         return false
 
     for child in %Rules.get_children():
@@ -103,6 +100,9 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
     for child in %Rules.get_children():
         order.push_back(child.get_rule().id)
 
+    # in _get_drag_data(), we override the panel stylebox to highlight this item
+    # so we clear it here when dropped
+    data.remove_theme_stylebox_override("panel")
     order_changed.emit(order)
 
 func _on_rule_selected(rule: HexMapTileRule) -> void:
@@ -113,4 +113,3 @@ func _on_rule_enabled_toggled(value: bool, rule: HexMapTileRule) -> void:
         return
     rule.enabled = value
     rule_changed.emit(rule)
-    

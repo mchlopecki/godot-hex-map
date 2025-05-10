@@ -1,17 +1,16 @@
+#include <godot_cpp/classes/global_constants.hpp>
+#include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/core/error_macros.hpp>
+#include <godot_cpp/core/object.hpp>
+#include <godot_cpp/core/property_info.hpp>
+#include <godot_cpp/templates/hash_set.hpp>
+#include <godot_cpp/variant/callable_method_pointer.hpp>
+#include <godot_cpp/variant/utility_functions.hpp>
+#include <godot_cpp/variant/variant.hpp>
+
 #include "auto_tiled_node.h"
 #include "core/iter_radial.h"
 #include "core/tile_orientation.h"
-#include "godot_cpp/classes/global_constants.hpp"
-#include "godot_cpp/core/class_db.hpp"
-#include "godot_cpp/core/error_macros.hpp"
-#include "godot_cpp/core/object.hpp"
-#include "godot_cpp/core/property_info.hpp"
-#include "godot_cpp/templates/hash_set.hpp"
-#include "godot_cpp/variant/callable_method_pointer.hpp"
-#include "godot_cpp/variant/utility_functions.hpp"
-#include "godot_cpp/variant/variant.hpp"
-
-using namespace godot;
 
 void HexMapAutoTiledNode::_get_property_list(
         List<PropertyInfo> *p_list) const {

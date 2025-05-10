@@ -1,9 +1,9 @@
-#include "mesh_tool.h"
-#include "../profiling.h"
-#include "math.h"
-
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/standard_material3d.hpp>
+
+#include "../profiling.h"
+#include "math.h"
+#include "mesh_tool.h"
 
 void HexMapMeshTool::set_space(const HexMapSpace &value) { space = value; }
 
