@@ -2,9 +2,12 @@
 extends VBoxContainer
 
 # signal emitted when save button is pressed
-signal save_pressed(rule: HexMapTileRule, is_update: bool)
+signal save_pressed(rule: HexMapTileRule)
 # signal emitted when cancel pressed to discard edits
 signal cancel_pressed
+
+# how to style the editor
+enum Mode { Add, Update }
 
 @export var cell_types : Array :
     set(value):
@@ -20,13 +23,24 @@ signal cancel_pressed
             await ready
         _on_mesh_library_changed()
 
+@export_enum("Add", "Update") var mode : String :
+    set(value):
+        mode = value
+        if mode == "Add":
+            %SaveButton.text = "Create"
+            pass
+        else:
+            %SaveButton.text = "Save"
+            pass
+            
+
 # cell radius & height used for building cell meshes in the preview.  We don't
 # need to react to changes here because the HexMapInt cell scale cannot be
 # changed while editing a HexMapAutoTiledNode.
 @export var cell_scale := Vector3(1, 1, 1)
 
 # rule being edited
-var rule : HexMapTileRule
+var rule := HexMapTileRule.new()
 
 # set to true when we're updating an existing rule; XXX maybe pull this from
 # rule.id == USHRT_MAX?
@@ -45,15 +59,12 @@ func set_hex_space(value: HexMapSpace) -> void:
     %RulePainter3D.set_hex_space(value)
 
 func clear() -> void:
-    %CellTypePalette.clear()
-    %MeshPalette.clear()
-    %RulePainter3D.reset()
-    rule = HexMapTileRule.new()
+    set_rule(HexMapTileRule.new())
 
 func show_message(text: String) -> void:
     %Notification.text = "[center]" + text + "[/center]"
 
-func set_rule(value: HexMapTileRule, update: bool) -> void:
+func set_rule(value: HexMapTileRule) -> void:
     rule = value 
 
     # reset the painter
@@ -66,8 +77,6 @@ func set_rule(value: HexMapTileRule, update: bool) -> void:
         %RulePainter3D.set_cell(cell["offset"],
             [cell["state"], cell_type_colors[cell["type"]]])
     _on_mesh_palette_selected(value.tile)
-
-    is_update = update
 
 func set_cell_state(offset: HexMapCellId, state: String, type) -> void:
     # if a type was specified, look up the color for that type
@@ -100,7 +109,7 @@ func focus_painter() -> void:
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
     %CancelButton.pressed.connect(func(): cancel_pressed.emit())
-    %SaveButton.pressed.connect(func(): save_pressed.emit(rule, is_update))
+    %SaveButton.pressed.connect(_on_submit_pressed)
     %RulePainter3D.focus_entered.connect(func(): %ActiveBorder.visible = true)
     %RulePainter3D.focus_exited.connect(func(): %ActiveBorder.visible = false)
     %RulePainter3D.cell_clicked.connect(_on_painter_cell_clicked)
@@ -142,8 +151,6 @@ func _on_cell_type_palette_selected(id: int) -> void:
     pass
 
 func _on_mesh_palette_selected(id: int) -> void:
-    if rule == null:
-        return
     rule.tile = id
     if id != -1:
         %RulePainter3D.tile_mesh = mesh_library.get_item_mesh(id)
@@ -195,3 +202,9 @@ func _on_painter_layer_changed(layer: int):
         child.button_pressed = layer == count
         count -= 1
     
+func _on_submit_pressed():
+    var out := rule
+    # because HexMapTileRule is a reference, replace the reference here to
+    # prevent stomping on the value we emit.
+    set_rule(HexMapTileRule.new())
+    save_pressed.emit(out)

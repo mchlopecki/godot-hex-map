@@ -124,7 +124,7 @@ void HexMapTiledNodeEditorPlugin::selection_clear() {
         undo_redo->add_do_method(hex_map,
                 "set_cell_item_v",
                 cell,
-                HexMapTiledNode::INVALID_CELL_VALUE);
+                HexMapTiledNode::CELL_VALUE_NONE);
         undo_redo->add_undo_method(hex_map,
                 "set_cell_item_v",
                 cell,
@@ -179,7 +179,7 @@ void HexMapTiledNodeEditorPlugin::copy_selection_to_cursor() {
 
     for (const HexMapCellId &cell : cells) {
         int tile = hex_map->get_cell_item(cell);
-        if (tile == HexMapTiledNode::INVALID_CELL_VALUE) {
+        if (tile == HexMapTiledNode::CELL_VALUE_NONE) {
             continue;
         }
         editor_cursor->set_tile(
@@ -271,7 +271,7 @@ void HexMapTiledNodeEditorPlugin::selection_move() {
 
     for (const HexMapCellId &cell_id : selection_manager->get_cells()) {
         int tile = hex_map->get_cell_item(cell_id);
-        if (tile == HexMapTiledNode::INVALID_CELL_VALUE) {
+        if (tile == HexMapTiledNode::CELL_VALUE_NONE) {
             continue;
         }
         cells_changed.push_back(CellChange{
@@ -280,7 +280,7 @@ void HexMapTiledNodeEditorPlugin::selection_move() {
                 .orig_orientation =
                         hex_map->get_cell_item_orientation(cell_id),
         });
-        hex_map->set_cell_item(cell_id, HexMapTiledNode::INVALID_CELL_VALUE);
+        hex_map->set_cell_item(cell_id, HexMapTiledNode::CELL_VALUE_NONE);
     }
     _deselect_cells();
 
@@ -322,7 +322,7 @@ void HexMapTiledNodeEditorPlugin::selection_move_apply() {
         undo_redo->add_do_method(hex_map,
                 "set_cell_item_v",
                 change.cell_id,
-                HexMapTiledNode::INVALID_CELL_VALUE);
+                HexMapTiledNode::CELL_VALUE_NONE);
     }
 
     // set the new cells, and start the undo restoring the new cells
@@ -513,8 +513,7 @@ int32_t HexMapTiledNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                             hex_map->get_cell_item_orientation(cell_id),
                     .new_tile = -1,
             });
-            hex_map->set_cell_item(
-                    cell_id, HexMapTiledNode::INVALID_CELL_VALUE);
+            hex_map->set_cell_item(cell_id, HexMapTiledNode::CELL_VALUE_NONE);
         }
         if (mouse_right_released) {
             commit_cell_changes("HexMap: erase cells");

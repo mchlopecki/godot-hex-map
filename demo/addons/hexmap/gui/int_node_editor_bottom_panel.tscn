@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://bigls27b0vip1"]
+[gd_scene load_steps=19 format=3 uid="uid://bigls27b0vip1"]
 
 [ext_resource type="Texture2D" uid="uid://dew2xbw2uvpy2" path="res://addons/hexmap/icons/Paint.svg" id="1_62m1a"]
 [ext_resource type="Theme" uid="uid://hmpeb1yvo8yj" path="res://addons/hexmap/hex_map_theme.tres" id="1_e3wnx"]
@@ -17,6 +17,8 @@
 [ext_resource type="Texture2D" uid="uid://w3fx13adcvh2" path="res://addons/hexmap/icons/Save.svg" id="15_45eli"]
 [ext_resource type="Texture2D" uid="uid://duo6jhp26ftsw" path="res://addons/hexmap/icons/Close.svg" id="16_ibucf"]
 [ext_resource type="Texture2D" uid="uid://khe663y3ndwa" path="res://addons/hexmap/icons/Remove.svg" id="17_3fmkh"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_v6jgt"]
 
 [node name="IntNodeEditorBottomPanel" type="VBoxContainer"]
 offset_right = 1152.0
@@ -271,8 +273,10 @@ icon = ExtResource("17_3fmkh")
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 8
+theme_override_styles/normal = SubResource("StyleBoxEmpty_v6jgt")
 text = "Cancel"
 icon = ExtResource("16_ibucf")
+icon_alignment = 2
 
 [node name="SubmitButton" type="Button" parent="EditorPopup/EditorView/VBoxContainer/HBoxContainer"]
 unique_name_in_owner = true
@@ -280,3 +284,4 @@ layout_mode = 2
 size_flags_horizontal = 8
 text = "Save"
 icon = ExtResource("15_45eli")
+icon_alignment = 2

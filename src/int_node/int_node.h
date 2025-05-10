@@ -29,9 +29,12 @@ public:
 
     /// Argument to set_cell_type to have the cell type id assigned
     /// automatically
-    static const int TypeIdNext = -1;
+    static const int TYPE_ID_NOT_SET = -1;
 
     /// insert or update a cell type
+    /// @param [id] existing type id to update, or TYPE_ID_NOT_SET to add
+    /// @param [name] human-readable name for the cell type
+    /// @param [color] color to represent the type in the editor
     unsigned set_cell_type(unsigned id, const String, const Color);
 
     /// remove a tile type

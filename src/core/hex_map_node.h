@@ -34,12 +34,33 @@ protected:
     void _notification(int p_what);
 
 public:
-    enum { INVALID_CELL_VALUE = -1 };
+    /// value used to denote that a cell has no value, so does not exist in the
+    /// map.
+    constexpr static int CELL_VALUE_NONE = -1;
 
     /// common contents for any cell in a hex node
     struct CellInfo {
-        int value = INVALID_CELL_VALUE;
+        int value = CELL_VALUE_NONE;
         HexMapTileOrientation orientation;
+    };
+
+    /// This enum describes how cell data is organized in the Array returned
+    /// by get_cells(), and expected by set_cells().  This is also the format
+    /// used in the cells_changed signal.
+    enum {
+        /// cell ID as a Vector3i; we use this type to optimize packing as a
+        /// Variant
+        CELL_ARRAY_INDEX_VEC = 0,
+
+        /// cell value
+        CELL_ARRAY_INDEX_VALUE,
+
+        /// cell orientation if present
+        CELL_ARRAY_INDEX_ORIENTATION,
+
+        /// Number of elements in the Array represent a single cell
+        // must always be the last element in this enum
+        CELL_ARRAY_WIDTH,
     };
 
     // various cell size getters/setters
@@ -111,10 +132,6 @@ public:
     /// @param value cell value
     /// @return Array array of Vector3i encoded cell IDs
     virtual Array find_cell_vecs_by_value(int value) const = 0;
-
-    /// number of elements that are used to represent a cell in the Array
-    /// returned by `_get_cells()`
-    static const int CellArrayWidth = 3;
 
     /// set the visibility of a cell
     ///

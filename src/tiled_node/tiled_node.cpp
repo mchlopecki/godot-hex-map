@@ -420,7 +420,7 @@ HexMapNode::CellInfo HexMapTiledNode::get_cell(
         const HexMapCellId &cell_id) const {
     const Cell *current_cell = cell_map.getptr(cell_id);
     if (current_cell == nullptr) {
-        return CellInfo{ .value = INVALID_CELL_VALUE };
+        return CellInfo{ .value = CELL_VALUE_NONE };
     }
     return CellInfo{ .value = static_cast<int>(current_cell->item),
         .orientation = HexMapTileOrientation(current_cell->rot) };
@@ -428,13 +428,13 @@ HexMapNode::CellInfo HexMapTiledNode::get_cell(
 
 int HexMapTiledNode::get_cell_item(const HexMapCellId &cell_id) const {
     ERR_FAIL_COND_V_MSG(!cell_id.in_bounds(),
-            INVALID_CELL_VALUE,
+            CELL_VALUE_NONE,
             "cell id not in bounds: " + cell_id);
 
     CellKey key(cell_id);
 
     if (!cell_map.has(key)) {
-        return INVALID_CELL_VALUE;
+        return CELL_VALUE_NONE;
     }
     return cell_map[key].item;
 }
@@ -968,7 +968,7 @@ void HexMapTiledNode::_bind_methods() {
             "set_navigation_bake_only_navmesh_tiles",
             "get_navigation_bake_only_navmesh_tiles");
 
-    BIND_CONSTANT(INVALID_CELL_VALUE);
+    BIND_CONSTANT(CELL_VALUE_NONE);
 
     ADD_SIGNAL(MethodInfo(
             "cell_changed", PropertyInfo(Variant::VECTOR3I, "cell")));

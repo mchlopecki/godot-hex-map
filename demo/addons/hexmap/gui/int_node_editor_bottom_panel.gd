@@ -95,7 +95,8 @@ func _ready() -> void:
     %CellTypeNameLineEdit.text_submitted \
         .connect(func(v): _on_submit_button_pressed())
 
-    _on_node_cell_types_changed()
+    if node != null:
+        _on_node_cell_types_changed()
 
 func _on_node_cell_types_changed() -> void:
     for child in %ColumnWrapContainer.get_children():
@@ -209,12 +210,14 @@ func _on_submit_button_pressed() -> void:
         EditMode.Add:
             # We need to create the cell type outside of undo/redo to get an id
             # to remove during undo.
-            id = node.set_cell_type(HexMapInt.TypeIdNext, name, color)
+            id = node.set_cell_type(
+                    HexMapInt.TYPE_ID_NOT_SET, name, color)
 
             # create an undo/redo for the new value
             undo_redo.create_action(
-                str("HexMapInt: add cell type: ", name, " (", id, ")"))
-            undo_redo.add_do_method(node, "set_cell_type", id, name, color)
+                    str("HexMapInt: add cell type: ", name, " (", id, ")"))
+            undo_redo.add_do_method(
+                    node, "set_cell_type", id, name, color)
             undo_redo.add_undo_method(node, "remove_cell_type", id)
             undo_redo.commit_action()
         EditMode.Update:
@@ -226,8 +229,9 @@ func _on_submit_button_pressed() -> void:
 
             # add commit undo/redo action for setting the new values
             undo_redo.create_action(
-                str("HexMapInt: update cell type: ", name, " (", id, ")"))
-            undo_redo.add_do_method(node, "set_cell_type", id, name, color)
+                    str("HexMapInt: update cell type: ", name, " (", id, ")"))
+            undo_redo.add_do_method(
+                    node, "set_cell_type", id, name, color)
             undo_redo.add_undo_method(node, "set_cell_type", id,
                     orig.name, orig.color)
             undo_redo.commit_action()
@@ -259,11 +263,11 @@ func _on_delete_type_confirmed() -> void:
 
     # create the args for set_cells() to clear all cells with this value
     var clear_cells := []
-    clear_cells.resize(cell_vecs.size() * HexMapNode.CellArrayWidth)
+    clear_cells.resize(cell_vecs.size() * HexMapNode.CELL_ARRAY_WIDTH)
     for i in range(cell_vecs.size()):
-        var base = i * node.CellArrayWidth
-        clear_cells[base] = cell_vecs[i]
-        clear_cells[base + 1] = node.INVALID_CELL_VALUE
+        var base = i * node.CELL_ARRAY_WIDTH
+        clear_cells[base + node.CELL_ARRAY_INDEX_VEC] = cell_vecs[i]
+        clear_cells[base + node.CELL_ARRAY_INDEX_VALUE] = node.CELL_VALUE_NONE
 
     # build the undo/redo action and commit it
     var undo_redo := editor_plugin.get_undo_redo()

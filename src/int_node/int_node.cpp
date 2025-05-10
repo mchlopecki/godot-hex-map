@@ -105,7 +105,7 @@ void HexMapIntNode::remove_cell_type(unsigned id) {
 unsigned HexMapIntNode::set_cell_type(unsigned id,
         const String name,
         const Color color) {
-    if (id == TypeIdNext) {
+    if (id == TYPE_ID_NOT_SET) {
         id = type_id_max + 1;
     }
     if (id > type_id_max) {
@@ -145,7 +145,7 @@ void HexMapIntNode::_bind_methods() {
             &HexMapIntNode::remove_cell_type);
     ClassDB::bind_method(D_METHOD("set_cell_type", "id", "name", "color"),
             &HexMapIntNode::set_cell_type);
-    BIND_CONSTANT(TypeIdNext);
+    BIND_CONSTANT(TYPE_ID_NOT_SET);
 
     ADD_SIGNAL(MethodInfo("cell_types_changed"));
 }
@@ -153,7 +153,7 @@ void HexMapIntNode::_bind_methods() {
 void HexMapIntNode::set_cell(const HexMapCellId &cell_id,
         int value,
         HexMapTileOrientation _) {
-    if (value == HexMapNode::INVALID_CELL_VALUE) {
+    if (value == HexMapNode::CELL_VALUE_NONE) {
         cell_map.erase(cell_id);
     } else if (value >= 0 && value < (1 << 16)) {
         cell_map.insert(cell_id, value);
@@ -166,7 +166,7 @@ HexMapNode::CellInfo HexMapIntNode::get_cell(
         const HexMapCellId &cell_id) const {
     const uint16_t *current_cell = cell_map.getptr(cell_id);
     if (current_cell == nullptr) {
-        return CellInfo{ .value = INVALID_CELL_VALUE };
+        return CellInfo{ .value = CELL_VALUE_NONE };
     }
     return CellInfo{ .value = *current_cell };
 }

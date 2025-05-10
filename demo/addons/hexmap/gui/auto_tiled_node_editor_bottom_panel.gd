@@ -23,7 +23,8 @@ var int_node: HexMapInt
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	%RulesList.new_rule_pressed.connect(_on_new_rule_pressed)
+	%NewRuleButton.pressed.connect(_on_new_rule_pressed)
+
 	%RulesList.rule_selected.connect(_on_rule_selected)
 	%RulesList.order_changed.connect(_on_rules_order_changed)
 	%RulesList.delete_rule.connect(_on_rules_list_delete)
@@ -37,11 +38,16 @@ func edit_rule(rule: HexMapTileRule) -> void:
 	%RulesList.selected_id = rule.id
 	%Directions.visible = false
 	%RuleEditor.clear()
+
 	%RuleEditor.set_hex_space(int_node.get_space())
 	%RuleEditor.cell_scale = int_node.get_space().cell_scale
 	%RuleEditor.cell_types = int_node.cell_types
 	%RuleEditor.mesh_library = node.mesh_library
-	%RuleEditor.set_rule(rule, rule.id != HexMapTileRule.RuleIdNotSet)
+	if rule.id == HexMapTileRule.ID_NOT_SET:
+		%RuleEditor.mode = "Add"
+	else:
+		%RuleEditor.mode = "Update"
+	%RuleEditor.set_rule(rule)
 	%RuleEditor.visible = true
 	%RuleEditor.focus_painter()
 
@@ -54,13 +60,18 @@ func _on_rule_selected(rule: HexMapTileRule) -> void:
 func _on_rules_order_changed(value: Array) -> void:
 	node.set_rules_order(value)
 
-func _on_rule_editor_save(rule: HexMapTileRule, is_update: bool):
-	if is_update:
+func _on_rule_editor_save(rule: HexMapTileRule):
+	if %RuleEditor.mode == "Update":
 		node.update_rule(rule)
+		edit_rule(rule)
 		%RuleEditor.show_message("[b]Saved rule " + str(rule.id) + "[/b]")
 	else:
 		var id = node.add_rule(rule)
 		%RulesList.selected_id = id
+
+		# update the rule id, and reopen the editor so it switches to edit mode
+		rule.id = id
+		edit_rule(rule)
 		%RuleEditor.show_message("[b]Added rule " + str(id) + "[/b]")
 
 func _on_rule_editor_cancel():

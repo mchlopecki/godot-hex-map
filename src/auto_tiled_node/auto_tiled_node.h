@@ -24,9 +24,6 @@ class HexMapAutoTiledNode : public Node3D {
 
     friend HexMapAutoTiledNodeEditorPlugin;
 
-    /// rule id used to denote that the rule does not have an id
-    static const uint16_t RuleIdNotSet = USHRT_MAX;
-
 public:
     class HexMapTileRule;
 
@@ -36,7 +33,10 @@ public:
         friend HexMapAutoTiledNode;
 
         /// number of cells contained in the rule pattern
-        static const unsigned PatternCells = 35;
+        static const unsigned PATTERN_CELLS = 35;
+
+        /// rule id used to denote that the rule does not have an id
+        static const uint16_t ID_NOT_SET = USHRT_MAX;
 
     public:
         /// rule cell states
@@ -90,7 +90,7 @@ public:
         /// @param cell_data
         /// @param orientation
         /// @return -1 if matches, >= 0 for the index of mismatch
-        inline int match(int32_t cell_type[PatternCells],
+        inline int match(int32_t cell_type[PATTERN_CELLS],
                 HexMapTileOrientation orientation);
 
     private:
@@ -99,7 +99,7 @@ public:
         /// offset of each cell in the rule pattern from the origin cell
         // NOTE: the order of these is important; we depend on it in
         // get_radii(), and in match().
-        static constexpr HexMapCellId CellOffsets[PatternCells] = {
+        static constexpr HexMapCellId CellOffsets[PATTERN_CELLS] = {
             // radius = 0, whole column, y = 0, 1, -1, 2, -2
             HexMapCellId( 0,  0,  0),   // 0: origin
             HexMapCellId( 0,  0,  1),
@@ -157,7 +157,7 @@ public:
         static_assert(HexMapTileOrientation::Upright180 == 3);
         static_assert(HexMapTileOrientation::Upright240 == 4);
         static_assert(HexMapTileOrientation::Upright300 == 5);
-        static constexpr uint8_t PatternIndex[6][PatternCells] = {
+        static constexpr uint8_t PatternIndex[6][PATTERN_CELLS] = {
             // Upright0
             { 0, 1, 2, 3, 4,            // q = r = 0
               5, 6, 7, 8, 9, 10,        // radius = 1, y = 0
@@ -211,7 +211,7 @@ public:
         void update_internal();
 
         /// internal rule id, used for ordering
-        uint16_t id = RuleIdNotSet;
+        uint16_t id = ID_NOT_SET;
 
         /// tile to set when rule matches
         int16_t tile = -1;
@@ -221,7 +221,7 @@ public:
 
         /// cell pattern to match against
         /// @see CellOffsets
-        Cell pattern[PatternCells];
+        Cell pattern[PATTERN_CELLS];
 
         /// bitmask of cells that are needed to match this rule with rotation
         uint64_t cell_mask = 0;

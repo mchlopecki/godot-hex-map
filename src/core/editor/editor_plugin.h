@@ -155,9 +155,9 @@ private:
     // So we have to track updated tiles ourselves.
     struct CellChange {
         HexMapCellId cell_id;
-        int orig_tile = HexMapNode::INVALID_CELL_VALUE;
+        int orig_tile = HexMapNode::CELL_VALUE_NONE;
         HexMapTileOrientation orig_orientation;
-        int new_tile = HexMapNode::INVALID_CELL_VALUE;
+        int new_tile = HexMapNode::CELL_VALUE_NONE;
         HexMapTileOrientation new_orientation;
     };
     Vector<CellChange> cells_changed;

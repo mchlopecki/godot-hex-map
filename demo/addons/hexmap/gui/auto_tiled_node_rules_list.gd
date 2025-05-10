@@ -20,8 +20,6 @@ extends PanelContainer
         for child in %Rules.get_children():
             child.selected = child.get_rule().id == selected_id
 
-# emitted when a new rule should be created & edited
-signal new_rule_pressed()
 # emitted when user clicks on an existing rule in the list
 signal rule_selected(rule: HexMapTileRule)
 # emitted when the user changes the order of the rules in the list
@@ -41,9 +39,6 @@ func _queue_rebuild_list() -> void:
         _redraw_queued = true
         call_deferred("_redraw_rules")
 
-# Called when the node enters the scene tree for the first time.
-func _ready() -> void:
-    %NewRuleButton.pressed.connect(func(): new_rule_pressed.emit())
 
 func _notification(what: int) -> void:
     if what == NOTIFICATION_DRAG_END:

@@ -134,11 +134,11 @@ Array EditorCursor::get_cells_v() const {
     const auto cells = mesh_tool.get_cells();
     auto cell_iter = cells.begin();
 
-    unsigned len = cells.size() * HexMapNode::CellArrayWidth;
+    unsigned len = cells.size() * HexMapNode::CELL_ARRAY_WIDTH;
     Array out;
     out.resize(len);
 
-    for (int i = 0; i < len; i += HexMapNode::CellArrayWidth) {
+    for (int i = 0; i < len; i += HexMapNode::CELL_ARRAY_WIDTH) {
         Vector3 center = space.get_cell_center_global(cell_iter->key);
         Vector3i cell_id = parent_space.get_cell_id_global(center);
         out[i] = (Vector3i)cell_id;

@@ -82,8 +82,11 @@ void HexMapNode::_bind_methods() {
             "cells_changed", PropertyInfo(Variant::ARRAY, "cells")));
     // XXX add signal cell_changed; connect in auto-tiled node, apply rules
 
-    BIND_CONSTANT(CellArrayWidth);
-    BIND_CONSTANT(INVALID_CELL_VALUE);
+    BIND_CONSTANT(CELL_ARRAY_WIDTH);
+    BIND_CONSTANT(CELL_ARRAY_INDEX_VEC);
+    BIND_CONSTANT(CELL_ARRAY_INDEX_VALUE);
+    BIND_CONSTANT(CELL_ARRAY_INDEX_ORIENTATION);
+    BIND_CONSTANT(CELL_VALUE_NONE);
 }
 
 void HexMapNode::_notification(int p_what) {
@@ -175,19 +178,23 @@ void HexMapNode::set_cell(const Ref<hex_bind::HexMapCellId> cell_id,
     // Yea, additional problems encountered during drag paint/erase; those
     // maybe should also trigger events.  Some event is necessary to have
     // autotiled show results with every cell changed in paint/erase.
+    static_assert(HexMapNode::CELL_ARRAY_INDEX_VEC == 0);
+    static_assert(HexMapNode::CELL_ARRAY_INDEX_VALUE == 1);
+    static_assert(HexMapNode::CELL_ARRAY_INDEX_ORIENTATION == 2);
     emit_signal("cells_changed",
             Array::make(cell_id->inner.to_vec(), p_item, p_orientation));
 }
 
 void HexMapNode::set_cells(const Array cells) {
     int size = cells.size();
-    ERR_FAIL_COND_MSG(size % CellArrayWidth != 0,
+    ERR_FAIL_COND_MSG(size % CELL_ARRAY_WIDTH != 0,
             "set_cells(): Array size must be a multiple of " +
-                    itos(CellArrayWidth));
-    for (int i = 0; i < size; i += 3) {
-        HexMapCellId cell_id(cells[i]);
-        int value = cells[i + 1];
-        HexMapTileOrientation orientation = cells[i + 2];
+                    itos(CELL_ARRAY_WIDTH));
+    for (int i = 0; i < size; i += CELL_ARRAY_WIDTH) {
+        HexMapCellId cell_id(cells[i + CELL_ARRAY_INDEX_VEC]);
+        int value = cells[i + CELL_ARRAY_INDEX_VALUE];
+        HexMapTileOrientation orientation =
+                cells[i + CELL_ARRAY_INDEX_ORIENTATION];
         set_cell(cell_id, value, orientation);
     }
     emit_signal("cells_changed", cells);
@@ -196,14 +203,14 @@ void HexMapNode::set_cells(const Array cells) {
 Array HexMapNode::get_cells(const Array cells) {
     int size = cells.size();
     Array out;
-    out.resize(size * 3);
+    out.resize(size * CELL_ARRAY_WIDTH);
     for (int i = 0; i < size; i++) {
         HexMapCellId cell_id(cells[i]);
         auto [value, orientation] = get_cell(cell_id);
-        int base = i * 3;
-        out[base] = (Vector3i)cell_id;
-        out[base + 1] = value;
-        out[base + 2] = orientation;
+        int base = i * CELL_ARRAY_WIDTH;
+        out[base + CELL_ARRAY_INDEX_VEC] = (Vector3i)cell_id;
+        out[base + CELL_ARRAY_INDEX_VALUE] = value;
+        out[base + CELL_ARRAY_INDEX_ORIENTATION] = orientation;
     }
     return out;
 }

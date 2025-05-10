@@ -134,7 +134,7 @@ void HexMapNodeEditorPlugin::selection_clear() {
     for (int i = 0; i < cell_count; i++) {
         int base = i * 3;
         do_list[base] = cells[i];
-        do_list[base + 1] = HexMapNode::INVALID_CELL_VALUE;
+        do_list[base + 1] = HexMapNode::CELL_VALUE_NONE;
         do_list[base + 2] = 0;
     }
 
@@ -195,7 +195,7 @@ void HexMapNodeEditorPlugin::copy_selection_to_cursor() {
 
     for (const HexMapCellId &cell_id : cells) {
         auto [value, orientation] = hex_map->get_cell(cell_id);
-        if (value == HexMapNode::INVALID_CELL_VALUE) {
+        if (value == HexMapNode::CELL_VALUE_NONE) {
             continue;
         }
         editor_cursor->set_tile(cell_id - center, value, orientation);
@@ -265,12 +265,12 @@ void HexMapNodeEditorPlugin::selection_move() {
     // is emitted
     Array cells;
     size_t count = selection_manager->size();
-    cells.resize(count * HexMapNode::CellArrayWidth);
+    cells.resize(count * HexMapNode::CELL_ARRAY_WIDTH);
     size_t index = 0;
     for (const HexMapCellId &cell_id : selection_manager->get_cells()) {
-        size_t base = index * HexMapNode::CellArrayWidth;
+        size_t base = index * HexMapNode::CELL_ARRAY_WIDTH;
         cells[base] = cell_id;
-        cells[base + 1] = HexMapNode::INVALID_CELL_VALUE;
+        cells[base + 1] = HexMapNode::CELL_VALUE_NONE;
         index++;
     }
     hex_map->set_cells(cells);
@@ -295,11 +295,11 @@ void HexMapNodeEditorPlugin::selection_move_apply() {
     // first phase of redo is to clear the source cells
     int count = move_source_cells.size();
     Array do_set_cells;
-    do_set_cells.resize(count * HexMapNode::CellArrayWidth);
+    do_set_cells.resize(count * HexMapNode::CELL_ARRAY_WIDTH);
     for (int i = 0; i < count; i++) {
-        int base = i * HexMapNode::CellArrayWidth;
+        int base = i * HexMapNode::CELL_ARRAY_WIDTH;
         do_set_cells[base] = move_source_cells[i];
-        do_set_cells[base + 1] = HexMapNode::INVALID_CELL_VALUE;
+        do_set_cells[base + 1] = HexMapNode::CELL_VALUE_NONE;
     }
     // second phase is to set the destination cells
     do_set_cells.append_array(editor_cursor->get_cells_v());
@@ -332,7 +332,7 @@ void HexMapNodeEditorPlugin::rebuild_cursor() {
     ERR_FAIL_COND(bottom_panel == nullptr);
     editor_cursor->clear_tiles();
     int tile = get_editor_state("cursor_mesh_index");
-    if (tile != HexMapNode::INVALID_CELL_VALUE) {
+    if (tile != HexMapNode::CELL_VALUE_NONE) {
         editor_cursor->set_tile(HexMapCellId(), tile);
     }
 
@@ -458,7 +458,7 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                 deselect_cells();
             } else {
                 set_editor_state(
-                        "cursor_mesh_index", HexMapNode::INVALID_CELL_VALUE);
+                        "cursor_mesh_index", HexMapNode::CELL_VALUE_NONE);
             }
             return AFTER_GUI_INPUT_STOP;
         }
@@ -482,8 +482,11 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                     .new_tile = cell.index,
                     .new_orientation = cell.orientation,
             });
-            hex_map->set_cells(
-                    Array::make(cell_id, cell.index, cell.orientation));
+            static_assert(HexMapNode::CELL_ARRAY_INDEX_VEC == 0);
+            static_assert(HexMapNode::CELL_ARRAY_INDEX_VALUE == 1);
+            static_assert(HexMapNode::CELL_ARRAY_INDEX_ORIENTATION == 2);
+            hex_map->set_cells(Array::make(
+                    (Vector3i)cell_id, cell.index, cell.orientation));
         }
         if (mouse_left_released) {
             commit_cell_changes("HexMap: paint cells");
@@ -506,6 +509,9 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
                     .orig_orientation = orientation,
                     .new_tile = -1,
             });
+            static_assert(HexMapNode::CELL_ARRAY_INDEX_VEC == 0);
+            static_assert(HexMapNode::CELL_ARRAY_INDEX_VALUE == 1);
+            static_assert(HexMapNode::CELL_ARRAY_INDEX_ORIENTATION == 2);
             hex_map->set_cells(Array::make(cell_id, -1, 0));
         }
         if (mouse_right_released) {

@@ -1,4 +1,3 @@
-
 #ifdef TOOLS_ENABLED
 
 #pragma once
