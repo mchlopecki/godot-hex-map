@@ -104,8 +104,9 @@ bool HexMapAutoTiledNode::_set(const StringName &p_name,
             size_t cell_count = cells_keys.size();
             for (size_t c = 0; c < cell_count; c++) {
                 Vector3i offset = cells_keys[c];
-
-                // convert the cell dictionary into a Cell instance
+                ERR_CONTINUE_MSG(
+                        cells_dict[offset].get_type() != Variant::DICTIONARY,
+                        "cell at offset " + offset + " is not a dictionary");
                 Rule::Cell cell = Rule::Cell::from_dict(cells_dict[offset]);
 
                 // look up the pattern index for the cell offset
@@ -233,7 +234,7 @@ void HexMapAutoTiledNode::delete_rule(uint16_t id) {
     emit_signal("rules_changed");
 }
 
-void HexMapAutoTiledNode::cell_scale_changed() {
+void HexMapAutoTiledNode::on_int_node_hex_space_changed() {
     ERR_FAIL_NULL(int_node);
     ERR_FAIL_NULL(tiled_node);
     tiled_node->set_space(int_node->get_space());
@@ -273,7 +274,7 @@ void HexMapAutoTiledNode::apply_rules() {
         cell_mask |= iter.value.cell_mask;
 
         // manually merge the cell pad (terrible name; fix later)
-        auto pad = iter.value.cell_pad;
+        auto pad = iter.value.search_pad;
         int index = 2 + pad.delta_y;
         if (pad.radius > cell_padding[index]) {
             cell_padding[index] = pad.radius;
@@ -343,18 +344,8 @@ void HexMapAutoTiledNode::apply_rules() {
     }
 }
 
-HexMapNode::CellInfo HexMapAutoTiledNode::get_cell(
-        const HexMapCellId &cell_id) const {
-    return tiled_node->get_cell(cell_id);
-}
-
-Dictionary HexMapAutoTiledNode::_get_cell(
-        const Ref<hex_bind::HexMapCellId> &ref) const {
-    auto info = get_cell(ref->inner);
-    Dictionary out;
-    out["value"] = info.value;
-    out["orientation"] = info.orientation;
-    return out;
+HexMapTiledNode *HexMapAutoTiledNode::get_tiled_node() const {
+    return tiled_node;
 }
 
 void HexMapAutoTiledNode::_bind_methods() {
@@ -390,7 +381,8 @@ void HexMapAutoTiledNode::_bind_methods() {
             D_METHOD("delete_rule", "id"), &HexMapAutoTiledNode::delete_rule);
 
     ClassDB::bind_method(
-            D_METHOD("get_cell", "cell_id"), &HexMapAutoTiledNode::_get_cell);
+            D_METHOD("get_tiled_node"), &HexMapAutoTiledNode::get_tiled_node);
+
     ADD_SIGNAL(MethodInfo("rules_changed"));
 }
 
@@ -400,18 +392,20 @@ void HexMapAutoTiledNode::_notification(int p_what) {
         int_node = Object::cast_to<HexMapIntNode>(get_parent());
         ERR_FAIL_NULL_MSG(int_node,
                 "Parent of HexMapAutoTiled node must be HexMapInt node");
-        int_node->connect("cell_scale_changed",
-                callable_mp(this, &HexMapAutoTiledNode::cell_scale_changed));
+        int_node->connect("hex_space_changed",
+                callable_mp(this,
+                        &HexMapAutoTiledNode::on_int_node_hex_space_changed));
         int_node->connect("cells_changed",
                 callable_mp(this,
                         &HexMapAutoTiledNode::on_int_node_cells_changed));
-        cell_scale_changed();
+        on_int_node_hex_space_changed();
         apply_rules();
 
         break;
     case NOTIFICATION_UNPARENTED:
-        int_node->disconnect("cell_scale_changed",
-                callable_mp(this, &HexMapAutoTiledNode::cell_scale_changed));
+        int_node->disconnect("hex_space_changed",
+                callable_mp(this,
+                        &HexMapAutoTiledNode::on_int_node_hex_space_changed));
         int_node->disconnect("cells_changed",
                 callable_mp(this,
                         &HexMapAutoTiledNode::on_int_node_cells_changed));
@@ -431,7 +425,8 @@ HexMapAutoTiledNode::HexMapAutoTiledNode() {
 
 HexMapAutoTiledNode::~HexMapAutoTiledNode() { tiled_node = nullptr; }
 
-int HexMapAutoTiledNode::Rule::get_pattern_index(HexMapCellId offset) const {
+inline int HexMapAutoTiledNode::Rule::get_pattern_index(
+        HexMapCellId offset) const {
     for (int i = 0; i < PATTERN_CELLS; i++) {
         if (offset == CellOffsets[i]) {
             return i;
@@ -441,53 +436,42 @@ int HexMapAutoTiledNode::Rule::get_pattern_index(HexMapCellId offset) const {
 }
 
 void HexMapAutoTiledNode::Rule::clear_cell(HexMapCellId offset) {
-    for (int i = 0; i < PATTERN_CELLS; i++) {
-        if (offset == CellOffsets[i]) {
-            pattern[i].state = RULE_CELL_STATE_DISABLED;
-            update_internal();
-            return;
-        }
-    }
-    ERR_FAIL_MSG("Rule::clear_cell(): invalid cell offset");
+    int i = get_pattern_index(offset);
+    ERR_FAIL_COND_MSG(i == -1, "invalid cell offset");
+    pattern[i].state = RULE_CELL_STATE_DISABLED;
+    update_internal();
 }
+
 HexMapAutoTiledNode::Rule::Cell HexMapAutoTiledNode::Rule::get_cell(
         HexMapCellId offset) const {
-    for (int i = 0; i < PATTERN_CELLS; i++) {
-        if (offset == CellOffsets[i]) {
-            return pattern[i];
-        }
-    }
+    int i = get_pattern_index(offset);
     // don't print an error here because this is used to check for a valid
     // cell offset in the editor
-    return Cell{ .state = RULE_CELL_INVALID_OFFSET };
+    if (i == -1) {
+        return Cell{ .state = RULE_CELL_INVALID_OFFSET };
+    } else {
+        return pattern[i];
+    }
 }
 
 void HexMapAutoTiledNode::Rule::set_cell_type(HexMapCellId offset,
         unsigned type,
         bool invert) {
-    for (int i = 0; i < PATTERN_CELLS; i++) {
-        if (offset == CellOffsets[i]) {
-            pattern[i].state =
-                    invert ? RULE_CELL_STATE_NOT_TYPE : RULE_CELL_STATE_TYPE;
-            pattern[i].type = type;
-            update_internal();
-            return;
-        }
-    }
-    ERR_FAIL_MSG("Rule::set_cell_type(): invalid cell offset");
+    int i = get_pattern_index(offset);
+    ERR_FAIL_COND_MSG(i == -1, "invalid cell offset");
+    pattern[i].state =
+            invert ? RULE_CELL_STATE_NOT_TYPE : RULE_CELL_STATE_TYPE;
+    pattern[i].type = type;
+    update_internal();
 }
 
 void HexMapAutoTiledNode::Rule::set_cell_empty(HexMapCellId offset,
         bool invert) {
-    for (int i = 0; i < PATTERN_CELLS; i++) {
-        if (offset == CellOffsets[i]) {
-            pattern[i].state =
-                    invert ? RULE_CELL_STATE_NOT_EMPTY : RULE_CELL_STATE_EMPTY;
-            update_internal();
-            return;
-        }
-    }
-    ERR_FAIL_MSG("Rule::set_cell_empty(): invalid cell offset");
+    int i = get_pattern_index(offset);
+    ERR_FAIL_COND_MSG(i == -1, "invalid cell offset");
+    pattern[i].state =
+            invert ? RULE_CELL_STATE_NOT_EMPTY : RULE_CELL_STATE_EMPTY;
+    update_internal();
 }
 
 inline bool HexMapAutoTiledNode::Rule::match(
@@ -502,8 +486,7 @@ inline bool HexMapAutoTiledNode::Rule::match(
 
         // iterate through the cells in the pattern checking if the cell values
         // match the pattern.
-        int pattern_size = PATTERN_CELLS;
-        for (int i = 0; i < pattern_size; i++) {
+        for (int i = 0; i <= pattern_index_max; i++) {
             const auto &cell = pattern[pattern_index[i]];
 
             // try match the cell state, if the cell matches, continue to the
@@ -562,11 +545,19 @@ inline bool HexMapAutoTiledNode::Rule::match(
 
 void HexMapAutoTiledNode::Rule::update_internal() {
     cell_mask = 0;
+    pattern_index_max = -1;
     for (int i = 0; i < PATTERN_CELLS; i++) {
         if (pattern[i].state == RULE_CELL_STATE_DISABLED) {
             continue;
         }
 
+        // The first five cells are at (q = r = 0), so rotation has no impact
+        // on them, so we mark each of those individually.
+        // For the remaining indexes, due to rotation, any cell set in an outer
+        // ring of the pattern (radius = 1, radius = 2) means all cells at that
+        // layer at the same radius must be considered for matching.  So when
+        // we encounter one of those cells set, we add all the cells for that
+        // ring in the cell mask.
         if (i < 5) {
             cell_mask |= (1 << i);
         } else if (i < 11) {
@@ -580,12 +571,15 @@ void HexMapAutoTiledNode::Rule::update_internal() {
             i = 22;
         } else {
             cell_mask |= (uint64_t)0xfff << 23;
-            break;
+            i = PATTERN_CELLS - 1;
         }
+
+        // update the max index
+        pattern_index_max = i;
     }
 
     // calculate any cell padding that may be needed for this rule
-    cell_pad = { .delta_y = 0, .radius = -1 };
+    search_pad = { .delta_y = 0, .radius = -1 };
     if (pattern[0].state != RULE_CELL_STATE_EMPTY) {
         return;
     }
@@ -598,28 +592,28 @@ void HexMapAutoTiledNode::Rule::update_internal() {
         if (i == 0) {
             continue;
         } else if (i == 1) {
-            cell_pad = { .delta_y = -1, .radius = 0 };
+            search_pad = { .delta_y = -1, .radius = 0 };
             break;
         } else if (i == 2) {
-            cell_pad = { .delta_y = 1, .radius = 0 };
+            search_pad = { .delta_y = 1, .radius = 0 };
             break;
         } else if (i == 3) {
-            cell_pad = { .delta_y = -2, .radius = 0 };
+            search_pad = { .delta_y = -2, .radius = 0 };
             break;
         } else if (i == 4) {
-            cell_pad = { .delta_y = 2, .radius = 0 };
+            search_pad = { .delta_y = 2, .radius = 0 };
             break;
         } else if (i < 11) {
-            cell_pad = { .delta_y = 0, .radius = 1 };
+            search_pad = { .delta_y = 0, .radius = 1 };
             break;
         } else if (i < 17) {
-            cell_pad = { .delta_y = -1, .radius = 1 };
+            search_pad = { .delta_y = -1, .radius = 1 };
             break;
         } else if (i < 23) {
-            cell_pad = { .delta_y = 1, .radius = 1 };
+            search_pad = { .delta_y = 1, .radius = 1 };
             break;
         } else {
-            cell_pad = { .delta_y = 0, .radius = 2 };
+            search_pad = { .delta_y = 0, .radius = 2 };
             break;
         }
     }
@@ -755,14 +749,14 @@ void HexMapAutoTiledNode::HexMapTileRule::set_enabled(bool value) {
     inner.enabled = value;
 }
 void HexMapAutoTiledNode::HexMapTileRule::clear_cell(
-        const Ref<hex_bind::HexMapCellId> &offset) {
-    inner.clear_cell(**offset);
+        const Ref<hex_bind::HexMapCellId> &ref) {
+    inner.clear_cell(ref->inner);
 }
 void HexMapAutoTiledNode::HexMapTileRule::set_cell_type(
-        const Ref<hex_bind::HexMapCellId> &offset,
+        const Ref<hex_bind::HexMapCellId> &ref,
         unsigned type,
         bool invert) {
-    inner.set_cell_type(**offset, type, invert);
+    inner.set_cell_type(ref->inner, type, invert);
 }
 void HexMapAutoTiledNode::HexMapTileRule::set_cell_empty(
         const Ref<hex_bind::HexMapCellId> &ref,

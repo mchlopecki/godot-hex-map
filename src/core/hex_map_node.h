@@ -86,7 +86,7 @@ public:
     Vector3 get_cell_scale() const;
 
     /// called when the cell scale changes
-    virtual bool cell_scale_changed();
+    virtual bool on_hex_space_changed();
 
     /// given a cell id, return the local position of the cell
     Vector3 get_cell_center(const HexMapCellId &) const;
@@ -94,6 +94,7 @@ public:
 
     /// given a local position, return the cell id that contains that point
     HexMapCellId get_cell_id(Vector3) const;
+    Ref<hex_bind::HexMapCellId> _get_cell_id(Vector3) const;
 
     /// set a single cell
     virtual void set_cell(const HexMapCellId &,
@@ -107,6 +108,9 @@ public:
 
     /// get the info for a single cell
     virtual CellInfo get_cell(const HexMapCellId &) const = 0;
+
+    /// gdscript wrapper for get_cell
+    Dictionary _get_cell(const Ref<hex_bind::HexMapCellId> &) const;
 
     /// set multiple cells
     ///

@@ -95,9 +95,6 @@ private:
     // lookup in get_bake_mesh_instance().
     Vector<OctantKey> baked_mesh_octants;
 
-    // updated cells to be emitted with the next "cells_changed" signal
-    HashSet<CellKey> updated_cells;
-
     void _recreate_octant_data();
     void update_octant_meshes();
 
@@ -126,7 +123,7 @@ public:
     Ref<MeshLibrary> get_mesh_library() const;
     bool mesh_library_changed();
 
-    bool cell_scale_changed() override;
+    bool on_hex_space_changed() override;
 
     void set_collision_debug(bool value);
     bool get_collision_debug() const;
@@ -181,13 +178,6 @@ public:
     void set_cell_visibility(const HexMapCellId &cell_id,
             bool visibility) override;
     bool set_cells_visibility_callback(Array cells);
-
-    HexMapCellId local_to_cell_id(const Vector3 &local_position) const;
-    Ref<hex_bind::HexMapCellId> _local_to_cell_id(
-            const Vector3 &p_local_position) const;
-    Vector3 cell_id_to_local(const HexMapCellId &cell_id) const;
-    Vector3 _cell_id_to_local(
-            const Ref<hex_bind::HexMapCellId> p_local_position) const;
 
     // given a quad defined by four points on one of the coordinate axis,
     // return the cellids that fall within that quad.

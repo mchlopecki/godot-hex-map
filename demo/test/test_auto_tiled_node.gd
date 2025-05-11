@@ -748,12 +748,15 @@ func test_auto_tiled_rules(params=use_parameters(rules_params)):
     # make the auto_node a child of int node
     int_node.add_child(auto_node)
 
+    # grab the resulting tiled node
+    var tiled_node = auto_node.get_tiled_node()
+
     # verify the rules were applied correctly
     for cell in parse_cell_map(params.expected):
         var cell_id = cell["cell"]
 
         if cell["text"] == "!":
-            assert_node_cell_value_eq(auto_node, cell_id, -1)
+            assert_node_cell_value_eq(tiled_node, cell_id, -1)
         elif cell["text"] != "":
             var words = cell.text.split(", ")
             var tile = int(words[0])
@@ -764,7 +767,7 @@ func test_auto_tiled_rules(params=use_parameters(rules_params)):
                     degree = 360 + degree
                 orientation = (int(degree)/60)
 
-            assert_node_cell_eq(auto_node, cell_id, tile, orientation)
+            assert_node_cell_eq(tiled_node, cell_id, tile, orientation)
 
     int_node.remove_child(auto_node)
     auto_node.free()
@@ -848,16 +851,19 @@ func test_each_rule_cell_matches() -> void:
             # add the auto node to the int node, applying all rules
             int_node.add_child(auto_node)
 
+            # grab the resulting tiled node
+            var tiled_node = auto_node.get_tiled_node()
+
             # verify the cell was properly set
             for cell_id in RuleCellOffsets:
                 if cell_id.q == 0 && cell_id.r == 0 && cell_id.y == 0:
                     if offset.q == 0 && offset.r == 0:
-                        assert_node_cell_eq(auto_node, cell_id, 1234, 0)
+                        assert_node_cell_eq(tiled_node, cell_id, 1234, 0)
                     else:
-                        assert_node_cell_eq(auto_node, cell_id, 1234,
+                        assert_node_cell_eq(tiled_node, cell_id, 1234,
                             orientation)
                 else:
-                    assert_node_cell_eq(auto_node, cell_id, -1)
+                    assert_node_cell_eq(tiled_node, cell_id, -1)
 
             # clean up so GUT doesn't complain of orphans
             int_node.remove_child(auto_node)

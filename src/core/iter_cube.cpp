@@ -66,7 +66,7 @@ HexMapIterCube::HexMapIterCube(Vector3 a, Vector3 b) {
 
 HexMapCellId HexMapIterCube::operator*() const {
     if (pos == Vector3i(INT_MAX, INT_MAX, INT_MAX)) {
-        return HexMapCellId::Invalid;
+        return HexMapCellId::INVALID;
     } else {
         return HexMapCellId::from_oddr(pos);
     }
@@ -127,12 +127,12 @@ HexMapIterCube::operator String() const {
 
 bool HexMapIterCube::_iter_init() {
     *this = begin();
-    return **this != HexMapCellId::Invalid;
+    return **this != HexMapCellId::INVALID;
 }
 
 bool HexMapIterCube::_iter_next() {
     HexMapCellId cell = *operator++();
-    return cell != HexMapCellId::Invalid;
+    return cell != HexMapCellId::INVALID;
 }
 
 HexMapCellId HexMapIterCube::_iter_get() const { return **this; }

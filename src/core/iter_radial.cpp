@@ -5,7 +5,7 @@ inline void HexMapIterRadial::advance_until_valid() {
     while ((exclude_center && axial_iter.cell == axial_iter.center) ||
             axial_iter.center.distance(axial_iter.cell) > radius) {
         ++axial_iter;
-        if (axial_iter.cell == HexMapCellId::Invalid) {
+        if (axial_iter.cell == HexMapCellId::INVALID) {
             break;
         }
     }
@@ -60,12 +60,12 @@ HexMapIterRadial::operator String() const {
 
 bool HexMapIterRadial::_iter_init() {
     *this = begin();
-    return axial_iter.cell != HexMapCellId::Invalid;
+    return axial_iter.cell != HexMapCellId::INVALID;
 }
 
 bool HexMapIterRadial::_iter_next() {
     HexMapCellId cell = *operator++();
-    return cell != HexMapCellId::Invalid;
+    return cell != HexMapCellId::INVALID;
 }
 
 HexMapCellId HexMapIterRadial::_iter_get() const { return axial_iter.cell; }

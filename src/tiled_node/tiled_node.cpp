@@ -289,8 +289,8 @@ bool HexMapTiledNode::mesh_library_changed() {
     return true;
 }
 
-bool HexMapTiledNode::cell_scale_changed() {
-    HexMapNode::cell_scale_changed();
+bool HexMapTiledNode::on_hex_space_changed() {
+    HexMapNode::on_hex_space_changed();
     clear_baked_meshes();
     _recreate_octant_data();
     return true;
@@ -356,7 +356,6 @@ void HexMapTiledNode::set_cell_item(const HexMapCellId &cell_id,
             .visible = true,
         };
         cell_map.insert(cell_key, cell);
-        updated_cells.insert(cell_key);
 
         // create a new octant if one doesn't already exist for this cell
         if (octant == nullptr) {
@@ -375,7 +374,6 @@ void HexMapTiledNode::set_cell_item(const HexMapCellId &cell_id,
     } else if (current_cell != nullptr) {
         // clear the cell
         cell_map.erase(cell_key);
-        updated_cells.insert(cell_key);
 
         ERR_FAIL_COND_MSG(octant == nullptr, "octant for cell does not exist");
         octant->clear_cell(cell_key);
@@ -385,11 +383,11 @@ void HexMapTiledNode::set_cell_item(const HexMapCellId &cell_id,
     return;
 }
 
-void HexMapTiledNode::_set_cell_item(const Ref<hex_bind::HexMapCellId> cell_id,
+void HexMapTiledNode::_set_cell_item(const Ref<hex_bind::HexMapCellId> ref,
         int p_item,
         int p_rot) {
-    ERR_FAIL_COND_MSG(!cell_id.is_valid(), "null cell id");
-    set_cell_item(**cell_id, p_item, p_rot);
+    ERR_FAIL_COND_MSG(!ref.is_valid(), "null cell id");
+    set_cell_item(ref->inner, p_item, p_rot);
 }
 
 void HexMapTiledNode::_set_cell_item_v(const Vector3i &cell_id,
@@ -440,9 +438,9 @@ int HexMapTiledNode::get_cell_item(const HexMapCellId &cell_id) const {
 }
 
 int HexMapTiledNode::_get_cell_item(
-        const Ref<hex_bind::HexMapCellId> p_cell_id) const {
-    ERR_FAIL_COND_V_MSG(!p_cell_id.is_valid(), -1, "null cell id");
-    return get_cell_item(**p_cell_id);
+        const Ref<hex_bind::HexMapCellId> ref) const {
+    ERR_FAIL_COND_V_MSG(!ref.is_valid(), -1, "null cell id");
+    return get_cell_item(ref->inner);
 }
 int HexMapTiledNode::_get_cell_item_v(const Vector3i &p_cell_vector) const {
     return get_cell_item(p_cell_vector);
@@ -460,9 +458,9 @@ int HexMapTiledNode::get_cell_item_orientation(
 }
 
 int HexMapTiledNode::_get_cell_item_orientation(
-        const Ref<hex_bind::HexMapCellId> p_cell_id) const {
-    ERR_FAIL_COND_V_MSG(!p_cell_id.is_valid(), 0, "null cell id");
-    return get_cell_item_orientation(**p_cell_id);
+        const Ref<hex_bind::HexMapCellId> ref) const {
+    ERR_FAIL_COND_V_MSG(!ref.is_valid(), 0, "null cell id");
+    return get_cell_item_orientation(ref->inner);
 }
 
 void HexMapTiledNode::set_cell_visibility(const HexMapCellId &cell_id,
@@ -550,26 +548,6 @@ static inline Vector3i axial_to_oddr(Vector3i axial) {
 static inline Vector3i oddr_to_axial(Vector3i oddr) {
     int q = oddr.x - (oddr.z - (oddr.z & 1)) / 2;
     return Vector3i(q, oddr.y, oddr.z);
-}
-
-HexMapCellId HexMapTiledNode::local_to_cell_id(
-        const Vector3 &local_position) const {
-    return space.get_cell_id(local_position);
-}
-
-Ref<hex_bind::HexMapCellId> HexMapTiledNode::_local_to_cell_id(
-        const Vector3 &p_local_position) const {
-    return local_to_cell_id(p_local_position);
-}
-
-Vector3 HexMapTiledNode::cell_id_to_local(const HexMapCellId &cell_id) const {
-    return space.get_cell_center(cell_id);
-}
-
-Vector3 HexMapTiledNode::_cell_id_to_local(
-        const Ref<hex_bind::HexMapCellId> p_cell_id) const {
-    ERR_FAIL_COND_V_MSG(!p_cell_id.is_valid(), Vector3(), "null cell id");
-    return cell_id_to_local(**p_cell_id);
 }
 
 Vector<HexMapCellId> HexMapTiledNode::local_quad_to_cell_ids(Vector3 a,
@@ -770,15 +748,6 @@ void HexMapTiledNode::update_dirty_octants_callback() {
     // XXX why is this needed here?
     _update_visibility();
     awaiting_update = false;
-
-    if (!updated_cells.is_empty()) {
-        Array cells;
-        for (const CellKey &key : updated_cells) {
-            cells.push_back((Vector3i)key);
-        }
-        updated_cells.clear();
-        emit_signal("cells_changed", cells);
-    }
 }
 
 void HexMapTiledNode::update_dirty_octants() {
@@ -897,11 +866,6 @@ void HexMapTiledNode::_bind_methods() {
                                  "local_point_b"),
             &HexMapTiledNode::_local_region_to_cell_ids);
 
-    ClassDB::bind_method(D_METHOD("local_to_cell_id", "local_position"),
-            &HexMapTiledNode::_local_to_cell_id);
-    ClassDB::bind_method(D_METHOD("cell_id_to_local", "cell_id"),
-            &HexMapTiledNode::_cell_id_to_local);
-
     ClassDB::bind_method(D_METHOD("clear"), &HexMapTiledNode::clear);
 
     ClassDB::bind_method(
@@ -972,8 +936,6 @@ void HexMapTiledNode::_bind_methods() {
 
     ADD_SIGNAL(MethodInfo(
             "cell_changed", PropertyInfo(Variant::VECTOR3I, "cell")));
-    ADD_SIGNAL(MethodInfo(
-            "cells_changed", PropertyInfo(Variant::ARRAY, "cell_id_vectors")));
 }
 
 Array HexMapTiledNode::get_used_cells() const {

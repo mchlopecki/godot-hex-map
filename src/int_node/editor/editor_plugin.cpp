@@ -94,9 +94,10 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
         editor_cursor->set_cells_visibility_callback(callable_mp(
                 tiled_node, &HexMapTiledNode::set_cells_visibility_callback));
 
-        int_node->connect("cell_scale_changed",
-                callable_mp(
-                        this, &HexMapIntNodeEditorPlugin::cell_scale_changed));
+        int_node->connect("hex_space_changed",
+                callable_mp(this,
+                        &HexMapIntNodeEditorPlugin::
+                                on_int_node_hex_space_changed));
         int_node->connect("cells_changed",
                 callable_mp(this,
                         &HexMapIntNodeEditorPlugin::
@@ -112,9 +113,10 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
             memfree(tiled_node);
             tiled_node = nullptr;
         }
-        int_node->disconnect("cell_scale_changed",
-                callable_mp(
-                        this, &HexMapIntNodeEditorPlugin::cell_scale_changed));
+        int_node->disconnect("hex_space_changed",
+                callable_mp(this,
+                        &HexMapIntNodeEditorPlugin::
+                                on_int_node_hex_space_changed));
         int_node->disconnect("cells_changed",
                 callable_mp(this,
                         &HexMapIntNodeEditorPlugin::
@@ -190,7 +192,7 @@ void HexMapIntNodeEditorPlugin::on_int_node_cells_changed(Array cells) {
     tiled_node->set_cells(cells);
 }
 
-void HexMapIntNodeEditorPlugin::cell_scale_changed() {
+void HexMapIntNodeEditorPlugin::on_int_node_hex_space_changed() {
     tiled_node->set_space(int_node->get_space());
     update_mesh_library();
 }

@@ -349,5 +349,5 @@ Vector3 hex_bind::HexMapSpace::get_cell_center(
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapSpace::get_cell_id(
         Vector3 local_pos) const {
-    return inner.get_cell_id(local_pos);
+    return inner.get_cell_id(local_pos).to_ref();
 }

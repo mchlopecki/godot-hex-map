@@ -102,7 +102,7 @@ protected:
     virtual EditorPlugin::AfterGUIInput handle_keypress(Ref<InputEventKey>);
 
     // callbacks for HexMap signals
-    void hex_space_changed();
+    void on_node_hex_space_changed();
 
     void plane_changed(int p_axis);
     void axis_changed(int p_axis);

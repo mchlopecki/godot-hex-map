@@ -651,12 +651,14 @@ void HexMapTiledNodeEditorPlugin::_edit(Object *p_object) {
         hex_map->set_meta("_editor_floors_", editor_control->get_planes());
 
         // disconnect signals
-        hex_map->disconnect("cell_scale_changed",
+        hex_map->disconnect("hex_space_changed",
                 callable_mp(this,
-                        &HexMapTiledNodeEditorPlugin::hex_space_changed));
+                        &HexMapTiledNodeEditorPlugin::
+                                on_node_hex_space_changed));
         hex_map->disconnect("mesh_offset_changed",
                 callable_mp(this,
-                        &HexMapTiledNodeEditorPlugin::hex_space_changed));
+                        &HexMapTiledNodeEditorPlugin::
+                                on_node_hex_space_changed));
         hex_map->disconnect("mesh_library_changed",
                 callable_mp(this,
                         &HexMapTiledNodeEditorPlugin::update_mesh_library));
@@ -717,12 +719,12 @@ void HexMapTiledNodeEditorPlugin::_edit(Object *p_object) {
 
     set_process(true);
 
-    hex_map->connect("cell_scale_changed",
-            callable_mp(
-                    this, &HexMapTiledNodeEditorPlugin::hex_space_changed));
+    hex_map->connect("hex_space_changed",
+            callable_mp(this,
+                    &HexMapTiledNodeEditorPlugin::on_node_hex_space_changed));
     hex_map->connect("mesh_offset_changed",
-            callable_mp(
-                    this, &HexMapTiledNodeEditorPlugin::hex_space_changed));
+            callable_mp(this,
+                    &HexMapTiledNodeEditorPlugin::on_node_hex_space_changed));
     hex_map->connect("mesh_library_changed",
             callable_mp(
                     this, &HexMapTiledNodeEditorPlugin::update_mesh_library));
@@ -770,7 +772,7 @@ void HexMapTiledNodeEditorPlugin::_notification(int p_what) {
     }
 }
 
-void HexMapTiledNodeEditorPlugin::hex_space_changed() {
+void HexMapTiledNodeEditorPlugin::on_node_hex_space_changed() {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
     editor_cursor->set_space(hex_map->get_space());
     selection_manager->set_space(hex_map->get_space());

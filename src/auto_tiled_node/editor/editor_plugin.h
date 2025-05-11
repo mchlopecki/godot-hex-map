@@ -10,7 +10,6 @@
 
 using namespace godot;
 
-// XXX move palette to bottom panel for HexGrid
 class HexMapAutoTiledNodeEditorPlugin : public EditorPlugin {
     GDCLASS(HexMapAutoTiledNodeEditorPlugin, EditorPlugin);
 

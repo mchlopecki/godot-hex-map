@@ -15,15 +15,15 @@ void hex_bind::HexMapIter::_bind_methods() {
 
 // Godot custom iterator functions
 bool hex_bind::HexMapIter::_iter_init(Variant _arg) {
-    return iter->_iter_init();
+    return inner->_iter_init();
 }
 
 bool hex_bind::HexMapIter::_iter_next(Variant _arg) {
-    return iter->_iter_next();
+    return inner->_iter_next();
 }
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapIter::_iter_get(Variant _arg) {
-    return iter->_iter_get();
+    return inner->_iter_get().to_ref();
 }
 
-String hex_bind::HexMapIter::_to_string() const { return *iter; };
+String hex_bind::HexMapIter::_to_string() const { return *inner; };

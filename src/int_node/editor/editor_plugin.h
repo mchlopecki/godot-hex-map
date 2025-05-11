@@ -44,7 +44,7 @@ private:
     void on_int_node_cells_changed(Array cells);
 
     // signal handlers
-    void cell_scale_changed();
+    void on_int_node_hex_space_changed();
     void set_cell_type(int id, String name, Color color);
     void delete_cell_type(int id);
     void set_edit_plane(int axis, int depth);

@@ -55,7 +55,6 @@
 
 using EditAxis = EditorCursor::EditAxis;
 
-// XXX selecting too many cells then deleting causes cpu spin/hang
 // XXX middle click in orthographic axis view moves camera; block that
 void HexMapNodeEditorPlugin::commit_cell_changes(String desc) {
     auto change_count = cells_changed.size();
@@ -632,10 +631,12 @@ void HexMapNodeEditorPlugin::_edit(Object *p_object) {
         write_editor_state(hex_map);
 
         // disconnect signals
-        hex_map->disconnect("cell_scale_changed",
-                callable_mp(this, &HexMapNodeEditorPlugin::hex_space_changed));
+        hex_map->disconnect("hex_space_changed",
+                callable_mp(this,
+                        &HexMapNodeEditorPlugin::on_node_hex_space_changed));
         hex_map->disconnect("mesh_offset_changed",
-                callable_mp(this, &HexMapNodeEditorPlugin::hex_space_changed));
+                callable_mp(this,
+                        &HexMapNodeEditorPlugin::on_node_hex_space_changed));
 
         // clear a couple of other state tracking variables
         last_selection.clear();
@@ -675,10 +676,12 @@ void HexMapNodeEditorPlugin::_edit(Object *p_object) {
 
     set_process(true);
 
-    hex_map->connect("cell_scale_changed",
-            callable_mp(this, &HexMapNodeEditorPlugin::hex_space_changed));
+    hex_map->connect("hex_space_changed",
+            callable_mp(
+                    this, &HexMapNodeEditorPlugin::on_node_hex_space_changed));
     hex_map->connect("mesh_offset_changed",
-            callable_mp(this, &HexMapNodeEditorPlugin::hex_space_changed));
+            callable_mp(
+                    this, &HexMapNodeEditorPlugin::on_node_hex_space_changed));
 
     // XXX the subclass needs to handle this some way
     // hex_map->connect("mesh_library_changed",
@@ -768,7 +771,7 @@ void HexMapNodeEditorPlugin::edit_plane_set_depth(int depth) {
     set_editor_state("edit_plane_depth", depth);
 }
 
-void HexMapNodeEditorPlugin::hex_space_changed() {
+void HexMapNodeEditorPlugin::on_node_hex_space_changed() {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
     editor_cursor->set_space(hex_map->get_space());
     selection_manager->set_space(hex_map->get_space());

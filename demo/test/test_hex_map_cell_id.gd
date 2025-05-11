@@ -13,14 +13,14 @@ var from_values_params = [
 ]
 
 func test_from_coordinates(params=use_parameters(from_values_params)):
-    var b := HexMapCellId.from_coordinates(params[0], params[1], params[2]);
+    var b := HexMapCellId.at(params[0], params[1], params[2]);
     assert_eq(b.get_q(), params[0])
     assert_eq(b.get_r(), params[1])
     assert_eq(b.get_y(), params[2])
 
 # helper used for all following tests
 func cell_id(values: Array) -> HexMapCellId:
-    return HexMapCellId.from_coordinates(values[0], values[1], values[2])
+    return HexMapCellId.at(values[0], values[1], values[2])
 
 var equals_params = [
     [[0, 0, 0], [0, 0, 0], true],

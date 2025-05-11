@@ -318,8 +318,8 @@ void EditorCursor::build_y_grid() {
                         .length_squared();
     PackedVector3Array grid_points;
     PackedColorArray grid_colors;
-    for (const auto cell : HexMapCellId::Origin.get_neighbors(
-                 GRID_RADIUS, HexMapPlanes::QRS)) {
+    for (const auto cell :
+            HexMapCellId::ZERO.get_neighbors(GRID_RADIUS, HexMapPlanes::QRS)) {
         Vector3 center = cell.unit_center();
         float transparency =
                 Math::pow(MAX(0, (max - center.length_squared()) / max), 2);
@@ -356,8 +356,8 @@ void EditorCursor::build_r_grid() {
     float max = HexMapCellId(0, 0, GRID_RADIUS).unit_center().length_squared();
     PackedVector3Array grid_points;
     PackedColorArray grid_colors;
-    for (const auto cell : HexMapCellId::Origin.get_neighbors(
-                 GRID_RADIUS, HexMapPlanes::YQS)) {
+    for (const auto cell :
+            HexMapCellId::ZERO.get_neighbors(GRID_RADIUS, HexMapPlanes::YQS)) {
         Vector3 center = cell.unit_center();
         float transparency =
                 Math::pow(MAX(0, (max - center.length_squared()) / max), 2);

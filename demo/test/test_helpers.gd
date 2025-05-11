@@ -2,7 +2,7 @@ extends GutTest
 class_name HexMapTest
 
 func CellId(q,r,y):
-	return HexMapCellId.from_coordinates(q,r,y)
+	return HexMapCellId.at(q,r,y)
 
 func cell_center(q,r,y):
 	return CellId(q,r,y).unit_center();

@@ -36,10 +36,10 @@ class HexMapIter : public godot::RefCounted {
 
 public:
     HexMapIter() {};
-    HexMapIter(const Inner &iter) : iter(iter.clone()) {};
+    HexMapIter(const Inner &iter) : inner(iter.clone()) {};
     ~HexMapIter() {
-        if (iter != nullptr) {
-            delete iter;
+        if (inner != nullptr) {
+            delete inner;
         }
     };
 
@@ -55,6 +55,6 @@ protected:
     static void _bind_methods();
 
 private:
-    Inner *iter = nullptr;
+    Inner *inner = nullptr;
 };
 } //namespace hex_bind

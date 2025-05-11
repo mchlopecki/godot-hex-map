@@ -12,8 +12,13 @@
 #include "iter_radial.h"
 #include "math.h"
 
-const HexMapCellId HexMapCellId::Origin(0, 0, 0);
-const HexMapCellId HexMapCellId::Invalid(INT_MAX, INT_MAX, INT_MAX);
+const HexMapCellId HexMapCellId::ZERO(0, 0, 0);
+const HexMapCellId HexMapCellId::INVALID(INT_MAX, INT_MAX, INT_MAX);
+
+/// return a Ref<T> wrapped copy of this HexMapCellId
+Ref<hex_bind::HexMapCellId> HexMapCellId::to_ref() const {
+    return Ref<hex_bind::HexMapCellId>(memnew(hex_bind::HexMapCellId(*this)));
+}
 
 // based on blog post https://observablehq.com/@jrus/hexround
 static inline HexMapCellId axial_round(real_t q_in, real_t r_in) {
@@ -57,8 +62,10 @@ unsigned HexMapCellId::distance(const HexMapCellId &other) const {
             (ABS(delta.q) + ABS(delta.q + delta.r) + ABS(delta.r)) / 2;
     unsigned y_dist = ABS(delta.y);
 
-    // movement laterally can combined with vertical movement, so which ever
-    // of the two distances is greater is the distance.
+    // Distance is the number of **faces** we traverse to get to the other
+    // node. We calculate it this way because allowing diagonal traversal up or
+    // down results in neighbors(radius=N) being a prism instead of a rough
+    // sphere.
     return hex_dist + y_dist;
 }
 
@@ -104,23 +111,19 @@ HexMapCellId::operator String() const {
 void hex_bind::HexMapCellId::_bind_methods() {
     // static constructors
     ClassDB::bind_static_method("HexMapCellId",
-            D_METHOD("from_coordinates", "q", "r", "y"),
-            &hex_bind::HexMapCellId::from_coordinates);
-    ClassDB::bind_static_method("HexMapCellId",
             D_METHOD("at", "q", "r", "y"),
-            &hex_bind::HexMapCellId::from_coordinates,
+            &hex_bind::HexMapCellId::at,
             DEFVAL(0));
     ClassDB::bind_static_method("HexMapCellId",
-            D_METHOD("from_vector", "vector"),
-            &hex_bind::HexMapCellId::from_vector);
+            D_METHOD("from_vec", "vector"),
+            &hex_bind::HexMapCellId::from_vec);
     ClassDB::bind_static_method("HexMapCellId",
             D_METHOD("from_int", "int"),
             &hex_bind::HexMapCellId::from_int);
 
     // type conversions
     ClassDB::bind_method(D_METHOD("as_int"), &hex_bind::HexMapCellId::as_int);
-    ClassDB::bind_method(
-            D_METHOD("as_vector"), &hex_bind::HexMapCellId::as_vector);
+    ClassDB::bind_method(D_METHOD("as_vec"), &hex_bind::HexMapCellId::as_vec);
 
     // field accessors
     ClassDB::bind_method(D_METHOD("get_q"), &hex_bind::HexMapCellId::get_q);
@@ -194,15 +197,15 @@ int hex_bind::HexMapCellId::get_y() { return inner.y; }
 void hex_bind::HexMapCellId::set_y(int value) { inner.y = value; }
 
 Ref<hex_bind::HexMapCellId>
-hex_bind::HexMapCellId::from_coordinates(int p_q, int p_r, int p_y) {
-    return CellId(p_q, p_r, p_y);
+hex_bind::HexMapCellId::at(int p_q, int p_r, int p_y) {
+    return CellId(p_q, p_r, p_y).to_ref();
 }
 
-Vector3i hex_bind::HexMapCellId::as_vector() { return (Vector3i)inner; }
+Vector3i hex_bind::HexMapCellId::as_vec() { return (Vector3i)inner; }
 
-Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::from_vector(
+Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::from_vec(
         Vector3i p_vector) {
-    return CellId(p_vector);
+    return CellId(p_vector).to_ref();
 }
 
 uint64_t hex_bind::HexMapCellId::as_int() {
@@ -212,39 +215,39 @@ uint64_t hex_bind::HexMapCellId::as_int() {
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::from_int(uint64_t p_int) {
     CellId::Key key(p_int);
-    return CellId(key);
+    return CellId(key).to_ref();
 }
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::east() const {
-    return inner + CellId(1, 0, 0);
+    return (inner + CellId(1, 0, 0)).to_ref();
 }
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::northeast() const {
-    return inner + CellId(1, -1, 0);
+    return (inner + CellId(1, -1, 0)).to_ref();
 }
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::northwest() const {
-    return inner + CellId(0, -1, 0);
+    return (inner + CellId(0, -1, 0)).to_ref();
 }
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::west() const {
-    return inner + CellId(-1, 0, 0);
+    return (inner + CellId(-1, 0, 0)).to_ref();
 }
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::southwest() const {
-    return inner + CellId(-1, 1, 0);
+    return (inner + CellId(-1, 1, 0)).to_ref();
 }
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::southeast() const {
-    return inner + CellId(0, 1, 0);
+    return (inner + CellId(0, 1, 0)).to_ref();
 }
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::down() const {
-    return inner + CellId(0, 0, -1);
+    return (inner + CellId(0, 0, -1)).to_ref();
 }
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::up() const {
-    return inner + CellId(0, 0, 1);
+    return (inner + CellId(0, 0, 1)).to_ref();
 }
 
 String hex_bind::HexMapCellId::_to_string() const { return (String)inner; };
@@ -266,23 +269,23 @@ Ref<hex_bind::HexMapIter> hex_bind::HexMapCellId::get_neighbors(
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::add(
         Ref<hex_bind::HexMapCellId> other) const {
-    return inner + other->inner;
+    return (inner + other->inner).to_ref();
 }
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::subtract(
         Ref<hex_bind::HexMapCellId> other) const {
-    return inner - other->inner;
+    return (inner - other->inner).to_ref();
 }
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::reverse() const {
-    return -inner;
+    return (-inner).to_ref();
 }
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::rotate(int steps,
         Ref<hex_bind::HexMapCellId> center) const {
     if (center.is_valid()) {
-        return inner.rotate(steps, center->inner);
+        return inner.rotate(steps, center->inner).to_ref();
     } else {
-        return inner.rotate(steps);
+        return inner.rotate(steps).to_ref();
     }
 }

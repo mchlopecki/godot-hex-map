@@ -25,6 +25,7 @@ class HexMapAutoTiledNode : public Node3D {
     friend HexMapAutoTiledNodeEditorPlugin;
 
 public:
+    // forward declare the gdscript wrapper class for the following Rule class
     class HexMapTileRule;
 
     /// class defining a single rule that matches some pattern of tile types
@@ -100,7 +101,18 @@ public:
 
         /// offset of each cell in the rule pattern from the origin cell
         // NOTE: the order of these is important; we depend on it in
-        // get_radii(), and in match().
+        // update_internal(), and in match().
+        //
+        // We intentionally order the radius = 0 (q = 0, r = 0) cells first
+        // because rotating the pattern won't matter if one of those cells does
+        // not match
+        //
+        // After that we have the radius = 1 cells, starting at the center and
+        // moving up and down from the center layer.  We do this to reduce the
+        // number of cells we need to fetch to match the rule.  If we don't
+        // have anything set for the radius=2 cells, we can avoid fetching them.
+        //
+        // Finally, we have the radius=2, y=0 cells.
         static constexpr HexMapCellId CellOffsets[PATTERN_CELLS] = {
             // radius = 0, whole column, y = 0, 1, -1, 2, -2
             HexMapCellId( 0,  0,  0),   // 0: origin
@@ -207,9 +219,10 @@ public:
 
         /// get the pattern index for a given cell offset
         /// @returns [int] index, or -1 for invalid offset
-        int get_pattern_index(HexMapCellId offset) const;
+        inline int get_pattern_index(HexMapCellId offset) const;
 
-        /// get the number of cells that are needed to match the pattern
+        /// update internal state (cell_mask, search_pad, etc) when the pattern
+        /// is changed.
         void update_internal();
 
         /// internal rule id, used for ordering
@@ -229,22 +242,29 @@ public:
         /// including all rotations
         uint64_t cell_mask = 0;
 
-        /// padding needed for existing cells to match this rule
+        /// highest set index in pattern
+        int pattern_index_max = -1;
+
+        /// How to pad the cell id search space to be able to match this rule
         ///
         /// apply_rules() only considers those cells with a value set.  To
         /// support rules with an empty cell at the origin cell in the pattern,
         /// we need to expand the cells processed by apply_rules().  We want
         /// to limit the number of additional cells we need to process, so we
-        /// calculate how many cells above/below/around the empty cell are
-        /// needed to match the pattern.
+        /// find the nearest neighbor cell that must be set for this rule to
+        /// match.
         ///
-        /// In this variable, we store the distance to the "nearest" non-empty
-        /// cell.  `delta_y` is the adjustment to Y from the center of the
-        /// cell pattern.
+        /// We then apply this pad to every defined cell id to make it possible
+        /// to match rules with an empty cell.
         struct {
+            /// change in y layer to the nearest defined cell
             int8_t delta_y : 4;
+            /// radius of nearest defined cell; 0 means in the center column,
+            /// 1 is inner-most ring, 2 means outer ring with radius = 2.  This
+            /// value will be set to -1 when the origin cell is set in the
+            /// pattern.
             int8_t radius : 4;
-        } cell_pad = { 0, 0 };
+        } search_pad = { 0, 0 };
     };
 
     /// GDScript wrapper for Rule class
@@ -285,10 +305,6 @@ public:
     HexMapAutoTiledNode();
     ~HexMapAutoTiledNode();
 
-    // HexMapNode::CellInfo get_cell(const HexMapCellId &) const;
-    // Array get_cell_ids_v() const;
-    // void set_cell_visibility(const HexMapCellId &cell_id, bool visibility);
-
     // property setters & getters
     void set_mesh_library(const Ref<MeshLibrary> &);
     Ref<MeshLibrary> get_mesh_library() const;
@@ -311,14 +327,12 @@ public:
     /// delete a rule by id
     void delete_rule(uint16_t);
 
-    /// get the state of a given cell
-    /// @param cell_id [HexMapCellId] cell id
-    /// @return HexMapNode::CellInfo
-    HexMapNode::CellInfo get_cell(const HexMapCellId &) const;
-    Dictionary _get_cell(const Ref<hex_bind::HexMapCellId> &) const;
+    /// get the HexMapTiledNode that contains the results of the rules
+    /// @return HexMapTiledNode
+    HexMapTiledNode *get_tiled_node() const;
 
     // signal callbacks
-    void cell_scale_changed();
+    void on_int_node_hex_space_changed();
 
 protected:
     static void _bind_methods();

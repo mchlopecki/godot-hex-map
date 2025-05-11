@@ -10,7 +10,6 @@ bool HexMapAutoTiledNodeEditorPlugin::_handles(Object *p_object) const {
 
 void HexMapAutoTiledNodeEditorPlugin::_edit(Object *p_object) {
     if (auto_tiled_node) {
-        // XXX disconnect things
         if (bottom_panel != nullptr) {
             remove_control_from_bottom_panel(bottom_panel);
             memfree(bottom_panel);

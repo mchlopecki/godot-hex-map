@@ -36,6 +36,9 @@ void HexMapNode::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_cells", "cells"),
             static_cast<void (HexMapNode::*)(const Array)>(
                     &HexMapNode::set_cells));
+
+    ClassDB::bind_method(
+            D_METHOD("get_cell", "cell_id"), &HexMapNode::_get_cell);
     ClassDB::bind_method(D_METHOD("get_cells", "cells"),
             static_cast<Array (HexMapNode::*)(const Array)>(
                     &HexMapNode::get_cells));
@@ -51,6 +54,8 @@ void HexMapNode::_bind_methods() {
             static_cast<Vector3 (HexMapNode::*)(
                     const Ref<hex_bind::HexMapCellId>) const>(
                     &HexMapNode::get_cell_center));
+    ClassDB::bind_method(
+            D_METHOD("get_cell_id", "local_pos"), &HexMapNode::_get_cell_id);
     ClassDB::bind_method(D_METHOD("get_cell_ids_in_local_quad",
                                  "a",
                                  "b",
@@ -76,7 +81,7 @@ void HexMapNode::_bind_methods() {
             "set_center_y",
             "get_center_y");
 
-    ADD_SIGNAL(MethodInfo("cell_scale_changed"));
+    ADD_SIGNAL(MethodInfo("hex_space_changed"));
     ADD_SIGNAL(MethodInfo("mesh_offset_changed"));
     ADD_SIGNAL(MethodInfo(
             "cells_changed", PropertyInfo(Variant::ARRAY, "cells")));
@@ -96,18 +101,19 @@ void HexMapNode::_notification(int p_what) {
         break;
     case NOTIFICATION_TRANSFORM_CHANGED:
         space.set_transform(get_global_transform());
+        on_hex_space_changed();
         break;
     }
 }
 
-void HexMapNode::set_space(const HexMapSpace &space) {
-    this->space = space;
-    cell_scale_changed();
+void HexMapNode::set_space(const HexMapSpace &value) {
+    space = value;
+    on_hex_space_changed();
 }
 
 void HexMapNode::set_space(const Ref<hex_bind::HexMapSpace> &ref) {
     space = ref->inner;
-    cell_scale_changed();
+    on_hex_space_changed();
 }
 
 Ref<hex_bind::HexMapSpace> HexMapNode::_get_space() {
@@ -117,14 +123,14 @@ Ref<hex_bind::HexMapSpace> HexMapNode::_get_space() {
 
 void HexMapNode::set_cell_height(real_t p_height) {
     space.set_cell_height(p_height);
-    cell_scale_changed();
+    on_hex_space_changed();
 }
 
 real_t HexMapNode::get_cell_height() const { return space.get_cell_height(); }
 
 void HexMapNode::set_cell_radius(real_t p_radius) {
     space.set_cell_radius(p_radius);
-    cell_scale_changed();
+    on_hex_space_changed();
 }
 
 real_t HexMapNode::get_cell_radius() const { return space.get_cell_radius(); }
@@ -135,15 +141,15 @@ void HexMapNode::set_center_y(bool p_value) {
     } else {
         space.set_mesh_offset(Vector3(0, -0.5, 0));
     }
-    cell_scale_changed();
+    on_hex_space_changed();
 }
 
 bool HexMapNode::get_center_y() const {
     return space.get_mesh_offset().y == 0;
 }
 
-bool HexMapNode::cell_scale_changed() {
-    emit_signal("cell_scale_changed");
+bool HexMapNode::on_hex_space_changed() {
+    emit_signal("hex_space_changed");
     return true;
 }
 
@@ -154,18 +160,21 @@ Vector3 HexMapNode::get_cell_center(const HexMapCellId &cell_id) const {
 }
 
 Vector3 HexMapNode::get_cell_center(
-        const Ref<hex_bind::HexMapCellId> cell_id) const {
-    return space.get_cell_center(**cell_id);
+        const Ref<hex_bind::HexMapCellId> ref) const {
+    return space.get_cell_center(ref->inner);
 }
 
 HexMapCellId HexMapNode::get_cell_id(Vector3 pos) const {
     return space.get_cell_id(pos);
 }
+Ref<hex_bind::HexMapCellId> HexMapNode::_get_cell_id(Vector3 pos) const {
+    return space.get_cell_id(pos).to_ref();
+}
 
-void HexMapNode::set_cell(const Ref<hex_bind::HexMapCellId> cell_id,
+void HexMapNode::set_cell(const Ref<hex_bind::HexMapCellId> ref,
         int p_item,
         int p_orientation) {
-    set_cell(**cell_id, p_item, p_orientation);
+    set_cell(ref->inner, p_item, p_orientation);
     // XXX emit this here because it is the entry point for set single cell via
     // gdscript, but this feels like there's a gap in our signal coverage.
     //
@@ -182,7 +191,7 @@ void HexMapNode::set_cell(const Ref<hex_bind::HexMapCellId> cell_id,
     static_assert(HexMapNode::CELL_ARRAY_INDEX_VALUE == 1);
     static_assert(HexMapNode::CELL_ARRAY_INDEX_ORIENTATION == 2);
     emit_signal("cells_changed",
-            Array::make(cell_id->inner.to_vec(), p_item, p_orientation));
+            Array::make(ref->inner.to_vec(), p_item, p_orientation));
 }
 
 void HexMapNode::set_cells(const Array cells) {
@@ -198,6 +207,15 @@ void HexMapNode::set_cells(const Array cells) {
         set_cell(cell_id, value, orientation);
     }
     emit_signal("cells_changed", cells);
+}
+
+Dictionary HexMapNode::_get_cell(
+        const Ref<hex_bind::HexMapCellId> &ref) const {
+    auto info = get_cell(ref->inner);
+    Dictionary out;
+    out["value"] = info.value;
+    out["orientation"] = info.orientation;
+    return out;
 }
 
 Array HexMapNode::get_cells(const Array cells) {

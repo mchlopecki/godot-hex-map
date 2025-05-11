@@ -12,14 +12,14 @@ void HexMapIterAxial::advance() {
         cell.q = q_min;
         cell.y++;
     } else {
-        cell = HexMapCellId::Invalid;
+        cell = HexMapCellId::INVALID;
     }
 }
 
 void HexMapIterAxial::advance_until_valid() {
     while (cell.s() < s_min || cell.s() > s_max || !cell.in_bounds()) {
         advance();
-        if (cell == HexMapCellId::Invalid) {
+        if (cell == HexMapCellId::INVALID) {
             break;
         }
     }
@@ -78,7 +78,7 @@ HexMapIterAxial HexMapIterAxial::begin() {
 
 HexMapIterAxial HexMapIterAxial::end() {
     HexMapIterAxial iter = *this;
-    iter.cell = HexMapCellId::Invalid;
+    iter.cell = HexMapCellId::INVALID;
     return iter;
 }
 
@@ -97,12 +97,12 @@ HexMapIterAxial::operator String() const {
 
 bool HexMapIterAxial::_iter_init() {
     *this = begin();
-    return cell != HexMapCellId::Invalid;
+    return cell != HexMapCellId::INVALID;
 }
 
 bool HexMapIterAxial::_iter_next() {
     HexMapCellId cell = *operator++();
-    return cell != HexMapCellId::Invalid;
+    return cell != HexMapCellId::INVALID;
 }
 
 HexMapCellId HexMapIterAxial::_iter_get() const { return cell; }

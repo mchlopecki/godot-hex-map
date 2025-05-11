@@ -78,10 +78,11 @@ public:
     // heavy (like Ref<HexMapCellIdRef>)
     inline operator Vector3i() const { return Vector3i(q, y, r); }
     inline operator Variant() const { return (Vector3i) * this; }
-    inline operator Ref<hex_bind::HexMapCellId>() const;
     operator String() const;
-    inline Ref<hex_bind::HexMapCellId> to_ref() const { return *this; }
-    inline Vector3i to_vec() const { return *this; }
+
+    /// return a Ref<T> wrapped copy of this HexMapCellId
+    Ref<hex_bind::HexMapCellId> to_ref() const;
+    inline Vector3i to_vec() const { return static_cast<Vector3i>(*this); }
 
     HexMapCellId operator+(const HexMapCellId &other) const {
         return HexMapCellId(q + other.q, r + other.r, y + other.y);
@@ -144,15 +145,14 @@ public:
     HexMapCellId rotate(int steps,
             HexMapCellId center = HexMapCellId(0, 0, 0)) const;
 
-    static const HexMapCellId Origin;
-    static const HexMapCellId Invalid;
+    static const HexMapCellId ZERO;
+    static const HexMapCellId INVALID;
 };
 
 // added for testing
 std::ostream &operator<<(std::ostream &os, const HexMapCellId &value);
 
 namespace hex_bind {
-
 // wrapper to return a HexMapCellId to GDscript
 class HexMapCellId : public RefCounted {
     GDCLASS(HexMapCellId, RefCounted)
@@ -165,9 +165,6 @@ public:
     HexMapCellId(const CellId &cell_id) : inner(cell_id) {};
     HexMapCellId() {};
 
-    // c++ helpers
-    inline operator const CellId &() const { return inner; }
-
     // GDScript field accessors
     int get_q();
     void set_q(int);
@@ -178,16 +175,15 @@ public:
     int get_s();
 
     // GDScript static constructors
-    static Ref<hex_bind::HexMapCellId>
-    from_coordinates(int p_q, int p_r, int p_y);
-    static Ref<hex_bind::HexMapCellId> from_vector(Vector3i p_vector);
+    static Ref<hex_bind::HexMapCellId> at(int p_q, int p_r, int p_y);
+    static Ref<hex_bind::HexMapCellId> from_vec(Vector3i p_vector);
     static Ref<hex_bind::HexMapCellId> from_int(uint64_t p_hash);
 
-    // gdscript does not support equality for RefCounted objects.  We need some
-    // way to use cell ids in arrays, hashes, etc.  We provide the hash method
-    // for generating a type that gdscript can handle for equality.
+    // gdscript does not support custom equality for objects.  We need some
+    // way to use cell ids in arrays, hashes, etc.  We provide the as_int()
+    // method for generating a type that gdscript can handle for equality.
     uint64_t as_int();
-    Vector3i as_vector();
+    Vector3i as_vec();
 
     // maths
     Ref<hex_bind::HexMapCellId> add(Ref<hex_bind::HexMapCellId>) const;
@@ -218,9 +214,4 @@ public:
 protected:
     static void _bind_methods();
 };
-
 } //namespace hex_bind
-
-inline HexMapCellId::operator Ref<hex_bind::HexMapCellId>() const {
-    return Ref<hex_bind::HexMapCellId>(memnew(hex_bind::HexMapCellId(*this)));
-}
