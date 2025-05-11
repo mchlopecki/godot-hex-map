@@ -223,7 +223,7 @@ func _on_submit_button_pressed() -> void:
         EditMode.Update:
             # get the original values for the type
             var orig = node.get_cell_type(id)
-            if not orig:
+            if orig == null:
                 push_error("unable to find original values for cell type ", id)
                 return
 

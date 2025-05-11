@@ -42,10 +42,6 @@ enum Mode { Add, Update }
 # rule being edited
 var rule := HexMapTileRule.new()
 
-# set to true when we're updating an existing rule; XXX maybe pull this from
-# rule.id == USHRT_MAX?
-var is_update: bool
-
 # map cell type to color, built from cell_types in _on_cell_types_changed()
 var cell_type_colors := {}
 
@@ -104,7 +100,8 @@ func set_cell_state(offset: HexMapCellId, state: String, type) -> void:
             push_error("unsupported cell state ", state)
 
 func focus_painter() -> void:
-    %RulePainter3D.grab_focus()
+    if is_inside_tree():
+        %RulePainter3D.grab_focus()
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -203,8 +200,4 @@ func _on_painter_layer_changed(layer: int):
         count -= 1
     
 func _on_submit_pressed():
-    var out := rule
-    # because HexMapTileRule is a reference, replace the reference here to
-    # prevent stomping on the value we emit.
-    set_rule(HexMapTileRule.new())
-    save_pressed.emit(out)
+    save_pressed.emit(rule.duplicate())

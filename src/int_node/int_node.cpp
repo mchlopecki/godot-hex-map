@@ -90,7 +90,7 @@ Variant HexMapIntNode::get_cell_type(unsigned id) const {
     Dictionary out;
     const auto cell_type = cell_types.find(id);
     ERR_FAIL_COND_V_MSG(
-            cell_type == cell_types.end(), false, "cell type id not found");
+            cell_type == cell_types.end(), nullptr, "cell type id not found");
     out["value"] = id;
     out["name"] = cell_type->value.name;
     out["color"] = cell_type->value.color;

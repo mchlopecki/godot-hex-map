@@ -32,6 +32,7 @@ void HexMapAutoTiledNodeEditorPlugin::_edit(Object *p_object) {
             "auto_tiled_node_editor_bottom_panel.tscn");
     bottom_panel = (Control *)panel_scene->instantiate();
     bottom_panel->set("node", auto_tiled_node);
+    bottom_panel->set("editor_plugin", this);
     // add & show the panel
     add_control_to_bottom_panel(bottom_panel, "HexMapAutoTiled");
     make_bottom_panel_item_visible(bottom_panel);

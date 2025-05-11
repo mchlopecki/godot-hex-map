@@ -176,7 +176,7 @@ func set_cell(cell_id: HexMapCellId, state: Array) -> void:
     cell.scale = hex_space.get_cell_scale()
     cell.show_grid = cell_id.y == active_layer
 
-    if not cell.is_inside_tree():
+    if cell.get_parent() == null:
         %CellMeshes.add_child(cell)
 
 func reset() -> void:

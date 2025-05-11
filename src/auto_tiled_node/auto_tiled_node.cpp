@@ -11,6 +11,7 @@
 #include "auto_tiled_node.h"
 #include "core/iter_radial.h"
 #include "core/tile_orientation.h"
+#include "godot_cpp/variant/string.hpp"
 
 void HexMapAutoTiledNode::_get_property_list(
         List<PropertyInfo> *p_list) const {
@@ -143,10 +144,15 @@ void HexMapAutoTiledNode::set_mesh_library(const Ref<MeshLibrary> &value) {
 Dictionary HexMapAutoTiledNode::get_rules() const {
     Dictionary out;
     for (const auto &r : rules) {
-        Ref<HexMapTileRule> rule = r.value;
-        out[r.key] = rule;
+        out[r.key] = r.value.to_ref();
     }
     return out;
+}
+
+Variant HexMapAutoTiledNode::get_rule(uint16_t id) const {
+    Dictionary out;
+    const HexMapAutoTiledNode::Rule *entry = rules.getptr(id);
+    return entry ? (Variant)entry->to_ref() : (Variant) nullptr;
 }
 
 Array HexMapAutoTiledNode::get_rules_order() const {
@@ -171,15 +177,24 @@ void HexMapAutoTiledNode::set_rules_order(Array value) {
 }
 
 unsigned HexMapAutoTiledNode::add_rule(const Rule &rule) {
-    unsigned id = 0;
-    for (int v : rules_order) {
-        if (v >= id) {
-            id = v + 1;
+    unsigned id = rule.id;
+
+    // look up an unused id
+    if (rule.id == Rule::ID_NOT_SET) {
+        id = 0;
+        for (int v : rules_order) {
+            if (v >= id) {
+                id = v + 1;
+            }
         }
     }
 
+    ERR_FAIL_COND_V_MSG(rules.has(id),
+            Rule::ID_NOT_SET,
+            "HexMapAutoTiled::add_rule, rule id " + itos(id) +
+                    " already exists");
+
     auto iter = rules.insert(id, rule);
-    assert(iter && "iter must return non-null");
     iter->value.id = id;
     rules_order.push_back(id);
 
@@ -363,6 +378,8 @@ void HexMapAutoTiledNode::_bind_methods() {
 
     ClassDB::bind_method(
             D_METHOD("get_rules"), &HexMapAutoTiledNode::get_rules);
+    ClassDB::bind_method(
+            D_METHOD("get_rule", "id"), &HexMapAutoTiledNode::get_rule);
     ClassDB::bind_method(D_METHOD("get_rules_order"),
             &HexMapAutoTiledNode::get_rules_order);
     ClassDB::bind_method(D_METHOD("set_rules_order", "order"),
@@ -652,6 +669,12 @@ HexMapAutoTiledNode::Rule::Cell HexMapAutoTiledNode::Rule::Cell::from_dict(
     return out;
 }
 
+Ref<HexMapAutoTiledNode::HexMapTileRule>
+HexMapAutoTiledNode::Rule::to_ref() const {
+    return Ref<HexMapAutoTiledNode::HexMapTileRule>(
+            memnew(HexMapAutoTiledNode::HexMapTileRule(*this)));
+}
+
 // GDSCRIPT Rule BINDINGS
 void HexMapAutoTiledNode::HexMapTileRule::_bind_methods() {
     ClassDB::bind_method(
@@ -691,6 +714,14 @@ void HexMapAutoTiledNode::HexMapTileRule::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_cell_empty", "offset", "invert"),
             &HexMapTileRule::set_cell_empty,
             DEFVAL(false));
+
+    ClassDB::bind_method(D_METHOD("duplicate"), &HexMapTileRule::duplicate);
+}
+
+Ref<HexMapAutoTiledNode::HexMapTileRule>
+HexMapAutoTiledNode::HexMapTileRule::duplicate() const {
+    // this creates a new Ref with a copy of the inner rule
+    return inner.to_ref();
 }
 
 int HexMapAutoTiledNode::HexMapTileRule::get_tile() const {

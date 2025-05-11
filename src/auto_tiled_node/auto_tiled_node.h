@@ -70,7 +70,9 @@ public:
             static Cell from_dict(const Dictionary);
         };
 
-        inline operator Ref<HexMapTileRule>() const;
+        /// get a reference to a copy of this value; used for packing into a
+        /// Variant type
+        Ref<HexMapTileRule> to_ref() const;
 
         /// get the details for a specific cell in the rule pattern
         Cell get_cell(HexMapCellId cell_id) const;
@@ -265,6 +267,7 @@ public:
         void set_cell_empty(const Ref<hex_bind::HexMapCellId> &, bool not_);
         Variant get_cell(const Ref<hex_bind::HexMapCellId> &) const;
         Array get_cells() const;
+        Ref<HexMapAutoTiledNode::HexMapTileRule> duplicate() const;
 
         HexMapTileRule() {};
         HexMapTileRule(const Rule &rule) : inner(rule) {};
@@ -289,10 +292,16 @@ public:
     void set_mesh_library(const Ref<MeshLibrary> &);
     Ref<MeshLibrary> get_mesh_library() const;
     Dictionary get_rules() const;
+    Variant get_rule(uint16_t id) const;
     Array get_rules_order() const;
     void set_rules_order(Array);
 
     /// add a new rule; id of new rule will be returned
+    /// @param [rule] Rule to be added
+    ///
+    /// If rule.id is ID_NOT_SET, then the next available rule id will be used.
+    /// If rule.id has any other value, this method will use the supplied id.
+    /// If the rule id is already in use, ID_NOT_SET will be returned.
     unsigned add_rule(const Rule &);
     unsigned add_rule(const Ref<HexMapTileRule> &);
     /// update an existing rule
@@ -333,9 +342,3 @@ private:
     /// order in which the rules should be applied
     Vector<int> rules_order;
 };
-
-inline HexMapAutoTiledNode::Rule::operator Ref<
-        HexMapAutoTiledNode::HexMapTileRule>() const {
-    return Ref<HexMapAutoTiledNode::HexMapTileRule>(
-            memnew(HexMapAutoTiledNode::HexMapTileRule(*this)));
-}

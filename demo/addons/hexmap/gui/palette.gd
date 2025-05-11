@@ -12,7 +12,8 @@ signal selected(id)
 @export var selected_id := -1 :
     set(value):
         selected_id = value
-        %Filter.release_focus()
+        if is_inside_tree():
+            %Filter.release_focus()
         rebuild_palette()
         selected.emit(value)
 @export var selected_item : Dictionary :
