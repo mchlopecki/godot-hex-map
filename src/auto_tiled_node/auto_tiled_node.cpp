@@ -261,13 +261,13 @@ void HexMapAutoTiledNode::apply_rules() {
     // only apply the rules to those cells that have some value defined,
     // but to support a pattern matching an empty cell (no value assigned)
     // at the center of the pattern, we need to evaluate cells with no
-    // value set.  To prevent evaluating every command, we only expand our
-    // search area around existing cells based on the rules defined.
+    // value set.  To prevent evaluating every possible cell in the space, we
+    // only expand our search area around existing cells based on the what the
+    // defined rules require.
     //
     // As an example, a rule with the center cell empty, but the cell below
     // it must have the value 3, we'll expand the cell ids to include the
-    // cell id
-    // **above** every cell that is defined.
+    // cell id **above** every cell that is defined.
     int8_t cell_padding[5] = { -1, -1, -1, -1, -1 };
     for (const auto &iter : rules) {
         cell_mask |= iter.value.cell_mask;
@@ -288,7 +288,6 @@ void HexMapAutoTiledNode::apply_rules() {
         cell_map.insert(iter.key);
 
         HexMapCellId cell_id = iter.key;
-        // UtilityFunctions::print("insert cell " + cell_id);
 
         for (int i = 0; i < 5; i++) {
             if (cell_padding[i] < 0) {
@@ -300,16 +299,22 @@ void HexMapAutoTiledNode::apply_rules() {
 
             for (const HexMapCellId id :
                     cell_id.get_neighbors(radius, HexMapPlanes::QRS, true)) {
-                // UtilityFunctions::print("insert pad cell " + id);
                 cell_map.insert(id);
             }
         }
     }
 
+    // Loop through the cells in our search space, attempting to match the
+    // rules in order.  If a rule matches a given cell, we update the tiled
+    // node with the appropriate tile & orientation, then move on to the next
+    // cell.  If no rules match, we don't set anything for that cell in the
+    // tiled node.
     for (const auto key : cell_map) {
         HexMapCellId cell_id = key;
         int32_t cells[Rule::PATTERN_CELLS];
         for (int i = 0; i < Rule::PATTERN_CELLS; i++) {
+            // if the cell isn't set in the cell mask, don't get the value for
+            // that cell.
             if ((cell_mask & (1ULL << i)) == 0) {
                 cells[i] = -1;
                 continue;
@@ -325,27 +330,16 @@ void HexMapAutoTiledNode::apply_rules() {
                 continue;
             }
 
-            for (int o = 0; o < 6; o++) {
-                int matched = rule.match(cells, o);
-                if (matched == -1) {
-                    // pattern matches with the current orientation, set
-                    // the tile & orientation in the tiled node, and move
-                    // on to the next cell for evaluation.
-                    tiled_node->set_cell_item(
-                            cell_id, rule.tile, static_cast<int>(o));
-                    goto next_cell;
-                } else if (matched < 5) {
-                    // XXX fix ugly magic number
-                    //
-                    // If one of the center cells (q = r = 0, y = -2...2)
-                    // does not match, no ammount of rotation will make it
-                    // match, so just move on to the next rule.
-                    goto next_rule;
-                }
+            // Try to match the cell
+            HexMapTileOrientation orientation;
+            if (rule.match(cells, orientation)) {
+                // cell matches; set the cell in the tiled node using the
+                // matched orientation
+                tiled_node->set_cell_item(
+                        cell_id, rule.tile, static_cast<int>(orientation));
+                break;
             }
-        next_rule: /* noop */;
         }
-    next_cell: /* noop */;
     }
 }
 
@@ -401,8 +395,6 @@ void HexMapAutoTiledNode::_bind_methods() {
 }
 
 void HexMapAutoTiledNode::_notification(int p_what) {
-    static Transform3D last_transform;
-
     switch (p_what) {
     case NOTIFICATION_PARENTED:
         int_node = Object::cast_to<HexMapIntNode>(get_parent());
@@ -424,9 +416,7 @@ void HexMapAutoTiledNode::_notification(int p_what) {
                 callable_mp(this,
                         &HexMapAutoTiledNode::on_int_node_cells_changed));
         int_node = nullptr;
-        UtilityFunctions::print("before clear tiled ", tiled_node);
         tiled_node->clear();
-        UtilityFunctions::print("clear tiled ", tiled_node);
         break;
     }
 }
@@ -439,11 +429,7 @@ HexMapAutoTiledNode::HexMapAutoTiledNode() {
     UtilityFunctions::print("tiled node = ", tiled_node);
 }
 
-HexMapAutoTiledNode::~HexMapAutoTiledNode() {
-    UtilityFunctions::print(
-            "remove child tiled ", vformat("0x%08x", (uint64_t)tiled_node));
-    tiled_node = nullptr;
-}
+HexMapAutoTiledNode::~HexMapAutoTiledNode() { tiled_node = nullptr; }
 
 int HexMapAutoTiledNode::Rule::get_pattern_index(HexMapCellId offset) const {
     for (int i = 0; i < PATTERN_CELLS; i++) {
@@ -504,48 +490,74 @@ void HexMapAutoTiledNode::Rule::set_cell_empty(HexMapCellId offset,
     ERR_FAIL_MSG("Rule::set_cell_empty(): invalid cell offset");
 }
 
-inline int HexMapAutoTiledNode::Rule::match(int32_t cell_type[PATTERN_CELLS],
-        HexMapTileOrientation orientation) {
-    int o = static_cast<int>(orientation);
-    assert(o >= 0 && o < 6 && "orientation must be in 0..5 inclusive");
-    auto *pattern_index = PatternIndex[static_cast<int>(orientation)];
+inline bool HexMapAutoTiledNode::Rule::match(
+        const int32_t cell_value[PATTERN_CELLS],
+        HexMapTileOrientation &orientation) const {
+    // start with zero rotation, and try matching the rule with each
+    // possible upright rotation
+    orientation = HexMapTileOrientation::Upright0;
+    do {
+        // get the cell indexes to use for the given rotation
+        auto *pattern_index = PatternIndex[static_cast<int>(orientation)];
 
-    int pattern_size = PATTERN_CELLS;
-    for (int i = 0; i < pattern_size; i++) {
-        int index = pattern_index[i];
-        const auto &cell = pattern[pattern_index[i]];
+        // iterate through the cells in the pattern checking if the cell values
+        // match the pattern.
+        int pattern_size = PATTERN_CELLS;
+        for (int i = 0; i < pattern_size; i++) {
+            const auto &cell = pattern[pattern_index[i]];
 
-        // match the cell state
-        switch (cell.state) {
-        case RULE_CELL_STATE_DISABLED:
-        case RULE_CELL_INVALID_OFFSET:
-            continue;
-        case RULE_CELL_STATE_EMPTY:
-            if (cell_type[i] == -1) {
+            // try match the cell state, if the cell matches, continue to the
+            // next cell
+            switch (cell.state) {
+            case RULE_CELL_STATE_DISABLED:
+            case RULE_CELL_INVALID_OFFSET:
                 continue;
+            case RULE_CELL_STATE_EMPTY:
+                if (cell_value[i] == -1) {
+                    continue;
+                }
+                break;
+            case RULE_CELL_STATE_NOT_EMPTY:
+                if (cell_value[i] != -1) {
+                    continue;
+                }
+                break;
+            case RULE_CELL_STATE_TYPE:
+                if (cell_value[i] == cell.type) {
+                    continue;
+                }
+                break;
+            case RULE_CELL_STATE_NOT_TYPE:
+                if (cell_value[i] != cell.type) {
+                    continue;
+                }
+                break;
             }
-            break;
-        case RULE_CELL_STATE_NOT_EMPTY:
-            if (cell_type[i] != -1) {
-                continue;
+
+            // this cell did not match with the current orientation
+
+            // If the mismatch was on one of the central cells (q = r = 0),
+            // then there's no possible rotation that would cause it to
+            // match, so fail early.
+            if (i < 5) {
+                return false;
             }
-            break;
-        case RULE_CELL_STATE_TYPE:
-            if (cell_type[i] == cell.type) {
-                continue;
-            }
-            break;
-        case RULE_CELL_STATE_NOT_TYPE:
-            if (cell_type[i] != cell.type) {
-                continue;
-            }
-            break;
+
+            // the rule does not match with the current orientation; try
+            // matching the next orientation.
+            goto next_orientation;
         }
-        /// cell state did not match, return our index
-        return i;
-    }
 
-    return -1;
+        // all cells matched the pattern; return success
+        return true;
+
+    next_orientation:
+        // rotate to try the next orientation
+        orientation.rotate(1);
+    } while (orientation != HexMapTileOrientation::Upright0);
+
+    // no orientation matched, let the caller know this rule does not match
+    return false;
 }
 
 void HexMapAutoTiledNode::Rule::update_internal() {

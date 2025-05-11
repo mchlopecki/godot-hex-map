@@ -1033,8 +1033,6 @@ RID HexMapTiledNode::get_bake_mesh_instance(int p_idx) {
 bool HexMapTiledNode::generate_navigation_source_geometry(Ref<NavigationMesh>,
         Ref<NavigationMeshSourceGeometryData3D> source_geometry_data,
         Node *) const {
-    UtilityFunctions::print("navigation source generator");
-
     for (const auto &it : cell_map) {
         const Cell &cell = it.value;
 

@@ -87,13 +87,13 @@ public:
         /// require a cell be empty when matching
         void set_cell_empty(HexMapCellId offset, bool invert = false);
 
-        /// check if the rule matches the provided cell data with the given
-        /// rotation
-        /// @param cell_data
-        /// @param orientation
-        /// @return -1 if matches, >= 0 for the index of mismatch
-        inline int match(int32_t cell_type[PATTERN_CELLS],
-                HexMapTileOrientation orientation);
+        /// check if the rule matches the provided cell values
+        /// @param[in] [cell_values] values for the surrounding cells
+        /// @param[out] [orientation] first orientation found where rule
+        ///     matches
+        /// @return true if rule matches
+        inline bool match(const int32_t cell_values[PATTERN_CELLS],
+                HexMapTileOrientation &orientation) const;
 
     private:
         // clang-format off
@@ -225,7 +225,8 @@ public:
         /// @see CellOffsets
         Cell pattern[PATTERN_CELLS];
 
-        /// bitmask of cells that are needed to match this rule with rotation
+        /// bitmask of neighbor cells that must be checked to match this rule,
+        /// including all rotations
         uint64_t cell_mask = 0;
 
         /// padding needed for existing cells to match this rule
