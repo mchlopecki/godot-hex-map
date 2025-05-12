@@ -936,6 +936,7 @@ void HexMapTiledNode::_bind_methods() {
 
     ADD_SIGNAL(MethodInfo(
             "cell_changed", PropertyInfo(Variant::VECTOR3I, "cell")));
+    ADD_SIGNAL(MethodInfo("mesh_library_changed"));
 }
 
 Array HexMapTiledNode::get_used_cells() const {

@@ -154,7 +154,7 @@ void HexMapNodeEditorPlugin::selection_fill() {
     ERR_FAIL_COND_MSG(
             editor_cursor->size() == 0, "cursor has no tiles; need one");
 
-    EditorCursor::CellState tile = editor_cursor->get_only_cell_state();
+    auto tile = editor_cursor->get_only_cell_state();
     auto cells = selection_manager->get_cells_v();
 
     // build the set_cells() argument to restore the original cells
@@ -163,12 +163,13 @@ void HexMapNodeEditorPlugin::selection_fill() {
     // build the set_cells() argument to clear the cells
     Array do_list;
     int cell_count = cells.size();
-    do_list.resize(cell_count * 3);
+    do_list.resize(cell_count * HexMapNode::CELL_ARRAY_WIDTH);
     for (int i = 0; i < cell_count; i++) {
-        int base = i * 3;
-        do_list[base] = cells[i];
-        do_list[base + 1] = tile.index;
-        do_list[base + 2] = tile.orientation;
+        int base = i * HexMapNode::CELL_ARRAY_WIDTH;
+        do_list[base + HexMapNode::CELL_ARRAY_INDEX_VEC] = cells[i];
+        do_list[base + HexMapNode::CELL_ARRAY_INDEX_VALUE] = tile.value;
+        do_list[base + HexMapNode::CELL_ARRAY_INDEX_ORIENTATION] =
+                tile.orientation;
     }
 
     EditorUndoRedoManager *undo_redo = get_undo_redo();
@@ -472,20 +473,20 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
         HexMapCellId cell_id = editor_cursor->get_cell();
         auto [tile, orientation] = hex_map->get_cell(cell_id);
 
-        EditorCursor::CellState cell = editor_cursor->get_only_cell_state();
-        if (cell.index != tile || cell.orientation != orientation) {
+        auto cell = editor_cursor->get_only_cell_state();
+        if (cell.value != tile || cell.orientation != orientation) {
             cells_changed.push_back(CellChange{
                     .cell_id = cell_id,
                     .orig_tile = tile,
                     .orig_orientation = orientation,
-                    .new_tile = cell.index,
+                    .new_tile = cell.value,
                     .new_orientation = cell.orientation,
             });
             static_assert(HexMapNode::CELL_ARRAY_INDEX_VEC == 0);
             static_assert(HexMapNode::CELL_ARRAY_INDEX_VALUE == 1);
             static_assert(HexMapNode::CELL_ARRAY_INDEX_ORIENTATION == 2);
             hex_map->set_cells(Array::make(
-                    (Vector3i)cell_id, cell.index, cell.orientation));
+                    (Vector3i)cell_id, cell.value, cell.orientation));
         }
         if (mouse_left_released) {
             commit_cell_changes("HexMap: paint cells");

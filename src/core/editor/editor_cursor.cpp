@@ -50,7 +50,7 @@ void EditorCursor::set_cells_visibility_callback(Callable value) {
     set_cells_visibility = value;
 }
 
-void EditorCursor::set_orientation(TileOrientation orientation) {
+void EditorCursor::set_orientation(HexMapTileOrientation orientation) {
     this->orientation = orientation;
     transform_meshes();
 }
@@ -77,10 +77,10 @@ void EditorCursor::transform_meshes() {
 
     auto profile = profiling_begin("EditorCursor: updating hidden cell list");
     Array changes;
-    HashSet<CellKey> current_cells = hidden_cells;
+    HashSet<HexMapCellId::Key> current_cells = hidden_cells;
     for (const auto &iter : mesh_tool.get_cells()) {
         Vector3 center = space.get_cell_center_global(iter.key);
-        CellId cell_id = parent_space.get_cell_id_global(center);
+        HexMapCellId cell_id = parent_space.get_cell_id_global(center);
         if (!current_cells.erase(cell_id)) {
             hidden_cells.insert(cell_id);
             changes.push_back((Vector3i)cell_id);
@@ -101,32 +101,15 @@ void EditorCursor::transform_meshes() {
 
 void EditorCursor::clear_tiles() {
     mesh_tool.clear();
-    set_orientation(TileOrientation::Upright0);
+    set_orientation(HexMapTileOrientation::Upright0);
 }
 
-void EditorCursor::set_tile(CellId cell,
+void EditorCursor::set_tile(HexMapCellId cell,
         int tile,
-        TileOrientation orientation) {
+        HexMapTileOrientation orientation) {
     mesh_tool.set_cell(cell, tile, orientation);
     // explicitly not calling transform_meshes() here because multiple tiles
     // may be set in a single frame.
-}
-
-Vector<EditorCursor::CellState> EditorCursor::get_cells() const {
-    const HexMapSpace &space = mesh_tool.get_space();
-    Vector<CellState> out;
-
-    for (const auto &iter : mesh_tool.get_cells()) {
-        Vector3 center = space.get_cell_center_global(iter.key);
-        CellId cell_id = parent_space.get_cell_id_global(center);
-        out.push_back(CellState{
-                .cell_id = cell_id,
-                .index = iter.value.index,
-                .orientation = iter.value.orientation + orientation,
-        });
-    }
-
-    return out;
 }
 
 Array EditorCursor::get_cells_v() const {
@@ -168,17 +151,16 @@ Array EditorCursor::get_cell_ids_v() const {
     return out;
 }
 
-EditorCursor::CellState EditorCursor::get_only_cell_state() const {
+HexMapNode::CellInfo EditorCursor::get_only_cell_state() const {
     auto cell_map = mesh_tool.get_cells();
     assert(cell_map.size() == 1 && "cursor must have only one cell");
 
     const HexMapSpace &space = mesh_tool.get_space();
     const auto &iter = *cell_map.begin();
     Vector3 center = space.get_cell_center_global(iter.key);
-    CellId cell_id = parent_space.get_cell_id_global(center);
-    return CellState{
-        .cell_id = cell_id,
-        .index = iter.value.index,
+    HexMapCellId cell_id = parent_space.get_cell_id_global(center);
+    return HexMapNode::CellInfo{
+        .value = iter.value.index,
         .orientation = iter.value.orientation + orientation,
     };
 }

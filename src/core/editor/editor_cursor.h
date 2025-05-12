@@ -9,6 +9,7 @@
 #include <godot_cpp/variant/vector2.hpp>
 
 #include "core/cell_id.h"
+#include "core/hex_map_node.h"
 #include "core/library_mesh_tool.h"
 #include "core/tile_orientation.h"
 
@@ -16,22 +17,11 @@ using namespace godot;
 
 class EditorCursor {
 public:
-    using CellId = HexMapCellId;
-    using CellKey = HexMapCellId::Key;
-    using TileOrientation = HexMapTileOrientation;
-
     enum EditAxis {
         AXIS_Y,
         AXIS_Q, // northwest/southeast
         AXIS_R, // east/west
         AXIS_S, // northeast/southeast
-    };
-
-    //
-    struct CellState {
-        CellId cell_id;
-        int index = -1;
-        TileOrientation orientation;
     };
 
     EditorCursor(RID scenario);
@@ -68,9 +58,10 @@ public:
     void set_visibility(bool visible);
 
     /// set a cell; takes effect on next `update()` call
-    void set_tile(CellId cell,
+    void set_tile(HexMapCellId cell,
             int tile,
-            TileOrientation orientation = TileOrientation::Upright0);
+            HexMapTileOrientation orientation =
+                    HexMapTileOrientation::Upright0);
 
     /// clear all cells; takes effect on next `update()` call
     void clear_tiles();
@@ -79,9 +70,6 @@ public:
 
     /// returns the number of cells the cursor occupies
     inline size_t size() { return mesh_tool.get_cells().size(); };
-
-    /// get the cell map for the cursor, adjusted for cursor transforms
-    Vector<CellState> get_cells() const;
 
     /// get the cell map for the cursor, in Array form described by
     /// `HexMapNode._set_cells()`
@@ -94,7 +82,7 @@ public:
     ///
     /// This function will assert if the number of cells set in the cursor does
     /// not equal 1.
-    CellState get_only_cell_state() const;
+    HexMapNode::CellInfo get_only_cell_state() const;
 
     /// get the cell the cursor is occupying
     inline HexMapCellId get_cell() { return pointer_cell; };
@@ -110,7 +98,7 @@ private:
     EditAxis edit_axis = EditAxis::AXIS_Y;
 
     /// orientation of the cursor
-    TileOrientation orientation;
+    HexMapTileOrientation orientation;
 
     /// callback used for toggling cell visibility in the parent class to
     /// prevent existing cells from hiding cursor cells
@@ -124,7 +112,7 @@ private:
 
     HexMapMeshTool mesh_manager;
     Vector3 pointer_pos;
-    CellId pointer_cell;
+    HexMapCellId pointer_cell;
 
     Vector3 last_update_origin;
     Vector3 last_update_normal;
@@ -138,7 +126,7 @@ private:
 
     /// HashSet of the cells we're currently hiding; used to limit the
     /// callbacks we make
-    HashSet<CellKey> hidden_cells;
+    HashSet<HexMapCellId::Key> hidden_cells;
 
     /// Update the grid & tile meshes, along with `cursor_transform()`
     void transform_meshes();

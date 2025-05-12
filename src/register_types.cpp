@@ -31,9 +31,9 @@ void initialize_hexmap_module(ModuleInitializationLevel p_level) {
 #ifdef TOOLS_ENABLED
     if (p_level == godot::MODULE_INITIALIZATION_LEVEL_EDITOR) {
         ClassDB::register_internal_class<EditorControl>();
+        ClassDB::register_abstract_class<HexMapNodeEditorPlugin>();
         ClassDB::register_internal_class<HexMapTiledNodeEditorPlugin>();
         EditorPlugins::add_by_type<HexMapTiledNodeEditorPlugin>();
-        ClassDB::register_abstract_class<HexMapNodeEditorPlugin>();
         ClassDB::register_internal_class<HexMapIntNodeEditorPlugin>();
         EditorPlugins::add_by_type<HexMapIntNodeEditorPlugin>();
         ClassDB::register_internal_class<HexMapAutoTiledNodeEditorPlugin>();

@@ -12,7 +12,6 @@
 
 using namespace godot;
 
-// XXX move palette to bottom panel for HexGrid
 class HexMapIntNodeEditorPlugin : public HexMapNodeEditorPlugin {
     GDCLASS(HexMapIntNodeEditorPlugin, HexMapNodeEditorPlugin);
 
