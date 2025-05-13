@@ -99,14 +99,14 @@ void HexMapNodeEditorPlugin::_deselect_cells() {
     ERR_FAIL_COND_MSG(selection_manager == nullptr,
             "HexMap: SelectionManager not present");
     selection_manager->clear();
-    set_editor_state("selection_active", false);
+    emit_signal("selection_active_changed", false);
 }
 
 void HexMapNodeEditorPlugin::_select_cell(Vector3i cell) {
     ERR_FAIL_COND_MSG(selection_manager == nullptr,
             "HexMap: SelectionManager not present");
     selection_manager->add_cell(cell);
-    set_editor_state("selection_active", true);
+    emit_signal("selection_active_changed", false);
 }
 
 void HexMapNodeEditorPlugin::_set_selection_v(Array cells) {
@@ -114,7 +114,7 @@ void HexMapNodeEditorPlugin::_set_selection_v(Array cells) {
             "HexMap: SelectionManager not present");
 
     selection_manager->set_cells(cells);
-    set_editor_state("selection_active", !cells.is_empty());
+    emit_signal("selection_active_changed", !cells.is_empty());
 }
 
 void HexMapNodeEditorPlugin::selection_clear() {
@@ -201,7 +201,7 @@ void HexMapNodeEditorPlugin::copy_selection_to_cursor() {
         editor_cursor->set_tile(cell_id - center, value, orientation);
     }
     editor_cursor->update(true);
-    set_editor_state("cursor_active", true);
+    emit_signal("cursor_active_changed", true);
     input_state = INPUT_STATE_MOVING;
 }
 
@@ -329,34 +329,14 @@ void HexMapNodeEditorPlugin::selection_move_apply() {
 }
 
 void HexMapNodeEditorPlugin::rebuild_cursor() {
-    ERR_FAIL_COND(bottom_panel == nullptr);
     editor_cursor->clear_tiles();
-    int tile = get_editor_state("cursor_mesh_index");
-    if (tile != HexMapNode::CELL_VALUE_NONE) {
-        editor_cursor->set_tile(HexMapCellId(), tile);
+    if (paint_value != HexMapNode::CELL_VALUE_NONE) {
+        editor_cursor->set_tile(HexMapCellId(), paint_value);
     }
 
     cursor_set_orientation(HexMapTileOrientation());
     editor_cursor->update(true);
-    set_editor_state("cursor_active", editor_cursor->size() > 0);
-}
-
-Variant HexMapNodeEditorPlugin::get_editor_state(const String &key) const {
-    Variant v = bottom_panel->get("editor_state");
-    ERR_FAIL_COND_V_MSG(v.get_type() != Variant::DICTIONARY,
-            Variant::NIL,
-            "bottom panel @export editor_state must be a Dictionary");
-    Dictionary state = v;
-    return state[key];
-}
-void HexMapNodeEditorPlugin::set_editor_state(const String &key,
-        const Variant value) {
-    Variant v = bottom_panel->get("editor_state");
-    ERR_FAIL_COND_MSG(v.get_type() != Variant::DICTIONARY,
-            "bottom panel @export editor_state must be a Dictionary");
-    Dictionary state = v;
-    state[key] = value;
-    bottom_panel->set("editor_state", state);
+    emit_signal("cursor_active_changed", editor_cursor->size() > 0);
 }
 
 void HexMapNodeEditorPlugin::_make_visible(bool p_visible) {
@@ -439,7 +419,8 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
     // - clear cursor (escape)
     case INPUT_STATE_DEFAULT:
         if (mouse_left_pressed && shift_pressed) {
-            editor_cursor->set_visibility(false);
+            editor_cursor->set_visible(false);
+            emit_signal("cursor_active_changed", false);
             input_state = INPUT_STATE_SELECTING;
             last_selection = selection_manager->get_cells_v();
             selection_anchor = editor_cursor->get_pos();
@@ -450,15 +431,15 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
             input_state = INPUT_STATE_PAINTING;
             return AFTER_GUI_INPUT_STOP;
         } else if (mouse_right_pressed) {
-            editor_cursor->set_visibility(false);
+            editor_cursor->set_visible(false);
+            emit_signal("cursor_active_changed", false);
             input_state = INPUT_STATE_ERASING;
             return AFTER_GUI_INPUT_STOP;
         } else if (escape_pressed) {
             if (!selection_manager->is_empty()) {
                 deselect_cells();
             } else {
-                set_editor_state(
-                        "cursor_mesh_index", HexMapNode::CELL_VALUE_NONE);
+                set_paint_value(HexMapNode::CELL_VALUE_NONE);
             }
             return AFTER_GUI_INPUT_STOP;
         }
@@ -517,7 +498,8 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
         if (mouse_right_released) {
             commit_cell_changes("HexMap: erase cells");
             input_state = INPUT_STATE_DEFAULT;
-            editor_cursor->set_visibility(true);
+            editor_cursor->set_visible(true);
+            emit_signal("cursor_active_changed", true);
         }
         break;
     }
@@ -560,7 +542,7 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
 
             selection_manager->clear();
             selection_manager->set_cells(cells);
-            set_editor_state("selection_active", true);
+            emit_signal("selection_active_changed", true);
         }
         if (mouse_left_released) {
             auto profile = profiling_begin("complete selection");
@@ -576,13 +558,15 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
             auto prof_commit = profiling_begin("commit selection undo_redo");
             undo_redo->commit_action();
 
-            editor_cursor->set_visibility(true);
+            editor_cursor->set_visible(true);
+            emit_signal("cursor_active_changed", true);
             input_state = INPUT_STATE_DEFAULT;
             return AFTER_GUI_INPUT_STOP;
         } else if (escape_pressed) {
             selection_manager->clear();
             selection_manager->set_cells(last_selection);
-            editor_cursor->set_visibility(true);
+            editor_cursor->set_visible(true);
+            emit_signal("cursor_active_changed", true);
             input_state = INPUT_STATE_DEFAULT;
             return AFTER_GUI_INPUT_STOP;
         }
@@ -660,6 +644,7 @@ void HexMapNodeEditorPlugin::_edit(Object *p_object) {
     }
 
     RID scenario = hex_map->get_world_3d()->get_scenario();
+    assert(scenario.is_valid());
 
     selection_manager = new SelectionManager(scenario);
     selection_manager->set_space(hex_map->get_space());
@@ -754,38 +739,71 @@ void HexMapNodeEditorPlugin::read_editor_state(const HexMapNode *node) {
     }
 }
 
-void HexMapNodeEditorPlugin::edit_plane_set_axis(EditorCursor::EditAxis axis) {
+void HexMapNodeEditorPlugin::set_edit_plane_axis(
+        EditorCursor::EditAxis value) {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
     ERR_FAIL_COND(bottom_panel == nullptr);
-    edit_axis = axis;
-    editor_cursor->set_axis(axis);
-    editor_cursor->set_depth(edit_axis_depth[axis]);
-    set_editor_state("edit_plane_axis", axis);
-    set_editor_state("edit_plane_depth", edit_axis_depth[axis]);
+
+    if (value == edit_axis) {
+        return;
+    }
+    edit_axis = value;
+    editor_cursor->set_axis(value);
+    emit_signal("edit_plane_axis_changed", value);
+    set_edit_plane_depth(edit_axis_depth[value]);
 }
 
-void HexMapNodeEditorPlugin::edit_plane_set_depth(int depth) {
+EditorCursor::EditAxis HexMapNodeEditorPlugin::get_edit_plane_axis() const {
+    return edit_axis;
+}
+
+void HexMapNodeEditorPlugin::set_edit_plane_depth(int value) {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
     ERR_FAIL_COND(bottom_panel == nullptr);
-    edit_axis_depth[edit_axis] = depth;
-    editor_cursor->set_depth(depth);
-    set_editor_state("edit_plane_depth", depth);
+
+    if (value == (int)edit_axis_depth[edit_axis]) {
+        return;
+    }
+    edit_axis_depth[edit_axis] = value;
+    editor_cursor->set_depth(value);
+    emit_signal("edit_plane_depth_changed", value);
+}
+
+int HexMapNodeEditorPlugin::get_edit_plane_depth() const {
+    return edit_axis_depth[edit_axis];
+}
+
+void HexMapNodeEditorPlugin::set_paint_value(int value) {
+    if (value == paint_value) {
+        return;
+    }
+    paint_value = value;
+
+    // rebuild the cursor if it's not populated with move/cloned cells, or
+    // actively selecting cells.
+    if (input_state != INPUT_STATE_CLONING &&
+            input_state != INPUT_STATE_MOVING &&
+            input_state != INPUT_STATE_SELECTING) {
+        rebuild_cursor();
+    }
+
+    emit_signal("paint_value_changed", value);
+}
+
+int HexMapNodeEditorPlugin::get_paint_value() const { return paint_value; }
+
+bool HexMapNodeEditorPlugin::is_cursor_active() const {
+    return editor_cursor->get_visible() && !editor_cursor->is_empty();
+}
+
+bool HexMapNodeEditorPlugin::is_selection_active() const {
+    return !selection_manager->is_empty();
 }
 
 void HexMapNodeEditorPlugin::on_node_hex_space_changed() {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
     editor_cursor->set_space(hex_map->get_space());
     selection_manager->set_space(hex_map->get_space());
-}
-
-void HexMapNodeEditorPlugin::plane_changed(int p_plane) {
-    ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
-    editor_cursor->set_depth(p_plane);
-}
-
-void HexMapNodeEditorPlugin::axis_changed(int p_axis) {
-    ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
-    editor_cursor->set_axis((EditAxis)p_axis);
 }
 
 void HexMapNodeEditorPlugin::cursor_set_orientation(
@@ -817,34 +835,34 @@ EditorPlugin::AfterGUIInput HexMapNodeEditorPlugin::handle_keypress(
         Ref<InputEventKey> event) {
     if (ED_IS_SHORTCUT("hex_map/edit_y_plane", event)) {
         // set edit plane to y
-        edit_plane_set_axis(EditorCursor::AXIS_Y);
+        set_edit_plane_axis(EditorCursor::AXIS_Y);
         return EditorPlugin::AFTER_GUI_INPUT_STOP;
     }
     if (ED_IS_SHORTCUT("hex_map/edit_q_plane", event)) {
-        edit_plane_set_axis(EditorCursor::AXIS_Q);
+        set_edit_plane_axis(EditorCursor::AXIS_Q);
         return EditorPlugin::AFTER_GUI_INPUT_STOP;
     }
     if (ED_IS_SHORTCUT("hex_map/edit_r_plane", event)) {
-        edit_plane_set_axis(EditorCursor::AXIS_R);
+        set_edit_plane_axis(EditorCursor::AXIS_R);
         return EditorPlugin::AFTER_GUI_INPUT_STOP;
     }
     if (ED_IS_SHORTCUT("hex_map/edit_s_plane", event)) {
-        edit_plane_set_axis(EditorCursor::AXIS_S);
+        set_edit_plane_axis(EditorCursor::AXIS_S);
         return EditorPlugin::AFTER_GUI_INPUT_STOP;
     }
     if (ED_IS_SHORTCUT("hex_map/edit_plane_rotate_cw", event)) {
         switch (edit_axis) {
         case EditAxis::AXIS_Y:
-            edit_plane_set_axis(EditAxis::AXIS_R);
+            set_edit_plane_axis(EditAxis::AXIS_R);
             break;
         case EditAxis::AXIS_Q:
-            edit_plane_set_axis(EditAxis::AXIS_S);
+            set_edit_plane_axis(EditAxis::AXIS_S);
             break;
         case EditAxis::AXIS_R:
-            edit_plane_set_axis(EditAxis::AXIS_Q);
+            set_edit_plane_axis(EditAxis::AXIS_Q);
             break;
         case EditAxis::AXIS_S:
-            edit_plane_set_axis(EditAxis::AXIS_R);
+            set_edit_plane_axis(EditAxis::AXIS_R);
             break;
         }
         return EditorPlugin::AFTER_GUI_INPUT_STOP;
@@ -852,28 +870,28 @@ EditorPlugin::AfterGUIInput HexMapNodeEditorPlugin::handle_keypress(
     if (ED_IS_SHORTCUT("hex_map/edit_plane_rotate_ccw", event)) {
         switch (edit_axis) {
         case EditAxis::AXIS_Y:
-            edit_plane_set_axis(EditAxis::AXIS_S);
+            set_edit_plane_axis(EditAxis::AXIS_S);
             break;
         case EditAxis::AXIS_Q:
-            edit_plane_set_axis(EditAxis::AXIS_R);
+            set_edit_plane_axis(EditAxis::AXIS_R);
             break;
         case EditAxis::AXIS_R:
-            edit_plane_set_axis(EditAxis::AXIS_S);
+            set_edit_plane_axis(EditAxis::AXIS_S);
             break;
         case EditAxis::AXIS_S:
-            edit_plane_set_axis(EditAxis::AXIS_Q);
+            set_edit_plane_axis(EditAxis::AXIS_Q);
             break;
         }
         return EditorPlugin::AFTER_GUI_INPUT_STOP;
     }
     if (ED_IS_SHORTCUT("hex_map/edit_plane_increment", event)) {
         int depth = (int)edit_axis_depth[editor_cursor->get_axis()] + 1;
-        edit_plane_set_depth(depth);
+        set_edit_plane_depth(depth);
         return EditorPlugin::AFTER_GUI_INPUT_STOP;
     }
     if (ED_IS_SHORTCUT("hex_map/edit_plane_decrement", event)) {
         int depth = (int)edit_axis_depth[editor_cursor->get_axis()] - 1;
-        edit_plane_set_depth(depth);
+        set_edit_plane_depth(depth);
         return EditorPlugin::AFTER_GUI_INPUT_STOP;
     }
     if (ED_IS_SHORTCUT("hex_map/cursor_rotate_cw", event)) {
@@ -948,6 +966,66 @@ EditorPlugin::AfterGUIInput HexMapNodeEditorPlugin::handle_keypress(
 }
 
 void HexMapNodeEditorPlugin::_bind_methods() {
+    ClassDB::bind_method(D_METHOD("set_edit_plane_axis", "axis"),
+            &HexMapNodeEditorPlugin::set_edit_plane_axis);
+    ClassDB::bind_method(D_METHOD("get_edit_plane_axis"),
+            &HexMapNodeEditorPlugin::get_edit_plane_axis);
+    ADD_PROPERTY(PropertyInfo(Variant::INT,
+                         "edit_plane_axis",
+                         godot::PROPERTY_HINT_NONE,
+                         ""),
+            "set_edit_plane_axis",
+            "get_edit_plane_axis");
+    ADD_SIGNAL(MethodInfo(
+            "edit_plane_axis_changed", PropertyInfo(Variant::INT, "axis")));
+
+    ClassDB::bind_method(D_METHOD("set_edit_plane_depth", "depth"),
+            &HexMapNodeEditorPlugin::set_edit_plane_depth);
+    ClassDB::bind_method(D_METHOD("get_edit_plane_depth"),
+            &HexMapNodeEditorPlugin::get_edit_plane_depth);
+    ADD_PROPERTY(PropertyInfo(Variant::INT,
+                         "edit_plane_depth",
+                         godot::PROPERTY_HINT_NONE,
+                         ""),
+            "set_edit_plane_depth",
+            "get_edit_plane_depth");
+    ADD_SIGNAL(MethodInfo(
+            "edit_plane_depth_changed", PropertyInfo(Variant::INT, "depth")));
+
+    ClassDB::bind_method(D_METHOD("set_paint_value", "depth"),
+            &HexMapNodeEditorPlugin::set_paint_value);
+    ClassDB::bind_method(D_METHOD("get_paint_value"),
+            &HexMapNodeEditorPlugin::get_paint_value);
+    ADD_PROPERTY(PropertyInfo(Variant::INT,
+                         "paint_value",
+                         godot::PROPERTY_HINT_NONE,
+                         ""),
+            "set_paint_value",
+            "get_paint_value");
+    ADD_SIGNAL(MethodInfo(
+            "paint_value_changed", PropertyInfo(Variant::INT, "value")));
+
+    ClassDB::bind_method(D_METHOD("is_cursor_active"),
+            &HexMapNodeEditorPlugin::is_cursor_active);
+    ADD_SIGNAL(MethodInfo(
+            "cursor_active_changed", PropertyInfo(Variant::INT, "active")));
+
+    ClassDB::bind_method(D_METHOD("is_selection_active"),
+            &HexMapNodeEditorPlugin::is_selection_active);
+    ADD_SIGNAL(MethodInfo(
+            "selection_active_changed", PropertyInfo(Variant::INT, "active")));
+
+    ClassDB::bind_method(D_METHOD("cursor_rotate", "steps"),
+            &HexMapNodeEditorPlugin::cursor_rotate);
+    ClassDB::bind_method(D_METHOD("selection_move"),
+            &HexMapNodeEditorPlugin::selection_move);
+    ClassDB::bind_method(D_METHOD("selection_clone"),
+            &HexMapNodeEditorPlugin::selection_clone);
+    ClassDB::bind_method(D_METHOD("selection_fill"),
+            &HexMapNodeEditorPlugin::selection_fill);
+    ClassDB::bind_method(D_METHOD("selection_clear"),
+            &HexMapNodeEditorPlugin::selection_clear);
+
     ClassDB::bind_method(D_METHOD("deselect_cells"),
             &HexMapNodeEditorPlugin::_deselect_cells);
     ClassDB::bind_method(D_METHOD("select_cell", "cell"),
@@ -957,8 +1035,6 @@ void HexMapNodeEditorPlugin::_bind_methods() {
     ClassDB::bind_method(D_METHOD("cursor_set_orientation", "orientation"),
             static_cast<void (HexMapNodeEditorPlugin::*)(int)>(
                     &HexMapNodeEditorPlugin::cursor_set_orientation));
-    ClassDB::bind_method(D_METHOD("cursor_rotate", "steps"),
-            &HexMapNodeEditorPlugin::cursor_rotate);
 
     BIND_ENUM_CONSTANT(EditorCursor::AXIS_Q);
     BIND_ENUM_CONSTANT(EditorCursor::AXIS_R);
@@ -1007,6 +1083,10 @@ void HexMapNodeEditorPlugin::add_editor_shortcut(const String &path,
 }
 
 HexMapNodeEditorPlugin::HexMapNodeEditorPlugin() {
+    // initialize the depth array
+    edit_axis_depth.resize(4);
+    edit_axis_depth.fill(0);
+
     // Define edit plane shortcuts
     add_editor_shortcut("hex_map/edit_y_plane", "Edit Y Plane", Key::KEY_X);
     add_editor_shortcut("hex_map/edit_q_plane", "Edit Q Plane", Key::KEY_NONE);

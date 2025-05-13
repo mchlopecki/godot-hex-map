@@ -70,6 +70,7 @@ void HexMapMeshTool::build_multimeshes() {
         // create an instance of the multimesh
         RID instance = rs->instance_create2(multimesh, scenario);
         rs->instance_attach_object_instance_id(instance, object_id);
+        rs->instance_set_visible(instance, visible);
 
         multimeshes.push_back(MultiMesh{ multimesh, instance });
     }
@@ -110,10 +111,10 @@ void HexMapMeshTool::clear() {
     cell_map.clear();
 }
 
-void HexMapMeshTool::set_visibility(bool visible) {
-    if (!scenario.is_valid()) {
-        return;
-    }
+bool HexMapMeshTool::get_visible() const { return visible; }
+
+void HexMapMeshTool::set_visible(bool value) {
+    visible = value;
     RenderingServer *rs = RenderingServer::get_singleton();
     for (const MultiMesh &mm : multimeshes) {
         rs->instance_set_visible(mm.instance, visible);

@@ -81,7 +81,10 @@ public:
     void clear();
 
     /// set the visibility of any meshes present
-    void set_visibility(bool visible);
+    void set_visible(bool visible);
+
+    /// check whether the meshes are visible
+    bool get_visible() const;
 
     /// helper function to simplify needed calls when hexmap enters world
     void enter_world(RID scenario);
@@ -111,6 +114,9 @@ private:
 
     /// godot object id all mesh instances belong to
     ObjectID object_id;
+
+    /// whether the meshes are visible
+    bool visible = true;
 
     void free_multimeshes();
     void build_multimeshes();

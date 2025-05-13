@@ -23,7 +23,7 @@ public:
     ~HexMapIntNodeEditorPlugin() {};
 
 protected:
-    static void _bind_methods() {};
+    static void _bind_methods();
 
 private:
     /// HexMapIntNode being edited
@@ -42,12 +42,11 @@ private:
     /// update the `HexMapTiledNode` based on a cell change
     void on_int_node_cells_changed(Array cells);
 
-    // signal handlers
     void on_int_node_hex_space_changed();
-    void set_cell_type(int id, String name, Color color);
-    void delete_cell_type(int id);
-    void set_edit_plane(int axis, int depth);
-    void set_tiled_map_visibility(bool visible);
+
+    /// set/get visibility of int node cells
+    void set_cells_visible(bool value);
+    bool get_cells_visible() const;
 };
 
 #endif

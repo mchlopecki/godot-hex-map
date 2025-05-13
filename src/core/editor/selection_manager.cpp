@@ -151,7 +151,7 @@ void SelectionManager::redraw_selection() {
     set_cells(cells);
 
     // make sure it is visible
-    mesh_manager.set_visibility(true);
+    mesh_manager.set_visible(true);
 }
 
 void SelectionManager::clear() { mesh_manager.clear(); }

@@ -12,6 +12,19 @@
 #include "editor_plugin.h"
 #include "tiled_node/tiled_node.h"
 
+void HexMapIntNodeEditorPlugin::_bind_methods() {
+    ClassDB::bind_method(D_METHOD("set_cells_visible", "axis"),
+            &HexMapIntNodeEditorPlugin::set_cells_visible);
+    ClassDB::bind_method(D_METHOD("get_cells_visible"),
+            &HexMapIntNodeEditorPlugin::get_cells_visible);
+    ADD_PROPERTY(PropertyInfo(Variant::INT,
+                         "cells_visible",
+                         godot::PROPERTY_HINT_NONE,
+                         ""),
+            "set_cells_visible",
+            "get_cells_visible");
+}
+
 bool HexMapIntNodeEditorPlugin::_handles(Object *p_object) const {
     return p_object->is_class("HexMapInt");
 }
@@ -26,74 +39,8 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
     HexMapNodeEditorPlugin::_edit(p_object);
 
     if (hex_map) {
-        // get IntNode properly casted
+        // get IntNode properly casted and connect those signals we care about
         int_node = Object::cast_to<HexMapIntNode>(p_object);
-
-        // XXX Move this loading to the constructor when gui stablizes
-        // load the bottom panel scene and add it to the editor
-        Ref<PackedScene> panel_scene = ResourceLoader::get_singleton()->load(
-                "res://addons/hexmap/gui/"
-                "int_node_editor_bottom_panel.tscn");
-        bottom_panel = (Control *)panel_scene->instantiate();
-
-        // connect the signals
-        bottom_panel->connect("type_selected",
-                callable_mp((HexMapNodeEditorPlugin *)this,
-                        &HexMapNodeEditorPlugin::rebuild_cursor));
-        bottom_panel->connect("edit_plane_changed",
-                callable_mp(this, &HexMapIntNodeEditorPlugin::set_edit_plane));
-        bottom_panel->connect("rotate_cursor",
-                callable_mp((HexMapNodeEditorPlugin *)this,
-                        &HexMapNodeEditorPlugin::cursor_rotate));
-        bottom_panel->connect("move_selection",
-                callable_mp((HexMapNodeEditorPlugin *)this,
-                        &HexMapNodeEditorPlugin::selection_move));
-        bottom_panel->connect("clone_selection",
-                callable_mp((HexMapNodeEditorPlugin *)this,
-                        &HexMapNodeEditorPlugin::selection_clone));
-        bottom_panel->connect("fill_selection",
-                callable_mp((HexMapNodeEditorPlugin *)this,
-                        &HexMapNodeEditorPlugin::selection_fill));
-        bottom_panel->connect("clear_selection",
-                callable_mp((HexMapNodeEditorPlugin *)this,
-                        &HexMapNodeEditorPlugin::selection_clear));
-        bottom_panel->connect("set_tiled_map_visibility",
-                callable_mp(this,
-                        &HexMapIntNodeEditorPlugin::set_tiled_map_visibility));
-
-        // set known state
-        bottom_panel->set("editor_plugin", this);
-        bottom_panel->set("node", int_node);
-        bottom_panel->set("edit_plane_axis", (int)edit_axis);
-        bottom_panel->set("edit_plane_depth", edit_axis_depth[edit_axis]);
-        bool show_cells = int_node->get_meta("_show_cells_", true);
-        bottom_panel->set("show_cells", show_cells);
-
-        // add & show the panel
-        add_control_to_bottom_panel(bottom_panel, "HexMapInt");
-        make_bottom_panel_item_visible(bottom_panel);
-
-        // create a TiledNode to visualize the contents of the IntNode
-        tiled_node = memnew(HexMapTiledNode);
-        tiled_node->set_space(int_node->get_space());
-        // the cell meshes we create in update_mesh_library() are centered on
-        // origin, so set the TileNode to center the mesh in the cell.
-        tiled_node->set_center_y(true);
-        set_tiled_map_visibility(show_cells);
-        update_mesh_library();
-
-        // populate the tiled node with our cells
-        for (const auto &iter : int_node->cell_map) {
-            tiled_node->set_cell(iter.key, iter.value);
-        }
-
-        // add the tiled node to the int_node to inherit the visibility of the
-        // int node.
-        int_node->add_child(tiled_node);
-
-        editor_cursor->set_cells_visibility_callback(callable_mp(
-                tiled_node, &HexMapTiledNode::set_cells_visibility_callback));
-
         int_node->connect("hex_space_changed",
                 callable_mp(this,
                         &HexMapIntNodeEditorPlugin::
@@ -105,6 +52,43 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
         int_node->connect("cell_types_changed",
                 callable_mp(this,
                         &HexMapIntNodeEditorPlugin::update_mesh_library));
+
+        // create a TiledNode to visualize the contents of the IntNode
+        tiled_node = memnew(HexMapTiledNode);
+        tiled_node->set_space(int_node->get_space());
+        // XXX fix needed here
+        // the cell meshes we create in update_mesh_library() are centered on
+        // origin, so set the TileNode to center the mesh in the cell.
+        tiled_node->set_center_y(true);
+
+        // build the MeshLibrary; this will also set it in the tiled node
+        update_mesh_library();
+
+        // populate the tiled node with our cells
+        for (const auto &iter : int_node->cell_map) {
+            tiled_node->set_cell(iter.key, iter.value);
+        }
+
+        // add the tiled node to the int_node to inherit the visibility of the
+        // int node.
+        int_node->add_child(tiled_node);
+
+        // XXX Move this loading to the constructor when gui stablizes
+        // load the bottom panel scene and add it to the editor
+        Ref<PackedScene> panel_scene = ResourceLoader::get_singleton()->load(
+                "res://addons/hexmap/gui/"
+                "int_node_editor_bottom_panel.tscn");
+        bottom_panel = (Control *)panel_scene->instantiate();
+
+        // set known state
+        bottom_panel->set("editor_plugin", this);
+        bottom_panel->set("node", int_node);
+        bottom_panel->set(
+                "show_cells", int_node->get_meta("_show_cells_", true));
+
+        // add & show the panel
+        add_control_to_bottom_panel(bottom_panel, "HexMapInt");
+        make_bottom_panel_item_visible(bottom_panel);
 
     } else {
         if (tiled_node != nullptr) {
@@ -197,16 +181,13 @@ void HexMapIntNodeEditorPlugin::on_int_node_hex_space_changed() {
     update_mesh_library();
 }
 
-void HexMapIntNodeEditorPlugin::set_edit_plane(int axis, int depth) {
-    if (edit_axis != axis) {
-        edit_plane_set_axis((EditorCursor::EditAxis)axis);
-    } else {
-        edit_plane_set_depth(depth);
-    }
-}
-
-void HexMapIntNodeEditorPlugin::set_tiled_map_visibility(bool visible) {
+void HexMapIntNodeEditorPlugin::set_cells_visible(bool visible) {
     ERR_FAIL_NULL(tiled_node);
     tiled_node->set_visible(visible);
 }
+
+bool HexMapIntNodeEditorPlugin::get_cells_visible() const {
+    return tiled_node ? tiled_node->is_visible() : false;
+}
+
 #endif // TOOLS_ENABLED

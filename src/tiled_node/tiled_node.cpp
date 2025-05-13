@@ -737,6 +737,9 @@ void HexMapTiledNode::update_dirty_octants_callback() {
         octant->apply_changes();
         if (octant->is_empty()) {
             empty_octants.push_back(pair.key);
+        } else {
+            // update visibility for dirty, non-empty octants
+            octant->update_visibility();
         }
     }
 
@@ -745,8 +748,6 @@ void HexMapTiledNode::update_dirty_octants_callback() {
         octants.erase(key);
     }
 
-    // XXX why is this needed here?
-    _update_visibility();
     awaiting_update = false;
 }
 

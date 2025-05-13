@@ -55,7 +55,10 @@ public:
     /// set the visibility of the tiles
     ///
     /// this does not apply to the visibility of the hex grid
-    void set_visibility(bool visible);
+    void set_visible(bool visible);
+
+    /// check if the cursor is visible
+    bool get_visible() const;
 
     /// set a cell; takes effect on next `update()` call
     void set_tile(HexMapCellId cell,
@@ -110,7 +113,6 @@ private:
     /// includes our cursor rotation & translation.
     HexMapSpace parent_space;
 
-    HexMapMeshTool mesh_manager;
     Vector3 pointer_pos;
     HexMapCellId pointer_cell;
 

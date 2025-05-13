@@ -125,7 +125,7 @@ void HexMapOctant::bake_mesh() {
     HashMap<Ref<Material>, Ref<SurfaceTool>> mat_map;
 
     // hide the mesh_manager; we want to preserve its state
-    mesh_tool.set_visibility(false);
+    mesh_tool.set_visible(false);
 
     // iterate through the cells, add cell mesh surfaces to the surface tool
     // for each material.
@@ -207,7 +207,7 @@ void HexMapOctant::update_visibility() {
     // XXX should hidden also disable the static shape?
 
     bool visible = hex_map.is_visible_in_tree();
-    mesh_tool.set_visibility(visible);
+    mesh_tool.set_visible(visible);
     if (collision_debug_mesh_instance.is_valid()) {
         rs->instance_set_visible(collision_debug_mesh_instance, visible);
     }
@@ -313,6 +313,10 @@ void HexMapOctant::clear_cell(const CellKey cell_key) {
 }
 
 void HexMapOctant::set_cell_visibility(HexMapCellId cell_id, bool visible) {
+    // nothing to be done if we have no value set for this cell
+    if (!cells.has(cell_id)) {
+        return;
+    }
     free_baked_mesh();
     mesh_tool.set_cell_visibility(cell_id, visible);
     dirty = true;

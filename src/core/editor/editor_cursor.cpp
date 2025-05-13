@@ -69,6 +69,8 @@ void EditorCursor::transform_meshes() {
     HexMapSpace space = parent_space;
     space.transform *= cursor_transform;
     mesh_tool.set_space(space);
+    // XXX we're destroying multimesh and rebuilding when we call this; we
+    // should make MeshTool smarter about what work it needs to do.
     mesh_tool.refresh();
 
     if (!set_cells_visibility.is_valid()) {
@@ -217,9 +219,11 @@ void EditorCursor::update(bool force) {
     transform_meshes();
 }
 
-void EditorCursor::set_visibility(bool visible) {
-    mesh_manager.set_visibility(visible);
+void EditorCursor::set_visible(bool visible) {
+    mesh_tool.set_visible(visible);
 }
+
+bool EditorCursor::get_visible() const { return mesh_tool.get_visible(); }
 
 void EditorCursor::set_axis(EditAxis axis) {
     // some axis values may have rotated the grid mesh transform.  We want to
@@ -382,6 +386,7 @@ EditorCursor::EditorCursor(RID scenario) {
     rs->instance_set_layer_mask(grid_mesh_instance, 1 << 24);
 
     mesh_tool.set_scenario(scenario);
+    mesh_tool.set_visible(true);
 
     set_axis(edit_axis);
     set_depth(0);

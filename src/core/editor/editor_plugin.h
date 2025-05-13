@@ -50,41 +50,22 @@ public:
     HexMapNodeEditorPlugin();
     ~HexMapNodeEditorPlugin();
 
-    /// rotate the cursor in 60 degree steps around the y-axis
-    /// @param steps negative values rotate clockwise, positive
-    /// counter-clockwise
-    ///
-    /// this function will call cursor_set_orientation() for any change
-    void cursor_rotate(int steps);
-
-    /// set edit axis
-    void edit_plane_set_axis(EditorCursor::EditAxis);
-
-    /// set edit axis depth
-    void edit_plane_set_depth(int);
-
-    // perform actions on selected cells
-    void selection_move();
-    void selection_clone();
-    void selection_fill();
-    void selection_clear();
-
-    /// rebuild the cursor from the UI state
-    virtual void rebuild_cursor();
-
 protected:
     void _notification(int p_what);
     static void _bind_methods();
 
+    /// Handle common keypress shortcuts for navigating the spatial editor
+    ///
+    /// Note: If a selection is active, EditorPlugin will consume the first
+    /// escape keypress.  All following escape keypresses will be sent to this
+    /// function.
+    virtual EditorPlugin::AfterGUIInput handle_keypress(Ref<InputEventKey>);
+
+    /// rebuild the cursor from the UI state
+    virtual void rebuild_cursor();
+
     /// add setting entry for a keyboard shortcut
     void add_editor_shortcut(const String &path, const String &name, Key);
-
-    /// get editor state from bottom panel gui
-    Variant get_editor_state(const String &key) const;
-
-    /// update editor state; used by bottom panel to keep in sync with the
-    /// EditorPlugin internal state
-    void set_editor_state(const String &key, const Variant value);
 
     /// set cursor orientation
     void cursor_set_orientation(HexMapTileOrientation);
@@ -94,18 +75,40 @@ protected:
     /// this function will call cursor_set_orientation() for any change
     void cursor_flip();
 
-    /// Handle common keypress shortcuts for navigating the spatial editor
+    /// rotate the cursor in 60 degree steps around the y-axis
+    /// @param steps negative values rotate clockwise, positive
+    /// counter-clockwise
     ///
-    /// Note: If a selection is active, EditorPlugin will consume the first
-    /// escape keypress.  All following escape keypresses will be sent to this
-    /// function.
-    virtual EditorPlugin::AfterGUIInput handle_keypress(Ref<InputEventKey>);
+    /// this function will call cursor_set_orientation() for any change
+    void cursor_rotate(int steps);
+
+    /// set/get edit axis
+    void set_edit_plane_axis(EditorCursor::EditAxis);
+    EditorCursor::EditAxis get_edit_plane_axis() const;
+
+    /// set/get edit axis depth
+    void set_edit_plane_depth(int);
+    int get_edit_plane_depth() const;
+
+    /// set/get paint value
+    /// @see paint_value
+    void set_paint_value(int);
+    int get_paint_value() const;
+
+    /// check if the editor cursor is active (visible & has more than one cell)
+    bool is_cursor_active() const;
+
+    /// check if a selection is active
+    bool is_selection_active() const;
+
+    // perform actions on selected cells
+    void selection_move();
+    void selection_clone();
+    void selection_fill();
+    void selection_clear();
 
     // callbacks for HexMap signals
     void on_node_hex_space_changed();
-
-    void plane_changed(int p_axis);
-    void axis_changed(int p_axis);
 
     // manage selection
     void deselect_cells();
@@ -135,6 +138,12 @@ protected:
 
     /// Array of previous cell contents; used during move selection
     Array move_source_cells;
+
+    /// Value to use when painting
+    /// This value is also used to look up the cursor mesh from the MeshLibrary
+    /// assigned to the editor_cursor.
+    /// The value CELL_VALUE_NONE means no paint value.
+    int paint_value = HexMapNode::CELL_VALUE_NONE;
 
     /// active edit axis
     EditorCursor::EditAxis edit_axis = EditorCursor::EditAxis::AXIS_Y;

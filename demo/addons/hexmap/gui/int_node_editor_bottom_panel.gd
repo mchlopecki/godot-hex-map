@@ -2,24 +2,13 @@
 
 extends VBoxContainer
 
-# emitted when user selects a cell type
-signal type_selected()
-# emitted when the edit plane axis or depth is changed
-signal edit_plane_changed(axis: int, depth: int)
-# emitted to rotate cursor (-1 clockwise, 1 counter-clockwise)
-signal rotate_cursor(step: int)
-# emitted to move selection
-signal move_selection
-# emitted to clone selection
-signal clone_selection
-# emitted to clear selected tiles
-signal clear_selection
-# emitted to fill the selected tiles
-signal fill_selection
+const rule_item: PackedScene = preload("int_node_cell_type_control.tscn")
+const add_icon: CompressedTexture2D = preload("../icons/Add.svg")
+const save_icon: CompressedTexture2D = preload("../icons/Save.svg")
+
 # emitted when we want to set visibility of tile value visualization
 signal set_tiled_map_visibility(visible: bool)
 
-@export var editor_plugin: EditorPlugin
 @export var node: HexMapInt:
     set(value):
         if node != null:
@@ -29,33 +18,47 @@ signal set_tiled_map_visibility(visible: bool)
         if is_node_ready():
             _on_node_cell_types_changed()
 
-@export var editor_state := {
-        "cursor_mesh_index": -1,
-        "edit_plane_axis": 0,
-        "edit_plane_depth": 0,
-        "selection_active": false,
-        "cursor_active": false, } :
+@export var editor_plugin: EditorPlugin :
     set(value):
-        # XXX Need to handle cursor_mesh_index being changed from EditorPlugin
-        # and updating the GUI without causing a signal loop.
-        _on_cell_type_pressed(value.cursor_mesh_index)
-        %EditPlaneSelector.axis = value.edit_plane_axis
-        %EditPlaneSelector.depth = value.edit_plane_depth
-        %CCWButton.disabled = !value.cursor_active
-        %CWButton.disabled = !value.cursor_active
-        %CopyButton.disabled = !value.selection_active
-        %MoveButton.disabled = !value.selection_active
-        %ClearButton.disabled = !value.selection_active
-        %FillButton.disabled = !(value.cursor_active && value.selection_active)
-        editor_state = value
+        if editor_plugin != null:
+            # disconnect existing EditorPlugin
+            editor_plugin.paint_value_changed \
+                    .connect(_on_editor_plugin_paint_value_changed)
+            editor_plugin.cursor_active_changed \
+                    .connect(_on_editor_plugin_cursor_active_changed)
+            editor_plugin.selection_active_changed \
+                    .connect(_on_editor_plugin_selection_active_changed)
+
+        editor_plugin = value
+
+        # set up all the needed connections
+        %EditPlaneSelector.editor_plugin = editor_plugin
+        editor_plugin.paint_value_changed \
+                .connect(_on_editor_plugin_paint_value_changed)
+        editor_plugin.cursor_active_changed \
+                .connect(_on_editor_plugin_cursor_active_changed)
+        editor_plugin.selection_active_changed \
+                .connect(_on_editor_plugin_selection_active_changed)
+
+        # copy out any values we need
+        paint_value = editor_plugin.paint_value
+        _on_editor_plugin_cursor_active_changed(
+                editor_plugin.is_cursor_active())
+        _on_editor_plugin_selection_active_changed(
+                editor_plugin.is_selection_active())
+
+@export var paint_value := -1 :
+    set(value):
+        if value == paint_value:
+            return
+        paint_value = value
+        _update_selected_cell_type()
+        editor_plugin.paint_value = value
         
 @export var show_cells: bool = true :
     set(value):
         %ShowCellsButton.button_pressed = value
-
-const rule_item: PackedScene = preload("int_node_cell_type_control.tscn")
-const add_icon: CompressedTexture2D = preload("../icons/Add.svg")
-const save_icon: CompressedTexture2D = preload("../icons/Save.svg")
+        editor_plugin.cells_visible = value
 
 enum EditMode { Add, Update }
 var edit_mode: EditMode :
@@ -77,17 +80,15 @@ var edit_mode: EditMode :
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-    %EditPlaneSelector.changed.connect(func(axis: int, depth: int): edit_plane_changed.emit(axis, depth))
-    %CCWButton.pressed.connect(rotate_cursor.emit.bind(1))
-    %CWButton.pressed.connect(rotate_cursor.emit.bind(-1))
-    %MoveButton.pressed.connect(move_selection.emit)
-    %CopyButton.pressed.connect(clone_selection.emit)
-    %FillButton.pressed.connect(fill_selection.emit)
-    %ClearButton.pressed.connect(clear_selection.emit)
-    %ShowCellsButton.toggled.connect(func(v): set_tiled_map_visibility.emit(v))
+    %CCWButton.pressed.connect(_on_cursor_rotate_button_pressed.bind(1))
+    %CWButton.pressed.connect(_on_cursor_rotate_button_pressed.bind(-1))
+    %MoveButton.pressed.connect(_on_move_selection_button_pressed)
+    %CopyButton.pressed.connect(_on_copy_selection_button_pressed)
+    %FillButton.pressed.connect(_on_fill_selection_button_pressed)
+    %ClearButton.pressed.connect(_on_clear_selection_button_pressed)
 
+    %ShowCellsButton.toggled.connect(func(v): show_cells = v)
     %FilterLineEdit.text_changed.connect(_on_filter_text_changed)
-
     %SubmitButton.pressed.connect(_on_submit_button_pressed)
     %CancelButton.pressed.connect(_on_cancel_edit_pressed)
     %DeleteButton.pressed.connect(_on_delete_type_pressed)
@@ -120,18 +121,52 @@ func _on_node_cell_types_changed() -> void:
         child.value = type.value
         child.desc = type.name
         child.color = type.color
-        child.pressed.connect(_on_cell_type_pressed.bind(type.value))
+        child.pressed.connect(func(): paint_value = type.value)
         child.pressed_edit.connect(
                 _on_cell_type_pressed_edit.bind(type))
 
         %ColumnWrapContainer.add_child(child)
+
+func _on_editor_plugin_paint_value_changed(value: int) -> void:
+    paint_value = value
+
+func _on_editor_plugin_cursor_active_changed(active: bool) -> void:
+    %CCWButton.disabled = !active
+    %CWButton.disabled = !active
+    %FillButton.disabled = (paint_value == -1 or !editor_plugin.is_selection_active())
+
+func _on_editor_plugin_selection_active_changed(active: bool) -> void:
+    %CopyButton.disabled = !active
+    %MoveButton.disabled = !active
+    %ClearButton.disabled = !active
+    %FillButton.disabled = (paint_value == -1 or !active)
+
+func _on_cursor_rotate_button_pressed(steps: int) -> void:
+    if editor_plugin:
+        editor_plugin.cursor_rotate(steps)
+
+func _on_move_selection_button_pressed() -> void:
+    if editor_plugin:
+        editor_plugin.selection_move()
+
+func _on_copy_selection_button_pressed() -> void:
+    if editor_plugin:
+        editor_plugin.selection_clone()
+
+func _on_fill_selection_button_pressed() -> void:
+    if editor_plugin:
+        editor_plugin.selection_fill()
+
+func _on_clear_selection_button_pressed() -> void:
+    if editor_plugin:
+        editor_plugin.selection_clear()
 
 func _cell_type_nodes() -> Array:
     return %ColumnWrapContainer.get_children() \
         .filter(func(n): return n is not Button)
 
 func _on_filter_text_changed(filter: String) -> void:
-    var selected = editor_state.cursor_mesh_index
+    var selected = paint_value
     var selected_visible = false
     if filter.is_empty():
         selected_visible = true
@@ -143,18 +178,12 @@ func _on_filter_text_changed(filter: String) -> void:
             if child.visible && child.value == selected:
                 selected_visible = true
     if selected != -1 and selected_visible == false:
-        _on_cell_type_pressed(-1)
+        paint_value = -1
 
-func _on_cell_type_pressed(value: int) -> void:
+# update the cell type list to select the 
+func _update_selected_cell_type() -> void:
     for child in _cell_type_nodes():
-        child.selected = child.value == value
-
-    if editor_state.cursor_mesh_index != value:
-        editor_state.cursor_mesh_index = value
-        type_selected.emit()
-    # XXX something isn't working right here when we hit escape in the editor
-    # to clear the active tile.
-    pass
+        child.selected = child.value == paint_value 
 
 func _get_popup_position() -> Vector2:
     var viewport = get_viewport()
@@ -252,8 +281,8 @@ func _on_delete_type_confirmed() -> void:
 
     # clear the selected type if that's the one we're deleting; otherwise the
     # editor cursor will have an invalid mesh reference.
-    if id == editor_state.cursor_mesh_index:
-        _on_cell_type_pressed(-1)
+    if id == paint_value:
+        paint_value = -1
 
     # find the cells in the int node that have this value
     var cell_vecs := node.find_cell_vecs_by_value(id)
