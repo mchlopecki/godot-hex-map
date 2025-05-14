@@ -12,7 +12,7 @@
 [ext_resource type="Texture2D" uid="uid://d1p1fc1hcb6s8" path="res://addons/hexmap/icons/Bucket.svg" id="7_uy3m2"]
 [ext_resource type="Texture2D" uid="uid://br3s3i4gu05x4" path="res://addons/hexmap/icons/Clear.svg" id="8_jalxn"]
 [ext_resource type="Texture2D" uid="uid://vrx8uwcvnqhs" path="res://addons/hexmap/icons/Search.svg" id="8_w81nb"]
-[ext_resource type="PackedScene" uid="uid://c4a26oqnkwm02" path="res://addons/hexmap/gui/edit_plane_selector.tscn" id="9_nu8or"]
+[ext_resource type="PackedScene" uid="uid://c4a26oqnkwm02" path="res://addons/hexmap/gui/editor_toolbar.tscn" id="9_nu8or"]
 [ext_resource type="Script" path="res://addons/hexmap/gui/column_wrap_container.gd" id="14_whjpo"]
 [ext_resource type="Texture2D" uid="uid://w3fx13adcvh2" path="res://addons/hexmap/icons/Save.svg" id="15_45eli"]
 [ext_resource type="Texture2D" uid="uid://duo6jhp26ftsw" path="res://addons/hexmap/icons/Close.svg" id="16_ibucf"]
@@ -32,6 +32,7 @@ script = ExtResource("1_h3koj")
 layout_mode = 2
 
 [node name="HBoxContainer3" type="HBoxContainer" parent="ToolbarHBox"]
+visible = false
 layout_mode = 2
 
 [node name="PaintButton" type="Button" parent="ToolbarHBox/HBoxContainer3"]
@@ -116,7 +117,7 @@ flat = true
 [node name="VSeparator3" type="VSeparator" parent="ToolbarHBox/HBoxContainer3"]
 layout_mode = 2
 
-[node name="EditPlaneSelector" parent="ToolbarHBox" instance=ExtResource("9_nu8or")]
+[node name="EditorCommonToolbar" parent="ToolbarHBox" instance=ExtResource("9_nu8or")]
 unique_name_in_owner = true
 layout_mode = 2
 

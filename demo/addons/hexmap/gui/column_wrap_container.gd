@@ -16,7 +16,7 @@ func _notification(what: int) -> void:
                 if not child.visible:
                     continue
                 fit_child_in_rect(child, Rect2(pos, wrap.child_size))
-                if count < wrap.count:
+                if count < wrap.count - 1:
                     pos.y += wrap.child_size.y
                     count += 1
                 else:
@@ -44,12 +44,15 @@ func _calc_wrap():
             min_width = size.x
     var min_size = Vector2(min_width, min_height)
 
-    # get the visible area in the parent
-    var win_size : Vector2 = get_parent_area_size()
+    # get the visible area in the ScrollContainer ancestor
+    var node = self
+    while node and not node is ScrollContainer:
+        node = node.get_parent()
+    var win_size : Vector2 = node.size if node else size
 
     # calculate some important boundaries
-    var visible_rows = floor(win_size.y / min_size.y) - 1
-    var visible_cols = floor(win_size.x / min_size.x)
+    var visible_rows = max(1, floor(win_size.y / min_size.y))
+    var visible_cols = max(1, floor(win_size.x / min_size.x))
 
     # calculate the number of elements to draw in a column before wrapping to
     # the next column

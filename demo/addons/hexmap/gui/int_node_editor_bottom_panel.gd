@@ -24,30 +24,20 @@ signal set_tiled_map_visibility(visible: bool)
             # disconnect existing EditorPlugin
             editor_plugin.paint_value_changed \
                     .connect(_on_editor_plugin_paint_value_changed)
-            editor_plugin.cursor_active_changed \
-                    .connect(_on_editor_plugin_cursor_active_changed)
-            editor_plugin.selection_active_changed \
-                    .connect(_on_editor_plugin_selection_active_changed)
 
         editor_plugin = value
 
         # set up all the needed connections
-        %EditPlaneSelector.editor_plugin = editor_plugin
         editor_plugin.paint_value_changed \
                 .connect(_on_editor_plugin_paint_value_changed)
-        editor_plugin.cursor_active_changed \
-                .connect(_on_editor_plugin_cursor_active_changed)
-        editor_plugin.selection_active_changed \
-                .connect(_on_editor_plugin_selection_active_changed)
 
         # copy out any values we need
         paint_value = editor_plugin.paint_value
-        _on_editor_plugin_cursor_active_changed(
-                editor_plugin.is_cursor_active())
-        _on_editor_plugin_selection_active_changed(
-                editor_plugin.is_selection_active())
 
-@export var paint_value := -1 :
+        if is_node_ready():
+            %EditorCommonToolbar.editor_plugin = editor_plugin
+
+var paint_value := -1 :
     set(value):
         if value == paint_value:
             return
@@ -55,7 +45,7 @@ signal set_tiled_map_visibility(visible: bool)
         _update_selected_cell_type()
         editor_plugin.paint_value = value
         
-@export var show_cells: bool = true :
+var show_cells: bool = true :
     set(value):
         %ShowCellsButton.button_pressed = value
         editor_plugin.cells_visible = value
@@ -80,15 +70,11 @@ var edit_mode: EditMode :
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-    %CCWButton.pressed.connect(_on_cursor_rotate_button_pressed.bind(1))
-    %CWButton.pressed.connect(_on_cursor_rotate_button_pressed.bind(-1))
-    %MoveButton.pressed.connect(_on_move_selection_button_pressed)
-    %CopyButton.pressed.connect(_on_copy_selection_button_pressed)
-    %FillButton.pressed.connect(_on_fill_selection_button_pressed)
-    %ClearButton.pressed.connect(_on_clear_selection_button_pressed)
-
+    %EditorCommonToolbar.editor_plugin = editor_plugin
     %ShowCellsButton.toggled.connect(func(v): show_cells = v)
+
     %FilterLineEdit.text_changed.connect(_on_filter_text_changed)
+
     %SubmitButton.pressed.connect(_on_submit_button_pressed)
     %CancelButton.pressed.connect(_on_cancel_edit_pressed)
     %DeleteButton.pressed.connect(_on_delete_type_pressed)
@@ -129,37 +115,6 @@ func _on_node_cell_types_changed() -> void:
 
 func _on_editor_plugin_paint_value_changed(value: int) -> void:
     paint_value = value
-
-func _on_editor_plugin_cursor_active_changed(active: bool) -> void:
-    %CCWButton.disabled = !active
-    %CWButton.disabled = !active
-    %FillButton.disabled = (paint_value == -1 or !editor_plugin.is_selection_active())
-
-func _on_editor_plugin_selection_active_changed(active: bool) -> void:
-    %CopyButton.disabled = !active
-    %MoveButton.disabled = !active
-    %ClearButton.disabled = !active
-    %FillButton.disabled = (paint_value == -1 or !active)
-
-func _on_cursor_rotate_button_pressed(steps: int) -> void:
-    if editor_plugin:
-        editor_plugin.cursor_rotate(steps)
-
-func _on_move_selection_button_pressed() -> void:
-    if editor_plugin:
-        editor_plugin.selection_move()
-
-func _on_copy_selection_button_pressed() -> void:
-    if editor_plugin:
-        editor_plugin.selection_clone()
-
-func _on_fill_selection_button_pressed() -> void:
-    if editor_plugin:
-        editor_plugin.selection_fill()
-
-func _on_clear_selection_button_pressed() -> void:
-    if editor_plugin:
-        editor_plugin.selection_clear()
 
 func _cell_type_nodes() -> Array:
     return %ColumnWrapContainer.get_children() \

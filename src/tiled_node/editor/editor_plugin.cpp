@@ -117,8 +117,7 @@ void HexMapTiledNodeEditorPlugin::_edit(Object *p_object) {
             "res://addons/hexmap/gui/"
             "hex_map_editor_bottom_panel.tscn");
     bottom_panel = (Control *)panel_scene->instantiate();
-    bottom_panel->connect("mesh_changed",
-            callable_mp(this, &HexMapTiledNodeEditorPlugin::tile_changed));
+    bottom_panel->set("editor_plugin", this);
     add_control_to_bottom_panel(bottom_panel, "HexMap");
     make_bottom_panel_item_visible(bottom_panel);
 
@@ -138,30 +137,6 @@ void HexMapTiledNodeEditorPlugin::on_node_hex_space_changed() {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
     editor_cursor->set_space(hex_map->get_space());
     selection_manager->set_space(hex_map->get_space());
-}
-
-void HexMapTiledNodeEditorPlugin::tile_changed(int p_mesh_id) {
-    ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
-    editor_cursor->clear_tiles();
-    if (p_mesh_id >= 0) {
-        editor_cursor->set_tile(HexMapCellId(), p_mesh_id);
-        editor_cursor->update(true);
-    }
-}
-
-void HexMapTiledNodeEditorPlugin::plane_changed(int p_plane) {
-    ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
-    editor_cursor->set_depth(p_plane);
-}
-
-void HexMapTiledNodeEditorPlugin::axis_changed(int p_axis) {
-    ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
-    editor_cursor->set_axis((EditAxis)p_axis);
-}
-
-void HexMapTiledNodeEditorPlugin::cursor_changed(Variant p_orientation) {
-    ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
-    editor_cursor->set_orientation(p_orientation);
 }
 
 void HexMapTiledNodeEditorPlugin::_bind_methods() {}
