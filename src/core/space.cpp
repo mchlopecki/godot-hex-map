@@ -19,8 +19,6 @@ void HexMapSpace::set_cell_radius(real_t value) {
     cell_scale.x = cell_scale.z = value;
 }
 
-void HexMapSpace::set_mesh_offset(Vector3 value) { mesh_offset = value; }
-
 PackedVector3Array HexMapSpace::get_cell_vertices(Vector3 scale) const {
     // PERMANENT NOTE TO SELF:
     // Do not try to move the hex cell vertices into a static const in this

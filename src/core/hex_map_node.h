@@ -68,8 +68,6 @@ public:
     real_t get_cell_height() const;
     void set_cell_radius(real_t p_radius);
     real_t get_cell_radius() const;
-    void set_center_y(bool value);
-    bool get_center_y() const;
 
     /// set the HexMapSpace
     void set_space(const HexMapSpace &space);

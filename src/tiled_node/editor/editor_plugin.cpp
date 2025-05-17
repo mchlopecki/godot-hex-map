@@ -77,14 +77,10 @@ void HexMapTiledNodeEditorPlugin::_edit(Object *p_object) {
 
     if (tiled_node) {
         // disconnect signals
-        tiled_node->disconnect("hex_space_changed",
+        tiled_node->disconnect("mesh_origin_changed",
                 callable_mp(this,
                         &HexMapTiledNodeEditorPlugin::
-                                on_node_hex_space_changed));
-        tiled_node->disconnect("mesh_offset_changed",
-                callable_mp(this,
-                        &HexMapTiledNodeEditorPlugin::
-                                on_node_hex_space_changed));
+                                on_tiled_node_mesh_offset_changed));
         tiled_node->disconnect("mesh_library_changed",
                 callable_mp(this,
                         &HexMapTiledNodeEditorPlugin::update_mesh_library));
@@ -110,22 +106,19 @@ void HexMapTiledNodeEditorPlugin::_edit(Object *p_object) {
     add_control_to_bottom_panel(bottom_panel, "HexMap");
     make_bottom_panel_item_visible(bottom_panel);
 
-    tiled_node->connect("hex_space_changed",
+    tiled_node->connect("mesh_origin_changed",
             callable_mp(this,
-                    &HexMapTiledNodeEditorPlugin::on_node_hex_space_changed));
-    tiled_node->connect("mesh_offset_changed",
-            callable_mp(this,
-                    &HexMapTiledNodeEditorPlugin::on_node_hex_space_changed));
+                    &HexMapTiledNodeEditorPlugin::
+                            on_tiled_node_mesh_offset_changed));
     tiled_node->connect("mesh_library_changed",
             callable_mp(
                     this, &HexMapTiledNodeEditorPlugin::update_mesh_library));
     update_mesh_library();
 }
 
-void HexMapTiledNodeEditorPlugin::on_node_hex_space_changed() {
+void HexMapTiledNodeEditorPlugin::on_tiled_node_mesh_offset_changed() {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
-    editor_cursor->set_space(hex_map->get_space());
-    selection_manager->set_space(hex_map->get_space());
+    editor_cursor->set_mesh_origin(tiled_node->get_mesh_origin_vec());
 }
 
 void HexMapTiledNodeEditorPlugin::_bind_methods() {}

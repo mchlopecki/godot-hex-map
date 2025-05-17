@@ -241,7 +241,6 @@ Array SelectionManager::get_cell_vecs() const {
 }
 
 void SelectionManager::set_space(HexMapSpace space) {
-    space.set_mesh_offset(Vector3());
     bool redraw = space.get_cell_scale() !=
             mesh_manager.get_space().get_cell_scale();
     mesh_manager.set_space(space);

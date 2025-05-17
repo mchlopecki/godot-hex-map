@@ -56,10 +56,6 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
         // create a TiledNode to visualize the contents of the IntNode
         tiled_node = memnew(HexMapTiledNode);
         tiled_node->set_space(int_node->get_space());
-        // XXX fix needed here
-        // the cell meshes we create in update_mesh_library() are centered on
-        // origin, so set the TileNode to center the mesh in the cell.
-        tiled_node->set_center_y(true);
 
         // build the MeshLibrary; this will also set it in the tiled node
         update_mesh_library();
@@ -126,8 +122,8 @@ void HexMapIntNodeEditorPlugin::update_mesh_library() {
     const HexMapSpace &space = int_node->get_space();
     // XXX this should be something provided by HexSpace, we use the math in
     // at least four places
-    const Transform3D mesh_transform =
-            Transform3D(Basis(), -space.get_mesh_offset());
+    // const Transform3D mesh_transform =
+    //         Transform3D(Basis(), -space.get_mesh_offset());
 
     for (const auto &iter : int_node->get_cell_types()) {
         Ref<StandardMaterial3D> material;
@@ -154,7 +150,7 @@ void HexMapIntNodeEditorPlugin::update_mesh_library() {
         mesh_library->create_item(iter.key);
         mesh_library->set_item_name(iter.key, iter.value.name);
         mesh_library->set_item_mesh(iter.key, mesh);
-        mesh_library->set_item_mesh_transform(iter.key, mesh_transform);
+        // mesh_library->set_item_mesh_transform(iter.key, mesh_transform);
     }
 
     if (tiled_node) {

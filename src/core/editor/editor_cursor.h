@@ -29,6 +29,7 @@ public:
 
     void set_space(HexMapSpace);
     void set_mesh_library(Ref<MeshLibrary> &);
+    void set_mesh_origin(Vector3);
 
     /// Set the callback function for `EditorCursor` to call when it needs to
     /// show/hide cells in the parent HexMap.  The arguments to this function

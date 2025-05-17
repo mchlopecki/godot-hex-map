@@ -51,7 +51,7 @@ private:
 
     // callbacks for HexMap signals
     void update_mesh_library();
-    void on_node_hex_space_changed();
+    void on_tiled_node_mesh_offset_changed();
 
     // callbacks used by signals from EditorControl
     void tile_changed(int p_mesh_id);

@@ -47,6 +47,11 @@ void EditorCursor::set_mesh_library(Ref<MeshLibrary> &value) {
     transform_meshes();
 }
 
+void EditorCursor::set_mesh_origin(Vector3 value) {
+    mesh_tool.set_mesh_origin(value);
+    mesh_tool.refresh();
+}
+
 void EditorCursor::set_cells_visibility_callback(Callable value) {
     set_cells_visibility = value;
 }

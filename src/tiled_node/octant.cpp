@@ -291,6 +291,7 @@ void HexMapOctant::apply_changes() {
     dirty = false;
 
     mesh_tool.set_space(hex_map.get_space());
+    mesh_tool.set_mesh_origin(hex_map.get_mesh_origin_vec());
     Ref<MeshLibrary> mesh_library = hex_map.get_mesh_library();
     mesh_tool.set_mesh_library(mesh_library);
     mesh_tool.refresh();

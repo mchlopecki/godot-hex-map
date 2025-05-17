@@ -42,6 +42,13 @@ public:
     using Planes = HexMapPlanes;
     using TileOrientation = HexMapTileOrientation;
 
+    // enum for setting mesh origin within the cell
+    enum MeshOrigin {
+        Center,
+        Top,
+        Bottom,
+    };
+
 private:
     /**
      * @brief A Cell is a single cell in the cube map space; it is defined by
@@ -68,7 +75,7 @@ private:
     // map properties
     real_t cell_radius = 1.0;
     real_t cell_height = 1.0;
-    bool center_y = false;
+    MeshOrigin mesh_origin = MeshOrigin::Center;
 
     // rendering properties
     int octant_size = 8;
@@ -120,6 +127,10 @@ public:
     void set_mesh_library(const Ref<MeshLibrary> &);
     Ref<MeshLibrary> get_mesh_library() const;
     bool mesh_library_changed();
+
+    void set_mesh_origin(MeshOrigin);
+    MeshOrigin get_mesh_origin() const;
+    Vector3 get_mesh_origin_vec() const;
 
     bool on_hex_space_changed() override;
 
@@ -179,3 +190,5 @@ public:
     HexMapTiledNode();
     ~HexMapTiledNode();
 };
+
+VARIANT_ENUM_CAST(HexMapTiledNode::MeshOrigin);

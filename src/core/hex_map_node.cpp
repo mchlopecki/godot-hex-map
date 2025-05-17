@@ -24,10 +24,6 @@ void HexMapNode::_bind_methods() {
     ClassDB::bind_method(
             D_METHOD("get_cell_radius"), &HexMapNode::get_cell_radius);
 
-    ClassDB::bind_method(
-            D_METHOD("set_center_y", "enable"), &HexMapNode::set_center_y);
-    ClassDB::bind_method(D_METHOD("get_center_y"), &HexMapNode::get_center_y);
-
     ClassDB::bind_method(D_METHOD("set_cell", "cell", "value", "orientation"),
             static_cast<void (HexMapNode::*)(
                     const Ref<hex_bind::HexMapCellId>, int, int)>(
@@ -77,9 +73,6 @@ void HexMapNode::_bind_methods() {
                          "suffix:m"),
             "set_cell_radius",
             "get_cell_radius");
-    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "cell_center_y"),
-            "set_center_y",
-            "get_center_y");
 
     ADD_SIGNAL(MethodInfo("hex_space_changed"));
     ADD_SIGNAL(MethodInfo("mesh_offset_changed"));
@@ -134,19 +127,6 @@ void HexMapNode::set_cell_radius(real_t p_radius) {
 }
 
 real_t HexMapNode::get_cell_radius() const { return space.get_cell_radius(); }
-
-void HexMapNode::set_center_y(bool p_value) {
-    if (p_value) {
-        space.set_mesh_offset(Vector3(0, 0, 0));
-    } else {
-        space.set_mesh_offset(Vector3(0, -0.5, 0));
-    }
-    on_hex_space_changed();
-}
-
-bool HexMapNode::get_center_y() const {
-    return space.get_mesh_offset().y == 0;
-}
 
 bool HexMapNode::on_hex_space_changed() {
     emit_signal("hex_space_changed");

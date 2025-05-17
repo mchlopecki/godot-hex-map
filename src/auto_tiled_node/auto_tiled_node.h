@@ -308,6 +308,8 @@ public:
     // property setters & getters
     void set_mesh_library(const Ref<MeshLibrary> &);
     Ref<MeshLibrary> get_mesh_library() const;
+    void set_mesh_origin(HexMapTiledNode::MeshOrigin);
+    HexMapTiledNode::MeshOrigin get_mesh_origin() const;
     Dictionary get_rules() const;
     Variant get_rule(uint16_t id) const;
     Array get_rules_order() const;

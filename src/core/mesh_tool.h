@@ -36,6 +36,10 @@ public:
             scenario(scenario), object_id(object_id) {};
     ~HexMapMeshTool();
 
+    /// set the mesh origin within a cell
+    void set_mesh_origin(Vector3 offset);
+    inline Vector3 get_mesh_origin() const { return mesh_origin; };
+
     /// Set the scenario to add meshes to
     inline void set_scenario(RID value) { scenario = value; };
 
@@ -117,6 +121,12 @@ private:
 
     /// whether the meshes are visible
     bool visible = true;
+
+    /// offset of the mesh origin from the geometric center of a unit cell
+    ///
+    /// To put the origin at the top of the cell, use y = 0.5
+    /// To put the origin at the bottom of the cell, use y = -0.5
+    Vector3 mesh_origin;
 
     void free_multimeshes();
     void build_multimeshes();

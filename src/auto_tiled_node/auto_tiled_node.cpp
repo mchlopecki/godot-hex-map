@@ -15,6 +15,11 @@
 
 void HexMapAutoTiledNode::_get_property_list(
         List<PropertyInfo> *p_list) const {
+    p_list->push_back(PropertyInfo(Variant::INT,
+            "mesh_origin",
+            PROPERTY_HINT_NONE,
+            "",
+            PROPERTY_USAGE_STORAGE));
     p_list->push_back(PropertyInfo(Variant::ARRAY,
             "rules_order",
             PROPERTY_HINT_NONE,
@@ -64,6 +69,8 @@ bool HexMapAutoTiledNode::_get(const StringName &p_name,
         }
         r_ret = out;
         return true;
+    } else if (name == "mesh_origin") {
+        r_ret = static_cast<int>(tiled_node->get_mesh_origin());
     }
 
     return false;
@@ -128,6 +135,9 @@ bool HexMapAutoTiledNode::_set(const StringName &p_name,
 
         // apply the rules we just loaded.
         return true;
+    } else if (name == "mesh_origin") {
+        set_mesh_origin(
+                HexMapTiledNode::MeshOrigin(static_cast<int>(p_value)));
     }
     return false;
 }
@@ -140,6 +150,14 @@ void HexMapAutoTiledNode::set_mesh_library(const Ref<MeshLibrary> &value) {
     mesh_library = value;
     tiled_node->set_mesh_library(value);
     emit_signal("mesh_library_changed");
+}
+
+HexMapTiledNode::MeshOrigin HexMapAutoTiledNode::get_mesh_origin() const {
+    return tiled_node->get_mesh_origin();
+}
+
+void HexMapAutoTiledNode::set_mesh_origin(HexMapTiledNode::MeshOrigin value) {
+    tiled_node->set_mesh_origin(value);
 }
 
 Dictionary HexMapAutoTiledNode::get_rules() const {
@@ -360,6 +378,17 @@ void HexMapAutoTiledNode::_bind_methods() {
             "set_mesh_library",
             "get_mesh_library");
     ADD_SIGNAL(MethodInfo("mesh_library_changed"));
+
+    ClassDB::bind_method(D_METHOD("set_mesh_origin", "value"),
+            &HexMapAutoTiledNode::set_mesh_origin);
+    ClassDB::bind_method(D_METHOD("get_mesh_origin"),
+            &HexMapAutoTiledNode::get_mesh_origin);
+    ADD_PROPERTY(PropertyInfo(Variant::INT,
+                         "mesh_origin",
+                         PROPERTY_HINT_ENUM,
+                         "Center,Top,Bottom"),
+            "set_mesh_origin",
+            "get_mesh_origin");
 
     ClassDB::bind_method(
             D_METHOD("get_rules"), &HexMapAutoTiledNode::get_rules);

@@ -8,8 +8,7 @@
 
 void HexMapLibraryMeshTool::set_space(const HexMapSpace &value) {
     // only need to rebuild if the cell scale or mesh offset changes.
-    if (value.get_cell_scale() != space.get_cell_scale() ||
-            value.get_mesh_offset() != space.get_mesh_offset()) {
+    if (value.get_cell_scale() != space.get_cell_scale()) {
         rebuild = true;
     }
     HexMapMeshTool::set_space(value);
@@ -38,7 +37,7 @@ void HexMapLibraryMeshTool::set_cell(HexMapCellId cell_id,
     if (!mesh.is_valid()) {
         mesh = get_placeholder_mesh();
         mesh_transform = Transform3D(Basis::from_scale(space.get_cell_scale()),
-                -space.get_mesh_offset());
+                -get_mesh_origin() * space.get_cell_scale());
     }
 
     Transform3D cell_transform(orientation);
@@ -165,7 +164,7 @@ void HexMapLibraryMeshTool::refresh() {
             RID mesh = get_placeholder_mesh()->get_rid();
             Transform3D transform =
                     Transform3D(Basis::from_scale(space.get_cell_scale()),
-                            -space.get_mesh_offset());
+                            -get_mesh_origin());
 
             for (const auto &iter : cell_map) {
                 HexMapMeshTool::set_cell(iter.key, mesh, transform);
@@ -185,7 +184,7 @@ void HexMapLibraryMeshTool::refresh() {
                     mesh = get_placeholder_mesh();
                     mesh_transform = Transform3D(
                             Basis::from_scale(space.get_cell_scale()),
-                            -space.get_mesh_offset());
+                            -get_mesh_origin());
                 }
 
                 // get the cell transform based on cell orientation

@@ -36,6 +36,8 @@
 #include "core/iter_cube.h"
 #include "core/math.h"
 #include "core/tile_orientation.h"
+#include "godot_cpp/classes/global_constants.hpp"
+#include "godot_cpp/core/object.hpp"
 #include "octant.h"
 #include "profiling.h"
 #include "tiled_node.h"
@@ -83,6 +85,8 @@ bool HexMapTiledNode::_set(const StringName &p_name, const Variant &p_value) {
 
         update_octant_meshes();
 
+    } else if (name == "mesh_origin") {
+        set_mesh_origin(MeshOrigin(static_cast<int>(p_value)));
     } else {
         return false;
     }
@@ -124,7 +128,8 @@ bool HexMapTiledNode::_get(const StringName &p_name, Variant &r_ret) const {
             ret[2 * i + 1] = octants[key]->get_baked_mesh();
         }
         r_ret = ret;
-
+    } else if (name == "mesh_origin") {
+        r_ret = static_cast<int>(mesh_origin);
     } else {
         return false;
     }
@@ -133,6 +138,11 @@ bool HexMapTiledNode::_get(const StringName &p_name, Variant &r_ret) const {
 }
 
 void HexMapTiledNode::_get_property_list(List<PropertyInfo> *p_list) const {
+    p_list->push_back(PropertyInfo(Variant::INT,
+            "mesh_origin",
+            PROPERTY_HINT_NONE,
+            "",
+            PROPERTY_USAGE_STORAGE));
     p_list->push_back(PropertyInfo(Variant::DICTIONARY,
             "data",
             PROPERTY_HINT_NONE,
@@ -287,6 +297,36 @@ bool HexMapTiledNode::mesh_library_changed() {
     emit_signal("mesh_library_changed");
     recreate_octant_data();
     return true;
+}
+
+void HexMapTiledNode::set_mesh_origin(MeshOrigin value) {
+    if (mesh_origin == value) {
+        return;
+    }
+
+    mesh_origin = value;
+
+    // mark all octants as dirty, and schedule a refresh of them
+    for (const auto pair : octants) {
+        pair.value->set_dirty();
+    }
+    update_dirty_octants();
+    emit_signal("mesh_origin_changed");
+}
+
+HexMapTiledNode::MeshOrigin HexMapTiledNode::get_mesh_origin() const {
+    return mesh_origin;
+}
+
+Vector3 HexMapTiledNode::get_mesh_origin_vec() const {
+    switch (mesh_origin) {
+    case Center:
+        return Vector3();
+    case Top:
+        return Vector3(0, 0.5, 0);
+    case Bottom:
+        return Vector3(0, -0.5, 0);
+    }
 }
 
 bool HexMapTiledNode::on_hex_space_changed() {
@@ -562,6 +602,11 @@ void HexMapTiledNode::_bind_methods() {
     ClassDB::bind_method(
             D_METHOD("get_mesh_library"), &HexMapTiledNode::get_mesh_library);
 
+    ClassDB::bind_method(D_METHOD("set_mesh_origin", "value"),
+            &HexMapTiledNode::set_mesh_origin);
+    ClassDB::bind_method(
+            D_METHOD("get_mesh_origin"), &HexMapTiledNode::get_mesh_origin);
+
     ClassDB::bind_method(D_METHOD("set_collision_debug", "debug"),
             &HexMapTiledNode::set_collision_debug);
     ClassDB::bind_method(D_METHOD("get_collision_debug"),
@@ -638,6 +683,7 @@ void HexMapTiledNode::_bind_methods() {
                          "PhysicsMaterial"),
             "set_physics_material",
             "get_physics_material");
+
     ADD_GROUP("Cell", "cell_");
     ADD_PROPERTY(PropertyInfo(Variant::INT,
                          "cell_octant_size",
@@ -645,6 +691,13 @@ void HexMapTiledNode::_bind_methods() {
                          "1,1024,1"),
             "set_octant_size",
             "get_octant_size");
+    ADD_PROPERTY(PropertyInfo(Variant::INT,
+                         "mesh_origin",
+                         PROPERTY_HINT_ENUM,
+                         "Center,Top,Bottom"),
+            "set_mesh_origin",
+            "get_mesh_origin");
+
     ADD_GROUP("Collision", "collision_");
     ADD_PROPERTY(PropertyInfo(Variant::BOOL,
                          "collision_debug",
@@ -676,6 +729,8 @@ void HexMapTiledNode::_bind_methods() {
     ADD_SIGNAL(MethodInfo(
             "cell_changed", PropertyInfo(Variant::VECTOR3I, "cell")));
     ADD_SIGNAL(MethodInfo("mesh_library_changed"));
+
+    ADD_SIGNAL(MethodInfo("mesh_origin_changed"));
 }
 
 void HexMapTiledNode::clear_baked_meshes() {
@@ -710,6 +765,11 @@ RID HexMapTiledNode::get_bake_mesh_instance(int p_idx) {
 bool HexMapTiledNode::generate_navigation_source_geometry(Ref<NavigationMesh>,
         Ref<NavigationMeshSourceGeometryData3D> source_geometry_data,
         Node *) const {
+    // calculate the mesh origin offset for each cell; this allows us to put
+    // the origin at the bottom or top of the cell, instead of the center.
+    Vector3 mesh_origin_offset =
+            get_mesh_origin_vec() * space.get_cell_scale();
+
     for (const auto &it : cell_map) {
         const Cell &cell = it.value;
 
@@ -734,8 +794,8 @@ bool HexMapTiledNode::generate_navigation_source_geometry(Ref<NavigationMesh>,
             continue;
         }
 
-        Transform3D cell_transform(
-                cell.get_basis(), space.get_mesh_origin(it.key));
+        Transform3D cell_transform(cell.get_basis(),
+                space.get_cell_center_global(it.key) + mesh_origin_offset);
         source_geometry_data->add_mesh(mesh,
                 cell_transform *
                         mesh_library->get_item_mesh_transform(cell.value));

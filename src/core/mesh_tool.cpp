@@ -7,6 +7,8 @@
 
 void HexMapMeshTool::set_space(const HexMapSpace &value) { space = value; }
 
+void HexMapMeshTool::set_mesh_origin(Vector3 value) { mesh_origin = value; }
+
 void HexMapMeshTool::free_multimeshes() {
     RenderingServer *rs = RenderingServer::get_singleton();
 
@@ -29,6 +31,10 @@ void HexMapMeshTool::build_multimeshes() {
     // transform for each instance of that cell in the octant
     HashMap<RID, Vector<Transform3D>> mesh_cells;
 
+    // calculate the mesh origin offset for each cell; this allows us to put
+    // the origin at the bottom or top of the cell, instead of the center.
+    Vector3 mesh_origin_offset = mesh_origin * space.get_cell_scale();
+
     // iterate through the cells, save off RID & Transform pairs for multimesh
     // creation later.
     for (const auto &iter : cell_map) {
@@ -46,8 +52,11 @@ void HexMapMeshTool::build_multimeshes() {
             mesh_transforms = &iter->value;
         }
 
+        Vector3 cell_center =
+                space.get_cell_center_global(cell_id) + mesh_origin_offset;
         mesh_transforms->push_back(
-                space.get_mesh_transform(cell_id) * cell.transform);
+                Transform3D(Basis(), cell_center) * cell.transform);
+        // XXX space.get_mesh_transform(cell_id) * cell.transform);
     }
 
     RenderingServer *rs = RenderingServer::get_singleton();
