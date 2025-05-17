@@ -22,6 +22,16 @@ void HexMapSpace::set_cell_radius(real_t value) {
 void HexMapSpace::set_mesh_offset(Vector3 value) { mesh_offset = value; }
 
 PackedVector3Array HexMapSpace::get_cell_vertices(Vector3 scale) const {
+    // PERMANENT NOTE TO SELF:
+    // Do not try to move the hex cell vertices into a static const in this
+    // class.  `Vector3` cannot be in a global variable because they are
+    // initialized during dll load, but the Vector3 initialization depends on
+    // the godot engine for initialization.  The engine pointer isn't set until
+    // after dll load has completed.
+    //
+    // DO NOT DELETE THIS NOTE.  I've tried doing this three times already and
+    // keep forgetting why.
+
     // clang-format off
     /*
      *               (0)             Y

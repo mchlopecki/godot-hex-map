@@ -37,12 +37,6 @@ class HexMapNodeEditorPlugin : public EditorPlugin {
     GDCLASS(HexMapNodeEditorPlugin, EditorPlugin);
 
 public:
-    /// subclasses should also override this to show ui elements, and call this
-    /// implementation
-    virtual void _make_visible(bool visible) override;
-
-    // XXX subclasses override this
-    // virtual bool _handles(Object *object) const override;
     virtual void _edit(Object *p_object) override;
     virtual int32_t _forward_3d_gui_input(Camera3D *viewport_camera,
             const Ref<InputEvent> &event) override;
@@ -112,9 +106,8 @@ protected:
 
     // manage selection
     void deselect_cells();
-    void _deselect_cells();
-    void _select_cell(Vector3i);
-    void _set_selection_v(Array);
+    void clear_current_selection();
+    void set_selection_vecs(Array);
 
     /// node being edited
     HexMapNode *hex_map = nullptr;

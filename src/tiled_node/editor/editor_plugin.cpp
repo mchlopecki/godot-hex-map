@@ -54,16 +54,6 @@ bool HexMapTiledNodeEditorPlugin::_handles(Object *p_object) const {
     return p_object->is_class("HexMapTiled");
 }
 
-// void HexMapTiledNodeEditorPlugin::_make_visible(bool p_visible) {
-//     if (p_visible) {
-//         editor_control->show();
-//         set_process(true);
-//     } else {
-//         editor_control->hide();
-//         set_process(false);
-//     }
-// }
-
 void HexMapTiledNodeEditorPlugin::update_mesh_library() {
     ERR_FAIL_NULL(hex_map);
 
@@ -102,7 +92,6 @@ void HexMapTiledNodeEditorPlugin::_edit(Object *p_object) {
 
         // clear the mesh library
         mesh_library = Ref<MeshLibrary>();
-        // bottom_panel->set("mesh_library", mesh_library);
     }
 
     HexMapNodeEditorPlugin::_edit(p_object);

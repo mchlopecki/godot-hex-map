@@ -146,7 +146,7 @@ void SelectionManager::redraw_selection() {
     RenderingServer *rs = RS::get_singleton();
 
     // transform the mesh manager and redraw it
-    Vector<CellId> cells = get_cells();
+    Vector<CellId> cells = get_cell_ids();
     mesh_manager.clear();
     set_cells(cells);
 
@@ -224,7 +224,7 @@ CellId SelectionManager::get_center() {
     return CellId::from_unit_point((max + min) / 2);
 }
 
-Vector<HexMapCellId> SelectionManager::get_cells() const {
+Vector<HexMapCellId> SelectionManager::get_cell_ids() const {
     Vector<HexMapCellId> out;
     for (const auto &cell : mesh_manager.get_cells()) {
         out.push_back((CellId)cell.key);
@@ -232,7 +232,7 @@ Vector<HexMapCellId> SelectionManager::get_cells() const {
     return out;
 }
 
-Array SelectionManager::get_cells_v() const {
+Array SelectionManager::get_cell_vecs() const {
     Array out;
     for (const auto &cell : mesh_manager.get_cells()) {
         out.push_back((CellId)cell.key);

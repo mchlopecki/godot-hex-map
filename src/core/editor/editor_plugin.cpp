@@ -55,22 +55,25 @@
 
 using EditAxis = EditorCursor::EditAxis;
 
-// XXX middle click in orthographic axis view moves camera; block that
 void HexMapNodeEditorPlugin::commit_cell_changes(String desc) {
     auto change_count = cells_changed.size();
     Array do_list, undo_list;
 
-    do_list.resize(change_count * 3);
-    undo_list.resize(change_count * 3);
+    do_list.resize(change_count * HexMapNode::CELL_ARRAY_WIDTH);
+    undo_list.resize(change_count * HexMapNode::CELL_ARRAY_WIDTH);
     for (int i = 0; i < change_count; i++) {
         const CellChange &change = cells_changed[i];
-        int base = i * 3;
-        do_list[base] = (Vector3i)change.cell_id;
-        do_list[base + 1] = change.new_tile;
-        do_list[base + 2] = change.new_orientation;
-        undo_list[base] = (Vector3i)change.cell_id;
-        undo_list[base + 1] = change.orig_tile;
-        undo_list[base + 2] = change.orig_orientation;
+        int base = i * HexMapNode::CELL_ARRAY_WIDTH;
+        do_list[base + HexMapNode::CELL_ARRAY_INDEX_VEC] =
+                (Vector3i)change.cell_id;
+        do_list[base + HexMapNode::CELL_ARRAY_INDEX_VALUE] = change.new_tile;
+        do_list[base + HexMapNode::CELL_ARRAY_INDEX_ORIENTATION] =
+                change.new_orientation;
+        undo_list[base + HexMapNode::CELL_ARRAY_INDEX_VEC] =
+                (Vector3i)change.cell_id;
+        undo_list[HexMapNode::CELL_ARRAY_INDEX_VALUE] = change.orig_tile;
+        undo_list[HexMapNode::CELL_ARRAY_INDEX_ORIENTATION] =
+                change.orig_orientation;
     }
 
     EditorUndoRedoManager *undo_redo = get_undo_redo();
@@ -90,26 +93,19 @@ void HexMapNodeEditorPlugin::deselect_cells() {
 
     // clear and select cells
     undo_redo->add_undo_method(
-            this, "set_selection_v", selection_manager->get_cells_v());
+            this, "set_selection", selection_manager->get_cell_vecs());
 
     undo_redo->commit_action();
 }
 
-void HexMapNodeEditorPlugin::_deselect_cells() {
+void HexMapNodeEditorPlugin::clear_current_selection() {
     ERR_FAIL_COND_MSG(selection_manager == nullptr,
             "HexMap: SelectionManager not present");
     selection_manager->clear();
     emit_signal("selection_active_changed", false);
 }
 
-void HexMapNodeEditorPlugin::_select_cell(Vector3i cell) {
-    ERR_FAIL_COND_MSG(selection_manager == nullptr,
-            "HexMap: SelectionManager not present");
-    selection_manager->add_cell(cell);
-    emit_signal("selection_active_changed", false);
-}
-
-void HexMapNodeEditorPlugin::_set_selection_v(Array cells) {
+void HexMapNodeEditorPlugin::set_selection_vecs(Array cells) {
     ERR_FAIL_COND_MSG(selection_manager == nullptr,
             "HexMap: SelectionManager not present");
 
@@ -121,7 +117,7 @@ void HexMapNodeEditorPlugin::selection_clear() {
     ERR_FAIL_COND_MSG(selection_manager == nullptr,
             "HexMap: SelectionManager not present");
 
-    auto cells = selection_manager->get_cells_v();
+    auto cells = selection_manager->get_cell_vecs();
 
     // build the set_cells() argument to restore the original cells
     Array undo_list = hex_map->get_cells(cells);
@@ -129,12 +125,13 @@ void HexMapNodeEditorPlugin::selection_clear() {
     // build the set_cells() argument to clear the cells
     Array do_list;
     int cell_count = cells.size();
-    do_list.resize(cell_count * 3);
+    do_list.resize(cell_count * HexMapNode::CELL_ARRAY_WIDTH);
     for (int i = 0; i < cell_count; i++) {
-        int base = i * 3;
-        do_list[base] = cells[i];
-        do_list[base + 1] = HexMapNode::CELL_VALUE_NONE;
-        do_list[base + 2] = 0;
+        int base = i * HexMapNode::CELL_ARRAY_WIDTH;
+        do_list[base + HexMapNode::CELL_ARRAY_INDEX_VEC] = cells[i];
+        do_list[base + HexMapNode::CELL_ARRAY_INDEX_VALUE] =
+                HexMapNode::CELL_VALUE_NONE;
+        do_list[base + HexMapNode::CELL_ARRAY_INDEX_ORIENTATION] = 0;
     }
 
     // add it to undo/redo and commit it
@@ -154,8 +151,9 @@ void HexMapNodeEditorPlugin::selection_fill() {
     ERR_FAIL_COND_MSG(
             editor_cursor->size() == 0, "cursor has no tiles; need one");
 
-    auto tile = editor_cursor->get_only_cell_state();
-    auto cells = selection_manager->get_cells_v();
+    auto tile = editor_cursor->get_origin_cell_info();
+    ERR_FAIL_COND(tile.value == HexMapNode::CELL_VALUE_NONE);
+    auto cells = selection_manager->get_cell_vecs();
 
     // build the set_cells() argument to restore the original cells
     Array undo_list = hex_map->get_cells(cells);
@@ -183,16 +181,18 @@ void HexMapNodeEditorPlugin::selection_fill() {
 void HexMapNodeEditorPlugin::copy_selection_to_cursor() {
     ERR_FAIL_COND(editor_cursor == nullptr);
 
-    // make the current pointer cell the origin cell in the cursor.
     editor_cursor->clear_tiles();
     cursor_set_orientation(HexMapTileOrientation());
 
-    Vector<HexMapCellId> cells = selection_manager->get_cells();
+    Vector<HexMapCellId> cells = selection_manager->get_cell_ids();
     if (cells.is_empty()) {
         return;
     }
+    // get the center cell id for the selection
     HexMapCellId center = selection_manager->get_center();
 
+    // copy all the cells into the editor cursor, adjusting the selection
+    // manager's cell id to be centered on the editor cursor
     for (const HexMapCellId &cell_id : cells) {
         auto [value, orientation] = hex_map->get_cell(cell_id);
         if (value == HexMapNode::CELL_VALUE_NONE) {
@@ -214,14 +214,14 @@ void HexMapNodeEditorPlugin::selection_clone() {
     copy_selection_to_cursor();
 
     // save off selection for cancel, then clear it
-    last_selection = selection_manager->get_cells_v();
-    _deselect_cells();
+    last_selection = selection_manager->get_cell_vecs();
+    clear_current_selection();
 
     input_state = INPUT_STATE_CLONING;
 }
 
 void HexMapNodeEditorPlugin::selection_clone_cancel() {
-    _set_selection_v(last_selection);
+    set_selection_vecs(last_selection);
     last_selection.clear();
 
     rebuild_cursor();
@@ -239,9 +239,9 @@ void HexMapNodeEditorPlugin::selection_clone_apply() {
             godot::UndoRedo::MERGE_DISABLE,
             hex_map);
     undo_redo->add_do_method(hex_map, "set_cells", do_list);
-    undo_redo->add_do_method(this, "set_selection_v", do_select);
+    undo_redo->add_do_method(this, "set_selection", do_select);
     undo_redo->add_undo_method(hex_map, "set_cells", undo_list);
-    undo_redo->add_undo_method(this, "set_selection_v", undo_select);
+    undo_redo->add_undo_method(this, "set_selection", undo_select);
     auto prof = profiling_begin("clone: commit action");
     undo_redo->commit_action();
 
@@ -258,7 +258,7 @@ void HexMapNodeEditorPlugin::selection_move() {
     copy_selection_to_cursor();
 
     // save the original cell contents
-    last_selection = selection_manager->get_cells_v();
+    last_selection = selection_manager->get_cell_vecs();
     move_source_cells = hex_map->get_cells(last_selection);
 
     // clear the cells; we use set_cells() to ensure the "cells_changed" signal
@@ -267,16 +267,17 @@ void HexMapNodeEditorPlugin::selection_move() {
     size_t count = selection_manager->size();
     cells.resize(count * HexMapNode::CELL_ARRAY_WIDTH);
     size_t index = 0;
-    for (const HexMapCellId &cell_id : selection_manager->get_cells()) {
+    for (const HexMapCellId &cell_id : selection_manager->get_cell_ids()) {
         size_t base = index * HexMapNode::CELL_ARRAY_WIDTH;
         cells[base] = cell_id;
-        cells[base + 1] = HexMapNode::CELL_VALUE_NONE;
+        cells[HexMapNode::CELL_ARRAY_INDEX_VALUE] =
+                HexMapNode::CELL_VALUE_NONE;
         index++;
     }
     hex_map->set_cells(cells);
 
     // clear selection
-    _deselect_cells();
+    clear_current_selection();
 
     input_state = INPUT_STATE_MOVING;
 }
@@ -285,7 +286,7 @@ void HexMapNodeEditorPlugin::selection_move_cancel() {
     hex_map->set_cells(move_source_cells);
     move_source_cells.clear();
 
-    _set_selection_v(last_selection);
+    set_selection_vecs(last_selection);
     last_selection.clear();
 
     rebuild_cursor();
@@ -299,7 +300,8 @@ void HexMapNodeEditorPlugin::selection_move_apply() {
     for (int i = 0; i < count; i++) {
         int base = i * HexMapNode::CELL_ARRAY_WIDTH;
         do_set_cells[base] = move_source_cells[i];
-        do_set_cells[base + 1] = HexMapNode::CELL_VALUE_NONE;
+        do_set_cells[HexMapNode::CELL_ARRAY_INDEX_VALUE] =
+                HexMapNode::CELL_VALUE_NONE;
     }
     // second phase is to set the destination cells
     do_set_cells.append_array(editor_cursor->get_cells_v());
@@ -319,9 +321,9 @@ void HexMapNodeEditorPlugin::selection_move_apply() {
             godot::UndoRedo::MERGE_DISABLE,
             hex_map);
     undo_redo->add_do_method(hex_map, "set_cells", do_set_cells);
-    undo_redo->add_do_method(this, "set_selection_v", do_select);
+    undo_redo->add_do_method(this, "set_selection", do_select);
     undo_redo->add_undo_method(hex_map, "set_cells", undo_set_cells);
-    undo_redo->add_undo_method(this, "set_selection_v", undo_select);
+    undo_redo->add_undo_method(this, "set_selection", undo_select);
     auto prof = profiling_begin("move: commit action");
     undo_redo->commit_action();
 
@@ -329,6 +331,10 @@ void HexMapNodeEditorPlugin::selection_move_apply() {
 }
 
 void HexMapNodeEditorPlugin::rebuild_cursor() {
+    if (editor_cursor == nullptr) {
+        return;
+    }
+
     editor_cursor->clear_tiles();
     if (paint_value != HexMapNode::CELL_VALUE_NONE) {
         editor_cursor->set_tile(HexMapCellId(), paint_value);
@@ -339,36 +345,23 @@ void HexMapNodeEditorPlugin::rebuild_cursor() {
     emit_signal("cursor_active_changed", editor_cursor->size() > 0);
 }
 
-void HexMapNodeEditorPlugin::_make_visible(bool p_visible) {
-    set_process(p_visible);
-}
-
 int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
         const Ref<InputEvent> &p_event) {
     if (!hex_map) {
         return EditorPlugin::AFTER_GUI_INPUT_PASS;
     }
 
-    // try to handle any key event as a shortcut first
-    //
-    // XXX need to make sure keypress events aren't passed through while we're
-    // performing an action.  This can happen right now with paint, move, etc
-    // by hitting `G` becuase there's no selection.
-    //
     Ref<InputEventKey> key_event = p_event;
 
-    // The escape key requires special handling.  In some cases this function
-    // will consume it to cancel a move/clone, or clear the selection.  In
-    // other cases, it will need to be passed to the subclass to clear the
-    // current tile selection.  We pull the escape_pressed state here.
+    // The escape key requires special handling later on; just grab the state
+    // for it now.
     bool escape_pressed = key_event.is_valid() &&
             key_event->get_keycode() == Key::KEY_ESCAPE &&
             key_event->is_pressed();
 
     // Pass keypress events to handle_keypress() to override editor default
-    // keybindings.  The one exception is the escape key; we'll call
-    // handle_keypress() with the event later if this function does not consume
-    // it.
+    // keybindings.  The one exception is the escape key; we'll consume all
+    // escape keypresses, and never pass them to handle_keypress().
     if (key_event.is_valid() && key_event->is_pressed() && !escape_pressed &&
             handle_keypress(key_event) == EditorPlugin::AFTER_GUI_INPUT_STOP) {
         assert(bottom_panel != nullptr &&
@@ -422,13 +415,17 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
             editor_cursor->set_visible(false);
             emit_signal("cursor_active_changed", false);
             input_state = INPUT_STATE_SELECTING;
-            last_selection = selection_manager->get_cells_v();
+            last_selection = selection_manager->get_cell_vecs();
             selection_anchor = editor_cursor->get_pos();
             selection_manager->clear();
             selection_manager->add_cell(editor_cursor->get_cell());
             return AFTER_GUI_INPUT_STOP;
-        } else if (mouse_left_pressed && !editor_cursor->is_empty()) {
-            input_state = INPUT_STATE_PAINTING;
+        } else if (mouse_left_pressed) {
+            // always consume the left click, otherwise we fall out of the
+            // editor
+            if (!editor_cursor->is_empty()) {
+                input_state = INPUT_STATE_PAINTING;
+            }
             return AFTER_GUI_INPUT_STOP;
         } else if (mouse_right_pressed) {
             editor_cursor->set_visible(false);
@@ -454,7 +451,9 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
         HexMapCellId cell_id = editor_cursor->get_cell();
         auto [tile, orientation] = hex_map->get_cell(cell_id);
 
-        auto cell = editor_cursor->get_only_cell_state();
+        auto cell = editor_cursor->get_origin_cell_info();
+        ERR_FAIL_COND_V(cell.value == HexMapNode::CELL_VALUE_NONE,
+                AFTER_GUI_INPUT_STOP);
         if (cell.value != tile || cell.orientation != orientation) {
             cells_changed.push_back(CellChange{
                     .cell_id = cell_id,
@@ -510,7 +509,8 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
     // - update selection (mouse event)
     case INPUT_STATE_SELECTING:
         if (mouse_event.is_valid() && p_camera != nullptr) {
-            // XXX look at moving this into SelectionManager
+            // p1 .. p4 are all points that fall on the edit plane that
+            // make up the quad created by dragging the mouse.
             Vector3 p1 = selection_anchor, p3 = editor_cursor->get_pos();
             Vector3 p2, p4;
             switch (editor_cursor->get_axis()) {
@@ -550,10 +550,9 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
             undo_redo->create_action("HexMap: select cells");
             // do method will apply the existing selection
             undo_redo->add_do_method(
-                    this, "set_selection_v", selection_manager->get_cells_v());
+                    this, "set_selection", selection_manager->get_cell_vecs());
 
-            undo_redo->add_undo_method(
-                    this, "set_selection_v", last_selection);
+            undo_redo->add_undo_method(this, "set_selection", last_selection);
 
             auto prof_commit = profiling_begin("commit selection undo_redo");
             undo_redo->commit_action();
@@ -668,12 +667,6 @@ void HexMapNodeEditorPlugin::_edit(Object *p_object) {
     hex_map->connect("mesh_offset_changed",
             callable_mp(
                     this, &HexMapNodeEditorPlugin::on_node_hex_space_changed));
-
-    // XXX the subclass needs to handle this some way
-    // hex_map->connect("mesh_library_changed",
-    //         callable_mp(this,
-    //         &HexMapNodeEditorPlugin::update_mesh_library));
-    // update_mesh_library();
 }
 
 void HexMapNodeEditorPlugin::_notification(int p_what) {
@@ -1027,11 +1020,9 @@ void HexMapNodeEditorPlugin::_bind_methods() {
             &HexMapNodeEditorPlugin::selection_clear);
 
     ClassDB::bind_method(D_METHOD("deselect_cells"),
-            &HexMapNodeEditorPlugin::_deselect_cells);
-    ClassDB::bind_method(D_METHOD("select_cell", "cell"),
-            &HexMapNodeEditorPlugin::_select_cell);
-    ClassDB::bind_method(D_METHOD("set_selection_v", "cells_vector"),
-            &HexMapNodeEditorPlugin::_set_selection_v);
+            &HexMapNodeEditorPlugin::clear_current_selection);
+    ClassDB::bind_method(D_METHOD("set_selection", "cells_vector"),
+            &HexMapNodeEditorPlugin::set_selection_vecs);
     ClassDB::bind_method(D_METHOD("cursor_set_orientation", "orientation"),
             static_cast<void (HexMapNodeEditorPlugin::*)(int)>(
                     &HexMapNodeEditorPlugin::cursor_set_orientation));

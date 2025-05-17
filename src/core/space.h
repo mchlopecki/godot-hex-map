@@ -19,20 +19,10 @@ class HexMapSpace {
     /// cell mesh origin offset
     Vector3 mesh_offset;
 
-public:
-    // PERMANENT NOTE TO SELF:
-    // Do not try to move the hex cell vertices into a static const in this
-    // class.  `Vector3` cannot be in a global variable because they are
-    // initialized during dll load, but the Vector3 initialization depends on
-    // the godot engine for initialization.  The engine pointer isn't set until
-    // after dll load has completed.
-    //
-    // DO NOT DELETE THIS NOTE.  I've tried doing this three times already and
-    // keep forgetting why.
-
     /// global transform of the meshes
     Transform3D transform;
 
+public:
     /// Set the cell scaling for the hex grid.  Scale modifies the unit hex
     /// cell with `height = 1`, `radius = 1`.  This will update any
     /// `mesh_offset` that was previously set.

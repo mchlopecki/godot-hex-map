@@ -49,7 +49,7 @@ private:
      */
     union Cell {
         struct {
-            unsigned int item : 16;
+            unsigned int value : 16;
             unsigned int rot : 4;
             unsigned int visible : 1;
         };
@@ -95,7 +95,7 @@ private:
     // lookup in get_bake_mesh_instance().
     Vector<OctantKey> baked_mesh_octants;
 
-    void _recreate_octant_data();
+    void recreate_octant_data();
     void update_octant_meshes();
 
     void update_physics_bodies_collision_properties();
@@ -105,9 +105,7 @@ private:
     void update_dirty_octants();
     void update_dirty_octants_callback();
 
-    void _clear_internal();
-
-    Vector3 _get_offset() const;
+    void clear_internal();
 
 protected:
     bool _set(const StringName &p_name, const Variant &p_value);
@@ -161,41 +159,10 @@ public:
     Array get_cell_vecs() const override;
     Array find_cell_vecs_by_value(int value) const override;
 
-    void set_cell_item(const HexMapCellId &cell_id, int p_item, int p_rot = 0);
-    void _set_cell_item(const Ref<hex_bind::HexMapCellId> cell_id,
-            int p_item,
-            int p_rot = 0);
-    void _set_cell_item_v(const Vector3i &cell_id, int p_item, int p_rot = 0);
-    int get_cell_item(const HexMapCellId &cell_id) const;
-    int _get_cell_item(const Ref<hex_bind::HexMapCellId> p_cell_id) const;
-    int _get_cell_item_v(const Vector3i &) const;
-    int get_cell_item_orientation(const HexMapCellId &cell_id) const;
-    int _get_cell_item_orientation(
-            const Ref<hex_bind::HexMapCellId> cell_id) const;
-
     // used by the editor to conceal cells for the editor cursor
     // value is not saved
     void set_cell_visibility(const HexMapCellId &cell_id,
             bool visibility) override;
-    bool set_cells_visibility_callback(Array cells);
-
-    // given a quad defined by four points on one of the coordinate axis,
-    // return the cellids that fall within that quad.
-    //
-    // Note: points must all fall on the same plane, and that plane must fall
-    // along one of the Q, R, S, or Y axis.
-    Vector<HexMapCellId>
-            local_quad_to_cell_ids(Vector3, Vector3, Vector3, Vector3) const;
-
-    HexMapIterCube local_region_to_cell_ids(Vector3,
-            Vector3,
-            Planes = Planes::All) const;
-    Ref<hex_bind::HexMapIter> _local_region_to_cell_ids(
-            Vector3 p_local_point_a,
-            Vector3 p_local_point_b) const;
-
-    Array get_used_cells() const;
-    TypedArray<Vector3i> get_used_cells_by_item(int p_item) const;
 
     void clear_baked_meshes();
     void make_baked_meshes(bool p_gen_lightmap_uv = false,

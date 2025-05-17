@@ -59,7 +59,7 @@ void HexMapOctant::build_physics_body() {
         const HexMapTiledNode::Cell *cell = hex_map.cell_map.getptr(cell_key);
         ERR_CONTINUE_MSG(cell == nullptr, "nonexistent HexMap cell in Octant");
 
-        Ref<Mesh> mesh = mesh_library->get_item_mesh(cell->item);
+        Ref<Mesh> mesh = mesh_library->get_item_mesh(cell->value);
         if (!mesh.is_valid()) {
             continue;
         }
@@ -73,7 +73,7 @@ void HexMapOctant::build_physics_body() {
         // has its own transform independent of the mesh transform.  Also
         // get_item_shapes() returns an array of Shape3D followed by
         // Transform3D for each shape.
-        const Array shapes = mesh_library->get_item_shapes(cell->item);
+        const Array shapes = mesh_library->get_item_shapes(cell->value);
         for (int i = 0; i < shapes.size(); i += 2) {
             Shape3D *shape = Object::cast_to<Shape3D>(shapes[i]);
             Transform3D shape_transform =
@@ -133,7 +133,7 @@ void HexMapOctant::bake_mesh() {
         const HexMapTiledNode::Cell *cell = hex_map.cell_map.getptr(cell_key);
         ERR_CONTINUE_MSG(cell == nullptr, "nonexistent HexMap cell in Octant");
 
-        Ref<ArrayMesh> mesh = mesh_library->get_item_mesh(cell->item);
+        Ref<ArrayMesh> mesh = mesh_library->get_item_mesh(cell->value);
         if (!mesh.is_valid()) {
             continue;
         }
@@ -142,7 +142,7 @@ void HexMapOctant::bake_mesh() {
         Transform3D transform;
         transform.basis = cell->get_basis();
         transform.set_origin(hex_map.get_cell_center(cell_key));
-        transform *= mesh_library->get_item_mesh_transform(cell->item);
+        transform *= mesh_library->get_item_mesh_transform(cell->value);
 
         for (int i = 0; i < mesh->get_surface_count(); i++) {
             if (mesh->surface_get_primitive_type(i) !=

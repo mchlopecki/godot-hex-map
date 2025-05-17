@@ -27,6 +27,7 @@
 
 using RS = RenderingServer;
 
+/// radius in cells of the edit grid
 #define GRID_RADIUS 40u
 
 void EditorCursor::set_space(HexMapSpace space) {
@@ -55,6 +56,10 @@ void EditorCursor::set_orientation(HexMapTileOrientation orientation) {
     transform_meshes();
 }
 
+HexMapTileOrientation EditorCursor::get_orientation() const {
+    return orientation;
+}
+
 void EditorCursor::transform_meshes() {
     // update the grid transform
     grid_mesh_transform.set_origin(
@@ -67,7 +72,7 @@ void EditorCursor::transform_meshes() {
     Transform3D cursor_transform(
             orientation, parent_space.get_cell_center(pointer_cell));
     HexMapSpace space = parent_space;
-    space.transform *= cursor_transform;
+    space.set_transform(space.get_transform() * cursor_transform);
     mesh_tool.set_space(space);
     // XXX we're destroying multimesh and rebuilding when we call this; we
     // should make MeshTool smarter about what work it needs to do.
@@ -77,25 +82,51 @@ void EditorCursor::transform_meshes() {
         return;
     }
 
+    // To prevent the HexMapNode cells from hiding the cursor cells (by having
+    // larger meshes, etc), we need to get a the list of cells the editor
+    // cursor now overlaps, and hide those.  Additionally we need to show any
+    // cells we no longer overlap.
+    //
+    // In this loop we'll construct an array of cell id followed by visibility
+    // state (true = visible, false = hidden), for only those cells that need
+    // to change.
+    //
     auto profile = profiling_begin("EditorCursor: updating hidden cell list");
-    Array changes;
+    Array changes; // changes to call set_cells_visibility()
+
+    // make a copy of the set of hidden cells; we'll use this to detect which
+    // cells visibiliby should be changed.
     HashSet<HexMapCellId::Key> current_cells = hidden_cells;
+
+    // iterate through all the cells in the editor cursor
     for (const auto &iter : mesh_tool.get_cells()) {
+        // the MeshTool may be rotated, so we need to map its cell id to the
+        // parent space's cell id.  We do this by grabbing the global
+        // coordinates for the center of the cell in the mesh_tool, then
+        // getting the cell id for that point in our parent space.
         Vector3 center = space.get_cell_center_global(iter.key);
         HexMapCellId cell_id = parent_space.get_cell_id_global(center);
+
+        // if the cell id is currently hidden, remove it
         if (!current_cells.erase(cell_id)) {
+            // cell id is not already hidden; add it to our hidden list and add
+            // the arguments to hide it to our changes Array.
             hidden_cells.insert(cell_id);
             changes.push_back((Vector3i)cell_id);
             changes.push_back(false);
         }
     }
 
+    // we removed all the cursor cell ids from the current cells list, so
+    // anything left is no longer covered by the editor cursor and should be
+    // unhidden.
     for (const auto key : current_cells) {
         hidden_cells.erase(key);
         changes.push_back((Vector3i)key);
         changes.push_back(true);
     }
 
+    // call the callback if we have any changes
     if (!changes.is_empty()) {
         set_cells_visibility.call(changes);
     }
@@ -113,6 +144,12 @@ void EditorCursor::set_tile(HexMapCellId cell,
     // explicitly not calling transform_meshes() here because multiple tiles
     // may be set in a single frame.
 }
+
+bool EditorCursor::is_empty() const {
+    return mesh_tool.get_cells().is_empty();
+};
+
+size_t EditorCursor::size() const { return mesh_tool.get_cells().size(); };
 
 Array EditorCursor::get_cells_v() const {
     const HexMapSpace &space = mesh_tool.get_space();
@@ -153,17 +190,15 @@ Array EditorCursor::get_cell_ids_v() const {
     return out;
 }
 
-HexMapNode::CellInfo EditorCursor::get_only_cell_state() const {
-    auto cell_map = mesh_tool.get_cells();
-    assert(cell_map.size() == 1 && "cursor must have only one cell");
-
-    const HexMapSpace &space = mesh_tool.get_space();
-    const auto &iter = *cell_map.begin();
-    Vector3 center = space.get_cell_center_global(iter.key);
-    HexMapCellId cell_id = parent_space.get_cell_id_global(center);
+HexMapNode::CellInfo EditorCursor::get_origin_cell_info() const {
+    const HexMapLibraryMeshTool::CellState *cell =
+            mesh_tool.get_cells().getptr(HexMapCellId());
+    if (cell == nullptr) {
+        return HexMapNode::CellInfo{};
+    }
     return HexMapNode::CellInfo{
-        .value = iter.value.index,
-        .orientation = iter.value.orientation + orientation,
+        .value = cell->index,
+        .orientation = cell->orientation,
     };
 }
 
@@ -173,7 +208,8 @@ bool EditorCursor::update(const Camera3D *camera,
     ERR_FAIL_COND_V_MSG(
             camera == nullptr, false, "null camera in EditorCursor.update()");
 
-    Transform3D local_transform = parent_space.transform.affine_inverse();
+    Transform3D local_transform =
+            parent_space.get_transform().affine_inverse();
     Vector3 origin = camera->project_ray_origin(pointer);
     Vector3 normal = camera->project_ray_normal(pointer);
     origin = local_transform.xform(origin);
@@ -219,6 +255,10 @@ void EditorCursor::update(bool force) {
     transform_meshes();
 }
 
+HexMapCellId EditorCursor::get_cell() const { return pointer_cell; };
+
+Vector3 EditorCursor::get_pos() const { return pointer_pos; };
+
 void EditorCursor::set_visible(bool visible) {
     mesh_tool.set_visible(visible);
 }
@@ -262,6 +302,8 @@ void EditorCursor::set_axis(EditAxis axis) {
     edit_axis = axis;
     update(true);
 }
+
+EditorCursor::EditAxis EditorCursor::get_axis() const { return edit_axis; };
 
 void EditorCursor::set_depth(int depth) {
     Vector3 cell_scale = parent_space.get_cell_scale();

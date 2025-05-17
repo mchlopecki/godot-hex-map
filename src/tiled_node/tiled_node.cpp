@@ -68,7 +68,7 @@ bool HexMapTiledNode::_set(const StringName &p_name, const Variant &p_value) {
             }
         }
 
-        _recreate_octant_data();
+        recreate_octant_data();
     } else if (name == "baked_meshes") {
         clear_baked_meshes();
 
@@ -285,21 +285,21 @@ Ref<MeshLibrary> HexMapTiledNode::get_mesh_library() const {
 
 bool HexMapTiledNode::mesh_library_changed() {
     emit_signal("mesh_library_changed");
-    _recreate_octant_data();
+    recreate_octant_data();
     return true;
 }
 
 bool HexMapTiledNode::on_hex_space_changed() {
     HexMapNode::on_hex_space_changed();
     clear_baked_meshes();
-    _recreate_octant_data();
+    recreate_octant_data();
     return true;
 }
 
 void HexMapTiledNode::set_octant_size(int p_size) {
     ERR_FAIL_COND(p_size == 0);
     octant_size = p_size;
-    _recreate_octant_data();
+    recreate_octant_data();
 }
 
 int HexMapTiledNode::get_octant_size() const { return octant_size; }
@@ -313,14 +313,8 @@ bool HexMapTiledNode::get_navigation_bake_only_navmesh_tiles() const {
 }
 
 void HexMapTiledNode::set_cell(const HexMapCellId &cell_id,
-        int tile,
+        int value,
         HexMapTileOrientation orientation) {
-    set_cell_item(cell_id, tile, static_cast<int>(orientation));
-}
-
-void HexMapTiledNode::set_cell_item(const HexMapCellId &cell_id,
-        int p_item,
-        int p_rot) {
     auto prof = profiling_begin("set cell item");
     ERR_FAIL_COND_MSG(
             !cell_id.in_bounds(), "cell id is not in bounds: " + cell_id);
@@ -329,8 +323,8 @@ void HexMapTiledNode::set_cell_item(const HexMapCellId &cell_id,
     // specified values, just return.
     CellKey cell_key(cell_id);
     Cell *current_cell = cell_map.getptr(cell_key);
-    if (current_cell != nullptr && p_item == current_cell->item &&
-            p_rot == current_cell->rot) {
+    if (current_cell != nullptr && value == current_cell->value &&
+            orientation == current_cell->rot) {
         return;
     }
 
@@ -348,11 +342,11 @@ void HexMapTiledNode::set_cell_item(const HexMapCellId &cell_id,
     Octant **octant_ptr = octants.getptr(octant_key);
     Octant *octant = octant_ptr ? *octant_ptr : nullptr;
 
-    if (p_item >= 0) {
+    if (value >= 0) {
         // set the cell
         Cell cell = {
-            .item = static_cast<unsigned int>(p_item),
-            .rot = static_cast<unsigned int>(p_rot),
+            .value = static_cast<unsigned int>(value),
+            .rot = static_cast<unsigned int>(orientation),
             .visible = true,
         };
         cell_map.insert(cell_key, cell);
@@ -368,7 +362,7 @@ void HexMapTiledNode::set_cell_item(const HexMapCellId &cell_id,
         }
 
         // add a cell to the octant, and schedule an update
-        octant->set_cell(cell_key, p_item, p_rot);
+        octant->set_cell(cell_key, value, orientation);
         update_dirty_octants();
 
     } else if (current_cell != nullptr) {
@@ -383,19 +377,6 @@ void HexMapTiledNode::set_cell_item(const HexMapCellId &cell_id,
     return;
 }
 
-void HexMapTiledNode::_set_cell_item(const Ref<hex_bind::HexMapCellId> ref,
-        int p_item,
-        int p_rot) {
-    ERR_FAIL_COND_MSG(!ref.is_valid(), "null cell id");
-    set_cell_item(ref->inner, p_item, p_rot);
-}
-
-void HexMapTiledNode::_set_cell_item_v(const Vector3i &cell_id,
-        int p_item,
-        int p_rot) {
-    set_cell_item(cell_id, p_item, p_rot);
-}
-
 Array HexMapTiledNode::get_cell_vecs() const {
     Array out;
     for (const auto &iter : cell_map) {
@@ -407,7 +388,7 @@ Array HexMapTiledNode::get_cell_vecs() const {
 Array HexMapTiledNode::find_cell_vecs_by_value(int value) const {
     Array out;
     for (const auto &iter : cell_map) {
-        if (iter.value.item == value) {
+        if (iter.value.value == value) {
             out.push_back(static_cast<Vector3i>(iter.key));
         }
     }
@@ -420,47 +401,8 @@ HexMapNode::CellInfo HexMapTiledNode::get_cell(
     if (current_cell == nullptr) {
         return CellInfo{ .value = CELL_VALUE_NONE };
     }
-    return CellInfo{ .value = static_cast<int>(current_cell->item),
+    return CellInfo{ .value = static_cast<int>(current_cell->value),
         .orientation = HexMapTileOrientation(current_cell->rot) };
-}
-
-int HexMapTiledNode::get_cell_item(const HexMapCellId &cell_id) const {
-    ERR_FAIL_COND_V_MSG(!cell_id.in_bounds(),
-            CELL_VALUE_NONE,
-            "cell id not in bounds: " + cell_id);
-
-    CellKey key(cell_id);
-
-    if (!cell_map.has(key)) {
-        return CELL_VALUE_NONE;
-    }
-    return cell_map[key].item;
-}
-
-int HexMapTiledNode::_get_cell_item(
-        const Ref<hex_bind::HexMapCellId> ref) const {
-    ERR_FAIL_COND_V_MSG(!ref.is_valid(), -1, "null cell id");
-    return get_cell_item(ref->inner);
-}
-int HexMapTiledNode::_get_cell_item_v(const Vector3i &p_cell_vector) const {
-    return get_cell_item(p_cell_vector);
-}
-
-int HexMapTiledNode::get_cell_item_orientation(
-        const HexMapCellId &cell_id) const {
-    ERR_FAIL_COND_V_MSG(!cell_id.in_bounds(), -1, "CellId out of bounds");
-
-    CellKey key(cell_id);
-    if (!cell_map.has(key)) {
-        return -1;
-    }
-    return cell_map[key].rot;
-}
-
-int HexMapTiledNode::_get_cell_item_orientation(
-        const Ref<hex_bind::HexMapCellId> ref) const {
-    ERR_FAIL_COND_V_MSG(!ref.is_valid(), 0, "null cell id");
-    return get_cell_item_orientation(ref->inner);
 }
 
 void HexMapTiledNode::set_cell_visibility(const HexMapCellId &cell_id,
@@ -495,183 +437,6 @@ void HexMapTiledNode::set_cell_visibility(const HexMapCellId &cell_id,
     }
 
     return;
-}
-
-bool HexMapTiledNode::set_cells_visibility_callback(Array cells) {
-    if (!baked_mesh_octants.is_empty()) {
-        UtilityFunctions::print(
-                "HexMap: map modified; clearing baked lighting meshes");
-        clear_baked_meshes();
-    }
-
-    size_t size = cells.size();
-    for (unsigned i = 0; i < size; i += 2) {
-        CellId cell_id((Vector3i)cells[i]);
-        ERR_CONTINUE_MSG(
-                !cell_id.in_bounds(), "cell id is not in bounds: " + cell_id);
-        OctantKey octant_key(cell_id, octant_size);
-        Octant **octant = octants.getptr(octant_key);
-        if (octant == nullptr) {
-            continue;
-        }
-        (*octant)->set_cell_visibility(cell_id, cells[i + 1]);
-    }
-
-    update_dirty_octants();
-    return true;
-}
-
-// based on blog post https://observablehq.com/@jrus/hexround
-static inline Vector2i axial_round(real_t q_in, real_t r_in) {
-    int q = round(q_in);
-    int r = round(r_in);
-
-    real_t q_rem = q_in - q;
-    real_t r_rem = r_in - r;
-
-    if (abs(q_rem) >= abs(r_rem)) {
-        q += round(0.5 * r_rem + q_rem);
-    } else {
-        r += round(0.5 * q_rem + r_rem);
-    }
-
-    return Vector2i(q, r);
-}
-
-// convert axial hex coordinates to offset coordinates
-// https://www.redblobgames.com/grids/hexagons/#conversions-offset
-static inline Vector3i axial_to_oddr(Vector3i axial) {
-    int x = axial.x + (axial.z - (axial.z & 1)) / 2;
-    return Vector3i(x, axial.y, axial.z);
-}
-
-static inline Vector3i oddr_to_axial(Vector3i oddr) {
-    int q = oddr.x - (oddr.z - (oddr.z & 1)) / 2;
-    return Vector3i(q, oddr.y, oddr.z);
-}
-
-Vector<HexMapCellId> HexMapTiledNode::local_quad_to_cell_ids(Vector3 a,
-        Vector3 b,
-        Vector3 c,
-        Vector3 d) const {
-    // UtilityFunctions::print("a ", a, ", b ", b, ", c ", ", d ", d);
-    // immediatly switch into unit scale
-    a /= get_cell_scale();
-    b /= get_cell_scale();
-    c /= get_cell_scale();
-    d /= get_cell_scale();
-    //UtilityFunctions::print("a ", a, ", b ", b, ", c ", ", d ", d);
-
-    Plane plane(a, b, c);
-    ERR_FAIL_COND_V_MSG(!plane.has_point(d, 0.0001f),
-            Vector<HexMapCellId>(),
-            "quad points must all be on the same plane");
-    //
-    // Vector3 center = (a + b + c + d) / 4;
-    // Vector3 cell_center =
-    // HexMapCellId::from_unit_point(a).unit_center(); Vector3 direction =
-    // a - center; a = cell_center + direction * 0.01;
-    //
-    // cell_center = HexMapCellId::from_unit_point(c).unit_center();
-    // direction = c - center;
-    // c = cell_center + direction * 0.01;
-
-    Vector3 top_right = a.max(b).max(c).max(d);
-    Vector3 bottom_left = a.min(b).min(c).min(d);
-    //UtilityFunctions::print(
-    //        "top-right ", top_right, ", bottom-left ", bottom_left);
-
-    HexMapIterCube iter(top_right, bottom_left);
-
-    // we're going to reduce the 3d problem to 2d by using the planes that
-    // are most perpendicular to the plane normal.
-    int axis[2];
-    switch (plane.normal.abs().max_axis_index()) {
-    case godot::Vector3::AXIS_X:
-        axis[0] = Vector3::AXIS_Y;
-        axis[1] = Vector3::AXIS_Z;
-        break;
-    case godot::Vector3::AXIS_Y:
-        axis[0] = Vector3::AXIS_X;
-        axis[1] = Vector3::AXIS_Z;
-        break;
-    case godot::Vector3::AXIS_Z:
-        axis[0] = Vector3::AXIS_X;
-        axis[1] = Vector3::AXIS_Y;
-        break;
-    }
-
-    // break the 3D quad down into two 2D triangles
-    Vector2 aa(a[axis[0]], a[axis[1]]);
-    Vector2 ab(b[axis[0]], b[axis[1]]);
-    Vector2 ac(c[axis[0]], c[axis[1]]);
-
-    Vector2 ba(a[axis[0]], a[axis[1]]);
-    Vector2 bb(d[axis[0]], d[axis[1]]);
-    Vector2 bc(c[axis[0]], c[axis[1]]);
-
-    // pull these points in to make it easier to select SW/SE line
-    const PackedVector3Array vertices = PackedVector3Array({
-            Vector3(0.0, 0.5, -1.0) * 0.5, // 0
-            Vector3(-Math_SQRT3_2, 0.5, -0.5) * 0.5, // 1
-            Vector3(-Math_SQRT3_2, 0.5, 0.5) * 0.5, // 2
-            Vector3(0.0, 0.5, 1.0) * 0.5, // 3
-            Vector3(Math_SQRT3_2, 0.5, 0.5) * 0.5, // 4
-            Vector3(Math_SQRT3_2, 0.5, -0.5) * 0.5, // 5
-            Vector3(0.0, -0.5, -1.0) * 0.5, // 6
-            Vector3(-Math_SQRT3_2, -0.5, -0.5) * 0.5, // 7
-            Vector3(-Math_SQRT3_2, -0.5, 0.5) * 0.5, // 8
-            Vector3(0.0, -0.5, 1.0) * 0.5, // 9
-            Vector3(Math_SQRT3_2, -0.5, 0.5) * 0.5, // 10 (0xa)
-            Vector3(Math_SQRT3_2, -0.5, -0.5) * 0.5, // 11 (0xb)
-    });
-
-    Geometry2D *geo = Geometry2D::get_singleton();
-    Vector<HexMapCellId> out;
-    auto prof = profiling_begin("selecting cells");
-    for (const CellId &cell_id : iter) {
-        Vector3 center = cell_id.unit_center();
-        Vector2 point(center[axis[0]], center[axis[1]]);
-        bool intercept_quad =
-                geo->point_is_inside_triangle(point, aa, ab, ac) ||
-                geo->point_is_inside_triangle(point, ba, bb, bc);
-        bool intercept_plane = false;
-        bool above = plane.is_point_over(center);
-
-        for (Vector3 vert : vertices) {
-            vert += center;
-
-            if (!intercept_plane && plane.is_point_over(vert) != above) {
-                intercept_plane = true;
-            }
-
-            Vector2 point(vert[axis[0]], vert[axis[1]]);
-            if (!intercept_quad &&
-                    (geo->point_is_inside_triangle(point, aa, ab, ac) ||
-                            geo->point_is_inside_triangle(
-                                    point, ba, bb, bc))) {
-                intercept_quad = true;
-            }
-
-            if (intercept_plane && intercept_quad) {
-                out.push_back(cell_id);
-                break;
-            }
-        }
-    }
-
-    return out;
-}
-
-HexMapIterCube HexMapTiledNode::local_region_to_cell_ids(Vector3 p_a,
-        Vector3 p_b,
-        Planes planes) const {
-    return HexMapIterCube(p_a, p_b);
-}
-
-Ref<hex_bind::HexMapIter>
-HexMapTiledNode::_local_region_to_cell_ids(Vector3 p_a, Vector3 p_b) const {
-    return local_region_to_cell_ids(p_a, p_b);
 }
 
 void HexMapTiledNode::_notification(int p_what) {
@@ -766,15 +531,15 @@ void HexMapTiledNode::update_octant_meshes() {
     }
 }
 
-void HexMapTiledNode::_recreate_octant_data() {
+void HexMapTiledNode::recreate_octant_data() {
     HashMap<CellKey, Cell> cell_copy = cell_map;
-    _clear_internal();
+    clear_internal();
     for (const KeyValue<CellKey, Cell> &E : cell_copy) {
-        set_cell_item(CellId(E.key), E.value.item, E.value.rot);
+        set_cell(CellId(E.key), E.value.value, E.value.rot);
     }
 }
 
-void HexMapTiledNode::_clear_internal() {
+void HexMapTiledNode::clear_internal() {
     for (auto &octant_pair : octants) {
         Octant *octant = octant_pair.value;
         if (is_inside_tree()) {
@@ -787,7 +552,7 @@ void HexMapTiledNode::_clear_internal() {
 }
 
 void HexMapTiledNode::clear() {
-    _clear_internal();
+    clear_internal();
     clear_baked_meshes();
 }
 
@@ -845,34 +610,7 @@ void HexMapTiledNode::_bind_methods() {
     ClassDB::bind_method(
             D_METHOD("get_octant_size"), &HexMapTiledNode::get_octant_size);
 
-    ClassDB::bind_method(
-            D_METHOD("set_cell_item", "position", "item", "orientation"),
-            &HexMapTiledNode::_set_cell_item,
-            DEFVAL(0));
-    ClassDB::bind_method(
-            D_METHOD("set_cell_item_v", "position", "item", "orientation"),
-            &HexMapTiledNode::_set_cell_item_v,
-            DEFVAL(0));
-
-    ClassDB::bind_method(D_METHOD("get_cell_item", "cell_id"),
-            &HexMapTiledNode::_get_cell_item);
-    ClassDB::bind_method(D_METHOD("get_cell_item_v", "cell_vector"),
-            &HexMapTiledNode::_get_cell_item_v);
-
-    ClassDB::bind_method(D_METHOD("get_cell_item_orientation", "position"),
-            &HexMapTiledNode::_get_cell_item_orientation);
-
-    ClassDB::bind_method(D_METHOD("local_region_to_cell_ids",
-                                 "local_point_a",
-                                 "local_point_b"),
-            &HexMapTiledNode::_local_region_to_cell_ids);
-
     ClassDB::bind_method(D_METHOD("clear"), &HexMapTiledNode::clear);
-
-    ClassDB::bind_method(
-            D_METHOD("get_used_cells"), &HexMapTiledNode::get_used_cells);
-    ClassDB::bind_method(D_METHOD("get_used_cells_by_item", "item"),
-            &HexMapTiledNode::get_used_cells_by_item);
 
     ClassDB::bind_method(
             D_METHOD("get_bake_meshes"), &HexMapTiledNode::get_bake_meshes);
@@ -940,31 +678,6 @@ void HexMapTiledNode::_bind_methods() {
     ADD_SIGNAL(MethodInfo("mesh_library_changed"));
 }
 
-Array HexMapTiledNode::get_used_cells() const {
-    Array a;
-    a.resize(cell_map.size());
-    int i = 0;
-    for (const KeyValue<CellKey, Cell> &E : cell_map) {
-        HexMapCellId cell_id(E.key);
-        a[i++] = static_cast<Ref<hex_bind::HexMapCellId>>(cell_id);
-    }
-
-    return a;
-}
-
-TypedArray<Vector3i> HexMapTiledNode::get_used_cells_by_item(
-        int p_item) const {
-    Array a;
-    for (const KeyValue<CellKey, Cell> &E : cell_map) {
-        if ((int)E.value.item == p_item) {
-            HexMapCellId cell_id(E.key);
-            a.push_back(static_cast<Ref<hex_bind::HexMapCellId>>(cell_id));
-        }
-    }
-
-    return a;
-}
-
 void HexMapTiledNode::clear_baked_meshes() {
     for (auto &it : octants) {
         it.value->clear_baked_mesh();
@@ -1010,13 +723,13 @@ bool HexMapTiledNode::generate_navigation_source_geometry(Ref<NavigationMesh>,
             }
 
             // if the cell doesn't have a navmesh, skip it
-            if (!mesh_library->get_item_navigation_mesh(cell.item)
+            if (!mesh_library->get_item_navigation_mesh(cell.value)
                             .is_valid()) {
                 continue;
             }
         }
 
-        Ref<Mesh> mesh = mesh_library->get_item_mesh(cell.item);
+        Ref<Mesh> mesh = mesh_library->get_item_mesh(cell.value);
         if (!mesh.is_valid()) {
             continue;
         }
@@ -1025,7 +738,7 @@ bool HexMapTiledNode::generate_navigation_source_geometry(Ref<NavigationMesh>,
                 cell.get_basis(), space.get_mesh_origin(it.key));
         source_geometry_data->add_mesh(mesh,
                 cell_transform *
-                        mesh_library->get_item_mesh_transform(cell.item));
+                        mesh_library->get_item_mesh_transform(cell.value));
     }
 
     // Unused return value.  To turn this function into a Callable, the

@@ -25,7 +25,7 @@ public:
     virtual HexMapCellId _iter_get() const = 0;
 
     // clone necessary to wrap for gdscript
-    operator Ref<hex_bind::HexMapIter>() const;
+    Ref<hex_bind::HexMapIter> to_ref() const;
     virtual HexMapIter *clone() const = 0;
 };
 

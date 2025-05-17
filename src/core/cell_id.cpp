@@ -264,7 +264,8 @@ bool hex_bind::HexMapCellId::equals(
 Ref<hex_bind::HexMapIter> hex_bind::HexMapCellId::get_neighbors(
         unsigned int radius,
         bool include_center) const {
-    return inner.get_neighbors(radius, HexMapPlanes::All, include_center);
+    return inner.get_neighbors(radius, HexMapPlanes::All, include_center)
+            .to_ref();
 }
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::add(

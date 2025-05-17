@@ -26,8 +26,8 @@ public:
     inline bool is_empty() const {
         return mesh_manager.get_cells().is_empty();
     };
-    Vector<HexMapCellId> get_cells() const;
-    Array get_cells_v() const;
+    Vector<HexMapCellId> get_cell_ids() const;
+    Array get_cell_vecs() const;
 
     void clear();
     size_t size() const;

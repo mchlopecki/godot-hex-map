@@ -1,6 +1,6 @@
 #include "iter.h"
 
-HexMapIter::operator Ref<hex_bind::HexMapIter>() const {
+Ref<hex_bind::HexMapIter> HexMapIter::to_ref() const {
     return Ref<hex_bind::HexMapIter>(memnew(hex_bind::HexMapIter(*this)));
 }
 

@@ -336,7 +336,7 @@ void HexMapAutoTiledNode::apply_rules() {
             if (rule.match(cells, orientation)) {
                 // cell matches; set the cell in the tiled node using the
                 // matched orientation
-                tiled_node->set_cell_item(
+                tiled_node->set_cell(
                         cell_id, rule.tile, static_cast<int>(orientation));
                 break;
             }
