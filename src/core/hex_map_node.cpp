@@ -78,7 +78,6 @@ void HexMapNode::_bind_methods() {
     ADD_SIGNAL(MethodInfo("mesh_offset_changed"));
     ADD_SIGNAL(MethodInfo(
             "cells_changed", PropertyInfo(Variant::ARRAY, "cells")));
-    // XXX add signal cell_changed; connect in auto-tiled node, apply rules
 
     BIND_CONSTANT(CELL_ARRAY_WIDTH);
     BIND_CONSTANT(CELL_ARRAY_INDEX_VEC);
@@ -133,8 +132,6 @@ bool HexMapNode::on_hex_space_changed() {
     return true;
 }
 
-Vector3 HexMapNode::get_cell_scale() const { return space.get_cell_scale(); }
-
 Vector3 HexMapNode::get_cell_center(const HexMapCellId &cell_id) const {
     return space.get_cell_center(cell_id);
 }
@@ -155,18 +152,8 @@ void HexMapNode::set_cell(const Ref<hex_bind::HexMapCellId> ref,
         int p_item,
         int p_orientation) {
     set_cell(ref->inner, p_item, p_orientation);
-    // XXX emit this here because it is the entry point for set single cell via
-    // gdscript, but this feels like there's a gap in our signal coverage.
-    //
-    // FOUND IT!  HexMapNodeEditorPlugin::selection_move() calls set_cell()
-    // directly, which bypasses the cells_changed signal.  This causes a
-    // graphical artifact during move cells of an IntNode with a child
-    // AutoTiledNode; the grabbed cells don't disappear from the screen because
-    // the AutoTiledNode is never notified that the IntNode was changed.
-    //
-    // Yea, additional problems encountered during drag paint/erase; those
-    // maybe should also trigger events.  Some event is necessary to have
-    // autotiled show results with every cell changed in paint/erase.
+
+    // Emit the signal noting that the cell has changed.
     static_assert(HexMapNode::CELL_ARRAY_INDEX_VEC == 0);
     static_assert(HexMapNode::CELL_ARRAY_INDEX_VALUE == 1);
     static_assert(HexMapNode::CELL_ARRAY_INDEX_ORIENTATION == 2);

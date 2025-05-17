@@ -18,13 +18,9 @@
 
 #include "core/cell_id.h"
 #include "core/hex_map_node.h"
-#include "core/iter.h"
-#include "core/iter_cube.h"
 #include "core/planes.h"
 #include "core/tile_orientation.h"
 #include "octant.h"
-
-#define RS RenderingServer
 
 using namespace godot;
 
@@ -44,9 +40,9 @@ public:
 
     // enum for setting mesh origin within the cell
     enum MeshOrigin {
-        Center,
-        Top,
-        Bottom,
+        MESH_ORIGIN_CENTER,
+        MESH_ORIGIN_TOP,
+        MESH_ORIGIN_BOTTOM,
     };
 
 private:
@@ -75,7 +71,7 @@ private:
     // map properties
     real_t cell_radius = 1.0;
     real_t cell_height = 1.0;
-    MeshOrigin mesh_origin = MeshOrigin::Center;
+    MeshOrigin mesh_origin = MeshOrigin::MESH_ORIGIN_CENTER;
 
     // rendering properties
     int octant_size = 8;
@@ -184,6 +180,9 @@ public:
     bool generate_navigation_source_geometry(Ref<NavigationMesh>,
             Ref<NavigationMeshSourceGeometryData3D>,
             Node *) const;
+
+    /// get the mesh origin in local coordinates for a given cell
+    Vector3 get_cell_origin(const Ref<hex_bind::HexMapCellId>) const;
 
     void clear();
 

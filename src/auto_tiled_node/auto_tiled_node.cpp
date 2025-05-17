@@ -323,6 +323,15 @@ void HexMapAutoTiledNode::apply_rules() {
         }
     }
 
+    // To reduce the signals produced from TiledNode::set_cell(), we're going
+    // to build an Array of cells to set to set_cells() after we finish.
+    Array output;
+    Array cell_state;
+    cell_state.resize(HexMapNode::CELL_ARRAY_WIDTH);
+    static_assert(HexMapNode::CELL_ARRAY_INDEX_VEC == 0);
+    static_assert(HexMapNode::CELL_ARRAY_INDEX_VALUE == 1);
+    static_assert(HexMapNode::CELL_ARRAY_INDEX_ORIENTATION == 2);
+
     // Loop through the cells in our search space, attempting to match the
     // rules in order.  If a rule matches a given cell, we update the tiled
     // node with the appropriate tile & orientation, then move on to the next
@@ -354,12 +363,19 @@ void HexMapAutoTiledNode::apply_rules() {
             if (rule.match(cells, orientation)) {
                 // cell matches; set the cell in the tiled node using the
                 // matched orientation
-                tiled_node->set_cell(
-                        cell_id, rule.tile, static_cast<int>(orientation));
+                cell_state[HexMapNode::CELL_ARRAY_INDEX_VEC] =
+                        cell_id.to_vec();
+                cell_state[HexMapNode::CELL_ARRAY_INDEX_VALUE] = rule.tile;
+                cell_state[HexMapNode::CELL_ARRAY_INDEX_ORIENTATION] =
+                        static_cast<int>(orientation);
+                output.append_array(cell_state);
                 break;
             }
         }
     }
+
+    // now apply all the changes
+    tiled_node->set_cells(output);
 }
 
 HexMapTiledNode *HexMapAutoTiledNode::get_tiled_node() const {

@@ -22,8 +22,6 @@
 
 using namespace godot;
 
-class HexMapOctant;
-
 class HexMapNode : public Node3D {
     GDCLASS(HexMapNode, Node3D);
 
@@ -76,12 +74,6 @@ public:
     /// get the HexMapSpace
     inline const HexMapSpace &get_space() { return space; }
     Ref<hex_bind::HexMapSpace> _get_space();
-
-    /// Return the cell scale factor for cells in this hexmap.
-    ///
-    /// A scale factor of `Vector3(1,1,1)` is returned for `cell_radius = 1.0`,
-    /// `cell_height = 1.0`.
-    Vector3 get_cell_scale() const;
 
     /// called when the cell scale changes
     virtual bool on_hex_space_changed();

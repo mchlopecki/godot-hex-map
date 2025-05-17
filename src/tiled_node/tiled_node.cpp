@@ -37,6 +37,7 @@
 #include "core/math.h"
 #include "core/tile_orientation.h"
 #include "godot_cpp/classes/global_constants.hpp"
+#include "godot_cpp/core/class_db.hpp"
 #include "godot_cpp/core/object.hpp"
 #include "octant.h"
 #include "profiling.h"
@@ -299,7 +300,7 @@ bool HexMapTiledNode::mesh_library_changed() {
     return true;
 }
 
-void HexMapTiledNode::set_mesh_origin(MeshOrigin value) {
+void HexMapTiledNode::set_mesh_origin(HexMapTiledNode::MeshOrigin value) {
     if (mesh_origin == value) {
         return;
     }
@@ -320,11 +321,11 @@ HexMapTiledNode::MeshOrigin HexMapTiledNode::get_mesh_origin() const {
 
 Vector3 HexMapTiledNode::get_mesh_origin_vec() const {
     switch (mesh_origin) {
-    case Center:
+    case MESH_ORIGIN_CENTER:
         return Vector3();
-    case Top:
+    case MESH_ORIGIN_TOP:
         return Vector3(0, 0.5, 0);
-    case Bottom:
+    case MESH_ORIGIN_BOTTOM:
         return Vector3(0, -0.5, 0);
     }
 }
@@ -671,6 +672,9 @@ void HexMapTiledNode::_bind_methods() {
             DEFVAL(false),
             DEFVAL(0.1));
 
+    ClassDB::bind_method(D_METHOD("get_cell_origin", "cell_id"),
+            &HexMapTiledNode::get_cell_origin);
+
     ADD_PROPERTY(PropertyInfo(Variant::OBJECT,
                          "mesh_library",
                          PROPERTY_HINT_RESOURCE_TYPE,
@@ -731,6 +735,10 @@ void HexMapTiledNode::_bind_methods() {
     ADD_SIGNAL(MethodInfo("mesh_library_changed"));
 
     ADD_SIGNAL(MethodInfo("mesh_origin_changed"));
+
+    BIND_ENUM_CONSTANT(MESH_ORIGIN_CENTER);
+    BIND_ENUM_CONSTANT(MESH_ORIGIN_BOTTOM);
+    BIND_ENUM_CONSTANT(MESH_ORIGIN_TOP);
 }
 
 void HexMapTiledNode::clear_baked_meshes() {
@@ -805,6 +813,13 @@ bool HexMapTiledNode::generate_navigation_source_geometry(Ref<NavigationMesh>,
     // return type needs to be able to be converted into a Variant.  `void`
     // is not a supported option.
     return true;
+}
+
+Vector3 HexMapTiledNode::get_cell_origin(
+        Ref<hex_bind::HexMapCellId> ref) const {
+    Vector3 out = space.get_cell_center(ref->inner);
+    out += get_mesh_origin_vec() * space.get_cell_scale();
+    return out;
 }
 
 HexMapTiledNode::HexMapTiledNode() {

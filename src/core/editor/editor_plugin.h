@@ -32,7 +32,6 @@
 
 using namespace godot;
 
-// XXX move palette to bottom panel for HexGrid
 class HexMapNodeEditorPlugin : public EditorPlugin {
     GDCLASS(HexMapNodeEditorPlugin, EditorPlugin);
 
@@ -50,9 +49,8 @@ protected:
 
     /// Handle common keypress shortcuts for navigating the spatial editor
     ///
-    /// Note: If a selection is active, EditorPlugin will consume the first
-    /// escape keypress.  All following escape keypresses will be sent to this
-    /// function.
+    /// Note: escape key events will not be passed to this function; they're
+    /// consumed by the HexMapNodeEditorPlugin
     virtual EditorPlugin::AfterGUIInput handle_keypress(Ref<InputEventKey>);
 
     /// rebuild the cursor from the UI state

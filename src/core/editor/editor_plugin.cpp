@@ -1026,11 +1026,6 @@ void HexMapNodeEditorPlugin::_bind_methods() {
     ClassDB::bind_method(D_METHOD("cursor_set_orientation", "orientation"),
             static_cast<void (HexMapNodeEditorPlugin::*)(int)>(
                     &HexMapNodeEditorPlugin::cursor_set_orientation));
-
-    BIND_ENUM_CONSTANT(EditorCursor::AXIS_Q);
-    BIND_ENUM_CONSTANT(EditorCursor::AXIS_R);
-    BIND_ENUM_CONSTANT(EditorCursor::AXIS_S);
-    BIND_ENUM_CONSTANT(EditorCursor::AXIS_Y);
 }
 
 void HexMapNodeEditorPlugin::add_editor_shortcut(const String &path,

@@ -106,10 +106,11 @@ void HexMapOctant::build_physics_body() {
     // update the collision debugging mesh if one exists
     if (collision_debug_mesh.is_valid() && !debug_mesh_vertices.is_empty()) {
         Array surface_arrays;
-        surface_arrays.resize(RS::ARRAY_MAX);
-        surface_arrays[RS::ARRAY_VERTEX] = debug_mesh_vertices;
-        rs->mesh_add_surface_from_arrays(
-                collision_debug_mesh, RS::PRIMITIVE_LINES, surface_arrays);
+        surface_arrays.resize(RenderingServer::ARRAY_MAX);
+        surface_arrays[RenderingServer::ARRAY_VERTEX] = debug_mesh_vertices;
+        rs->mesh_add_surface_from_arrays(collision_debug_mesh,
+                RenderingServer::PRIMITIVE_LINES,
+                surface_arrays);
         rs->mesh_surface_set_material(collision_debug_mesh,
                 0,
                 hex_map.collision_debug_mat->get_rid());

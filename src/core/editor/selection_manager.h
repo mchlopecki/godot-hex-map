@@ -23,14 +23,12 @@ public:
     void hide();
     bool is_visible();
 
-    inline bool is_empty() const {
-        return mesh_manager.get_cells().is_empty();
-    };
     Vector<HexMapCellId> get_cell_ids() const;
     Array get_cell_vecs() const;
 
     void clear();
     size_t size() const;
+    bool is_empty() const;
     void add_cell(HexMapCellId);
     void set_cells(Vector<HexMapCellId>);
     void set_cells(Array);
@@ -40,9 +38,9 @@ public:
     HexMapCellId get_center();
 
 private:
+    Ref<ArrayMesh> cell_mesh;
     Ref<StandardMaterial3D> mesh_mat;
     Ref<StandardMaterial3D> line_mat;
-    RID cell_mesh;
     HexMapMeshTool mesh_manager;
 
     void build_cell_mesh();
