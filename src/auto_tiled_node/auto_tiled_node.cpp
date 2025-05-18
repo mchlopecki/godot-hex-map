@@ -465,7 +465,6 @@ HexMapAutoTiledNode::HexMapAutoTiledNode() {
     tiled_node = memnew(HexMapTiledNode);
     tiled_node->set_mesh_library(mesh_library);
     add_child(tiled_node);
-    UtilityFunctions::print("tiled node = ", tiled_node);
 }
 
 HexMapAutoTiledNode::~HexMapAutoTiledNode() { tiled_node = nullptr; }

@@ -69,11 +69,6 @@ public:
     constexpr HexMapCellId(int q, int r, int y) : q(q), r(r), y(y) {};
     _FORCE_INLINE_ HexMapCellId(const Vector3i v) : q(v.x), r(v.z), y(v.y) {};
 
-    static HexMapCellId from_oddr(Vector3i oddr) {
-        int q = oddr.x - (oddr.z - (oddr.z & 1)) / 2;
-        return HexMapCellId(q, oddr.z, oddr.y);
-    }
-
     // vector3i is the fastest way to get to a Variant type that isn't malloc
     // heavy (like Ref<HexMapCellIdRef>)
     inline operator Vector3i() const { return Vector3i(q, y, r); }
@@ -136,6 +131,12 @@ public:
     _FORCE_INLINE_ Vector3i to_oddr() const {
         int x = q + (r - (r & 1)) / 2;
         return Vector3i(x, y, r);
+    }
+    static HexMapCellId from_oddr(Vector3i oddr) {
+        // To adjust for using right-hand coordinate system, we need to flip
+        // Z here.
+        int q = oddr.x - (oddr.z - (oddr.z & 1)) / 2;
+        return HexMapCellId(q, oddr.z, oddr.y);
     }
 
     // rotate the cell about the y-axis relative to another cell

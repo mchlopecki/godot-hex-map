@@ -130,3 +130,9 @@ func test_rotate() -> void:
     cell = HexMapCellId.at(4,-3,10)
     center = HexMapCellId.at(3, -3, 0)
     assert_cell_eq(cell.rotate(3, center), HexMapCellId.at(2,-3,10))
+
+# ensure that "north" goes towards negative-z to match godot right-hand
+# coordinate system.
+func test_north_goes_negative_z():
+    var cell = HexMapCellId.at(0,0,0).northeast()
+    assert_lt(cell.unit_center().z, 0)
