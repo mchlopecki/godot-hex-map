@@ -1,9 +1,9 @@
 [gd_scene load_steps=7 format=3 uid="uid://dyd26wbqhm8km"]
 
-[ext_resource type="Script" path="res://addons/hexmap/gui/auto_tiled_node_rule_list_item.gd" id="1_qap2u"]
-[ext_resource type="Texture2D" uid="uid://d21ao7ljiaii6" path="res://addons/hexmap/icons/drag_handle.svg" id="2_l43xc"]
-[ext_resource type="Theme" uid="uid://hmpeb1yvo8yj" path="res://addons/hexmap/hex_map_theme.tres" id="4_g73pa"]
-[ext_resource type="Texture2D" uid="uid://khe663y3ndwa" path="res://addons/hexmap/icons/Remove.svg" id="4_sv746"]
+[ext_resource type="Script" path="res://addons/hex_map/gui/auto_tiled_node_rule_list_item.gd" id="1_qap2u"]
+[ext_resource type="Texture2D" uid="uid://d21ao7ljiaii6" path="res://addons/hex_map/icons/drag_handle.svg" id="2_l43xc"]
+[ext_resource type="Theme" uid="uid://hmpeb1yvo8yj" path="res://addons/hex_map/hex_map_theme.tres" id="4_g73pa"]
+[ext_resource type="Texture2D" uid="uid://khe663y3ndwa" path="res://addons/hex_map/icons/Remove.svg" id="4_sv746"]
 
 [sub_resource type="Texture2D" id="Texture2D_57a5r"]
 resource_local_to_scene = false

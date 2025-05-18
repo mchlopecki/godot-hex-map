@@ -1,6 +1,6 @@
 [gd_scene load_steps=9 format=4 uid="uid://qashcstu1cg0"]
 
-[ext_resource type="Script" path="res://addons/hexmap/gui/hex_cell_button.gd" id="1_4ixbe"]
+[ext_resource type="Script" path="res://addons/hex_map/gui/hex_cell_button.gd" id="1_4ixbe"]
 
 [sub_resource type="Image" id="Image_vjnlp"]
 data = {

@@ -1,10 +1,10 @@
 [gd_scene load_steps=7 format=3 uid="uid://ilwmmns8ccdg"]
 
-[ext_resource type="Script" path="res://addons/hexmap/gui/auto_tiled_node_editor_bottom_panel.gd" id="1_2bs26"]
-[ext_resource type="Theme" uid="uid://hmpeb1yvo8yj" path="res://addons/hexmap/hex_map_theme.tres" id="1_3t1vn"]
-[ext_resource type="PackedScene" uid="uid://bcii1uofabb8u" path="res://addons/hexmap/gui/auto_tiled_node_rules_list.tscn" id="2_ep4b4"]
-[ext_resource type="PackedScene" uid="uid://p42lol2mxn4a" path="res://addons/hexmap/gui/auto_tiled_rule_editor.tscn" id="3_g8rki"]
-[ext_resource type="Texture2D" uid="uid://27nqiq38njor" path="res://addons/hexmap/icons/Add.svg" id="3_llhy6"]
+[ext_resource type="Script" path="res://addons/hex_map/gui/auto_tiled_node_editor_bottom_panel.gd" id="1_2bs26"]
+[ext_resource type="Theme" uid="uid://hmpeb1yvo8yj" path="res://addons/hex_map/hex_map_theme.tres" id="1_3t1vn"]
+[ext_resource type="PackedScene" uid="uid://bcii1uofabb8u" path="res://addons/hex_map/gui/auto_tiled_node_rules_list.tscn" id="2_ep4b4"]
+[ext_resource type="PackedScene" uid="uid://p42lol2mxn4a" path="res://addons/hex_map/gui/auto_tiled_rule_editor.tscn" id="3_g8rki"]
+[ext_resource type="Texture2D" uid="uid://27nqiq38njor" path="res://addons/hex_map/icons/Add.svg" id="3_llhy6"]
 
 [sub_resource type="MeshLibrary" id="MeshLibrary_pgy6p"]
 

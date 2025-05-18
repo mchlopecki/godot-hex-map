@@ -1,13 +1,13 @@
 [gd_scene load_steps=13 format=3 uid="uid://p42lol2mxn4a"]
 
-[ext_resource type="Script" path="res://addons/hexmap/gui/auto_tiled_rule_editor.gd" id="1_hjusd"]
-[ext_resource type="Script" path="res://addons/hexmap/gui/auto_tiled_rule_painter_3d.gd" id="2_sqqto"]
-[ext_resource type="PackedScene" uid="uid://dut4042ogc1kq" path="res://addons/hexmap/gui/palette.tscn" id="3_ndemm"]
-[ext_resource type="Texture2D" uid="uid://b0t2we5vilohg" path="res://addons/hexmap/icons/layer_selected.svg" id="4_6au4l"]
-[ext_resource type="Texture2D" uid="uid://dd5c46r7o1ek" path="res://addons/hexmap/icons/layer_dot.svg" id="4_qsc82"]
-[ext_resource type="Texture2D" uid="uid://dq7ggm6nurccx" path="res://addons/hexmap/icons/layer_hover.svg" id="6_qchkv"]
-[ext_resource type="Texture2D" uid="uid://duo6jhp26ftsw" path="res://addons/hexmap/icons/Close.svg" id="7_0sj2e"]
-[ext_resource type="Texture2D" uid="uid://w3fx13adcvh2" path="res://addons/hexmap/icons/Save.svg" id="8_n6dfs"]
+[ext_resource type="Script" path="res://addons/hex_map/gui/auto_tiled_rule_editor.gd" id="1_hjusd"]
+[ext_resource type="Script" path="res://addons/hex_map/gui/auto_tiled_rule_painter_3d.gd" id="2_sqqto"]
+[ext_resource type="PackedScene" uid="uid://dut4042ogc1kq" path="res://addons/hex_map/gui/palette.tscn" id="3_ndemm"]
+[ext_resource type="Texture2D" uid="uid://b0t2we5vilohg" path="res://addons/hex_map/icons/layer_selected.svg" id="4_6au4l"]
+[ext_resource type="Texture2D" uid="uid://dd5c46r7o1ek" path="res://addons/hex_map/icons/layer_dot.svg" id="4_qsc82"]
+[ext_resource type="Texture2D" uid="uid://dq7ggm6nurccx" path="res://addons/hex_map/icons/layer_hover.svg" id="6_qchkv"]
+[ext_resource type="Texture2D" uid="uid://duo6jhp26ftsw" path="res://addons/hex_map/icons/Close.svg" id="7_0sj2e"]
+[ext_resource type="Texture2D" uid="uid://w3fx13adcvh2" path="res://addons/hex_map/icons/Save.svg" id="8_n6dfs"]
 
 [sub_resource type="Environment" id="Environment_005ur"]
 

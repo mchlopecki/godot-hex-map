@@ -4,7 +4,7 @@ import sys
 
 from SCons.Script import ARGUMENTS
 
-target_path = ARGUMENTS.pop("target_path", "demo/addons/hexmap/lib")
+target_path = ARGUMENTS.pop("target_path", "demo/addons/hex_map/lib")
 target_name = ARGUMENTS.pop("target_name", "libgdhexmap")
 
 env = SConscript("godot-cpp/SConstruct")

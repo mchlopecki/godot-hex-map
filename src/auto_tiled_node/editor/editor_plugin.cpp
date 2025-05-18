@@ -35,7 +35,7 @@ void HexMapAutoTiledNodeEditorPlugin::_edit(Object *p_object) {
 
 HexMapAutoTiledNodeEditorPlugin::HexMapAutoTiledNodeEditorPlugin() {
     bottom_panel_scene = ResourceLoader::get_singleton()->load(
-            "res://addons/hexmap/gui/"
+            "res://addons/hex_map/gui/"
             "auto_tiled_node_editor_bottom_panel.tscn");
 }
 

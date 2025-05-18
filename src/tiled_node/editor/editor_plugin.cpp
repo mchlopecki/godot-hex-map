@@ -51,7 +51,7 @@ bool HexMapTiledNodeEditorPlugin::_handles(Object *p_object) const {
 
 HexMapTiledNodeEditorPlugin::HexMapTiledNodeEditorPlugin() {
     set_bottom_panel_scene(ResourceLoader::get_singleton()->load(
-            "res://addons/hexmap/gui/"
+            "res://addons/hex_map/gui/"
             "hex_map_editor_bottom_panel.tscn"));
 }
 

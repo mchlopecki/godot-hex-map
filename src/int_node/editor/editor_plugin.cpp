@@ -15,7 +15,7 @@
 
 HexMapIntNodeEditorPlugin::HexMapIntNodeEditorPlugin() {
     set_bottom_panel_scene(ResourceLoader::get_singleton()->load(
-            "res://addons/hexmap/gui/"
+            "res://addons/hex_map/gui/"
             "int_node_editor_bottom_panel.tscn"));
 }
 

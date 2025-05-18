@@ -1,8 +1,8 @@
 [gd_scene load_steps=4 format=3 uid="uid://ofsyhk6g7nop"]
 
-[ext_resource type="Theme" uid="uid://hmpeb1yvo8yj" path="res://addons/hexmap/hex_map_theme.tres" id="1_ygdwu"]
-[ext_resource type="Script" path="res://addons/hexmap/gui/int_node_cell_type_control.gd" id="2_cpvp8"]
-[ext_resource type="Texture2D" uid="uid://dd3s0s0xxnmqj" path="res://addons/hexmap/icons/Edit.svg" id="3_cc1g1"]
+[ext_resource type="Theme" uid="uid://hmpeb1yvo8yj" path="res://addons/hex_map/hex_map_theme.tres" id="1_ygdwu"]
+[ext_resource type="Script" path="res://addons/hex_map/gui/int_node_cell_type_control.gd" id="2_cpvp8"]
+[ext_resource type="Texture2D" uid="uid://dd3s0s0xxnmqj" path="res://addons/hex_map/icons/Edit.svg" id="3_cc1g1"]
 
 [node name="IntNodeCellTypeControl" type="PanelContainer"]
 custom_minimum_size = Vector2(100, 0)

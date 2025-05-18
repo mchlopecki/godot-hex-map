@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://bcii1uofabb8u"]
 
-[ext_resource type="Script" path="res://addons/hexmap/gui/auto_tiled_node_rules_list.gd" id="1_tqi0s"]
-[ext_resource type="Theme" uid="uid://hmpeb1yvo8yj" path="res://addons/hexmap/hex_map_theme.tres" id="2_v8kor"]
+[ext_resource type="Script" path="res://addons/hex_map/gui/auto_tiled_node_rules_list.gd" id="1_tqi0s"]
+[ext_resource type="Theme" uid="uid://hmpeb1yvo8yj" path="res://addons/hex_map/hex_map_theme.tres" id="2_v8kor"]
 
 [sub_resource type="MeshLibrary" id="MeshLibrary_kq57d"]
 
