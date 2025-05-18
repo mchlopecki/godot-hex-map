@@ -14,14 +14,8 @@
 
 using namespace godot;
 
-class HexMapLibraryMeshTool;
-
 class HexMapMeshTool {
 public:
-    /// Type used as a key when looking up cells
-    using CellId = HexMapCellId;
-    using CellKey = CellId::Key;
-
     /// cell state
     struct Cell {
         /// mesh to show in the cell
@@ -55,19 +49,19 @@ public:
 
     /// Set the mesh and mesh instance transform for a given cell.  The
     /// transform is relative to the center of the cell.
-    void set_cell(CellId cell_id,
+    void set_cell(HexMapCellId cell_id,
             RID mesh,
             Transform3D mesh_transform = Transform3D());
 
     /// clear the specified cell
-    void clear_cell(CellId);
+    void clear_cell(HexMapCellId);
 
     /// set per-cell visibility
     ///
     /// If the cell has not been added to the `HexMapMeshTool`, this will have
     /// no affect.  If the cell is set after visibility has been changed, the
     /// cell will become visible.
-    void set_cell_visibility(CellId, bool visible);
+    void set_cell_visibility(HexMapCellId, bool visible);
 
     /// make all cells in the mesh visible
     ///
@@ -76,7 +70,9 @@ public:
     void set_all_cells_visible();
 
     /// get an iterator to go over the cell ids in the mesh
-    const HashMap<CellKey, Cell> &get_cells() const { return cell_map; };
+    const HashMap<HexMapCellId::Key, Cell> &get_cells() const {
+        return cell_map;
+    };
 
     /// update the meshes that are displayed
     void refresh();
@@ -108,7 +104,7 @@ private:
     };
 
     /// map of cell keys to the visual for each cell
-    HashMap<CellKey, Cell> cell_map;
+    HashMap<HexMapCellId::Key, Cell> cell_map;
 
     /// list of multimeshes
     Vector<MultiMesh> multimeshes;

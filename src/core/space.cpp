@@ -11,7 +11,9 @@
 #include "profiling.h"
 #include "space.h"
 
-void HexMapSpace::set_transform(Transform3D value) { transform = value; }
+void HexMapSpace::set_transform(Transform3D value) {
+    global_transform = value;
+}
 
 void HexMapSpace::set_cell_scale(Vector3 value) { cell_scale = value; }
 void HexMapSpace::set_cell_height(real_t value) { cell_scale.y = value; }
@@ -193,10 +195,8 @@ Vector<HexMapCellId> HexMapSpace::get_cell_ids_in_local_quad(Vector3 a,
             "HexMapSpace::get_cell_ids_in_quad(): invalid padding value;"
             "must be `0 < padding <= 1`");
 
-    // XXX build_cell_vertex_array() applies cell_scale; try this without
-    // converting to unit space
-    //
-    // convert local space to unit space
+    // We convert the points to unit space because HexMapIterCube does not
+    // currently provide a mechanism to iterate in non-unit space.
     a /= cell_scale;
     b /= cell_scale;
     c /= cell_scale;
@@ -243,7 +243,8 @@ Vector<HexMapCellId> HexMapSpace::get_cell_ids_in_local_quad(Vector3 a,
     Vector2 bb(d[axis[0]], d[axis[1]]);
     Vector2 bc(c[axis[0]], c[axis[1]]);
 
-    // XXX pull these points in to make it easier to select SW/SE line
+    // pull the vertices in towards the center make it easier to select SW/SE
+    // line
     float scale = 1.0 - padding;
     PackedVector3Array vertices =
             get_cell_vertices(Vector3(scale, scale, scale));
@@ -254,28 +255,37 @@ Vector<HexMapCellId> HexMapSpace::get_cell_ids_in_local_quad(Vector3 a,
     for (const HexMapCellId &cell_id : iter) {
         Vector3 center = cell_id.unit_center();
         Vector2 point(center[axis[0]], center[axis[1]]);
-        bool intercept_quad =
+
+        // we're checking to see if any vertex (or the center point) falls
+        // within the two-dimensional quad we reduced the search space to. If a
+        // no cell vertex or center point falls within the quad, then the cell
+        // cannot be within the selection region.
+        bool intersect_quad =
                 geo->point_is_inside_triangle(point, aa, ab, ac) ||
                 geo->point_is_inside_triangle(point, ba, bb, bc);
-        bool intercept_plane = false;
+
+        // We're checking to see if any line from the center of the cell to one
+        // of the vertices intersects the selection plane. If not, then the
+        // cell cannot be in the selection region.
+        bool intersect_plane = false;
         bool above = plane.is_point_over(center);
 
         for (Vector3 vert : vertices) {
             vert += center;
 
-            if (!intercept_plane && plane.is_point_over(vert) != above) {
-                intercept_plane = true;
+            if (!intersect_plane && plane.is_point_over(vert) != above) {
+                intersect_plane = true;
             }
 
             Vector2 point(vert[axis[0]], vert[axis[1]]);
-            if (!intercept_quad &&
+            if (!intersect_quad &&
                     (geo->point_is_inside_triangle(point, aa, ab, ac) ||
                             geo->point_is_inside_triangle(
                                     point, ba, bb, bc))) {
-                intercept_quad = true;
+                intersect_quad = true;
             }
 
-            if (intercept_plane && intercept_quad) {
+            if (intersect_plane && intersect_quad) {
                 out.push_back(cell_id);
                 break;
             }

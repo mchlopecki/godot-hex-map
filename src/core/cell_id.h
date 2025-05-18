@@ -188,7 +188,7 @@ public:
     // maths
     Ref<hex_bind::HexMapCellId> add(Ref<hex_bind::HexMapCellId>) const;
     Ref<hex_bind::HexMapCellId> subtract(Ref<hex_bind::HexMapCellId>) const;
-    Ref<hex_bind::HexMapCellId> reverse() const;
+    Ref<hex_bind::HexMapCellId> inverse() const;
 
     // rotation
     Ref<hex_bind::HexMapCellId> rotate(int steps,

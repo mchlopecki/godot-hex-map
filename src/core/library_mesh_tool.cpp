@@ -68,79 +68,8 @@ Ref<ArrayMesh> HexMapLibraryMeshTool::get_placeholder_mesh() {
     surface_mat->set_flag(StandardMaterial3D::FLAG_DISABLE_FOG, true);
     surface_mat->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
 
-    Array surface;
-    surface.resize(RenderingServer::ARRAY_MAX);
-
-    /*
-     *               (0)             Y
-     *              /   \            |
-     *           (1)     (5)         o---X
-     *            |       |           \
-     *           (2)     (4)           Z
-     *            | \   / |
-     *            |  (3)  |
-     *            |   |   |
-     *            |  (6)  |
-     *            | / | \ |
-     *           (7)  |  (b)
-     *            |   |   |
-     *           (8)  |  (a)
-     *              \ | /
-     *               (9)
-     */
-    surface[RenderingServer::ARRAY_VERTEX] = PackedVector3Array({
-            Vector3(0.0, 0.5, -1.0), // 0
-            Vector3(-Math_SQRT3_2, 0.5, -0.5), // 1
-            Vector3(-Math_SQRT3_2, 0.5, 0.5), // 2
-            Vector3(0.0, 0.5, 1.0), // 3
-            Vector3(Math_SQRT3_2, 0.5, 0.5), // 4
-            Vector3(Math_SQRT3_2, 0.5, -0.5), // 5
-            Vector3(0.0, -0.5, -1.0), // 6
-            Vector3(-Math_SQRT3_2, -0.5, -0.5), // 7
-            Vector3(-Math_SQRT3_2, -0.5, 0.5), // 8
-            Vector3(0.0, -0.5, 1.0), // 9
-            Vector3(Math_SQRT3_2, -0.5, 0.5), // 10 (0xa)
-            Vector3(Math_SQRT3_2, -0.5, -0.5), // 11 (0xb)
-    });
-
-    // clang-format off
-	surface[RenderingServer::ARRAY_INDEX] = PackedInt32Array({
-		// top
-		0, 5, 1,
-		1, 5, 2,
-		2, 5, 4,
-		2, 4, 3,
-		// bottom
-		6, 7, 11,
-		11, 7, 8,
-		8, 10, 11,
-		10, 8, 9,
-		// east
-		4,  5, 11,
-		11, 10, 4,
-		// northeast
-		5, 0,  6,
-		6, 11, 5,
-		// northwest
-		0, 1, 7,
-		7, 6, 0,
-		// west
-		1, 2, 8,
-		8, 7, 1,
-		// southwest
-		2, 3, 9,
-		9, 8, 2,
-		// southeast
-		3, 4, 10,
-		10, 9, 3,
-	});
-    // clang-format on
-
-    placeholder_mesh.instantiate();
-    placeholder_mesh->add_surface_from_arrays(
-            Mesh::PRIMITIVE_TRIANGLES, surface);
+    placeholder_mesh = space.build_cell_mesh();
     placeholder_mesh->surface_set_material(0, surface_mat);
-
     return placeholder_mesh;
 }
 

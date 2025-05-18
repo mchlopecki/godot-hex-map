@@ -1,3 +1,4 @@
+#include "godot_cpp/classes/packed_scene.hpp"
 #ifdef TOOLS_ENABLED
 
 #pragma once
@@ -17,7 +18,7 @@ public:
     virtual bool _handles(Object *object) const override;
     virtual void _edit(Object *p_object) override;
 
-    HexMapAutoTiledNodeEditorPlugin() {};
+    HexMapAutoTiledNodeEditorPlugin();
     ~HexMapAutoTiledNodeEditorPlugin() {};
 
 protected:
@@ -29,6 +30,9 @@ private:
 
     /// HexMapAutoTiledNode being edited
     HexMapAutoTiledNode *auto_tiled_node = nullptr;
+
+    /// scene for the bottom panel if one is defined
+    Ref<PackedScene> bottom_panel_scene;
 
     /// gui bottom panel holding all user controls for this plugin
     Control *bottom_panel = nullptr;

@@ -53,8 +53,11 @@ protected:
     /// consumed by the HexMapNodeEditorPlugin
     virtual EditorPlugin::AfterGUIInput handle_keypress(Ref<InputEventKey>);
 
+    /// set the scene to be used in the bottom panel
+    void set_bottom_panel_scene(Ref<PackedScene>);
+
     /// rebuild the cursor from the UI state
-    virtual void rebuild_cursor();
+    void rebuild_cursor();
 
     /// add setting entry for a keyboard shortcut
     void add_editor_shortcut(const String &path, const String &name, Key);
@@ -174,6 +177,9 @@ private:
 
     /// current input handling state
     InputState input_state = INPUT_STATE_DEFAULT;
+
+    /// scene for the bottom panel if one is defined
+    Ref<PackedScene> bottom_panel_scene;
 
     /// GDScript set_orientation handler; calls true cursor_set_orientation
     void cursor_set_orientation(int);

@@ -19,7 +19,7 @@ public:
     virtual bool _handles(Object *object) const override;
     virtual void _edit(Object *p_object) override;
 
-    HexMapIntNodeEditorPlugin() {};
+    HexMapIntNodeEditorPlugin();
     ~HexMapIntNodeEditorPlugin() {};
 
 protected:
@@ -37,7 +37,7 @@ private:
     Ref<MeshLibrary> mesh_library;
 
     /// update the `MeshLibrary` used in the `HexMapTiledNode` editor display
-    void update_mesh_library();
+    void on_int_node_cell_types_changed();
 
     /// update the `HexMapTiledNode` based on a cell change
     void on_int_node_cells_changed(Array cells);

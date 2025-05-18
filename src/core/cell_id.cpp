@@ -179,7 +179,7 @@ void hex_bind::HexMapCellId::_bind_methods() {
     ClassDB::bind_method(
             D_METHOD("subtract", "other"), &hex_bind::HexMapCellId::subtract);
     ClassDB::bind_method(
-            D_METHOD("reverse"), &hex_bind::HexMapCellId::reverse);
+            D_METHOD("inverse"), &hex_bind::HexMapCellId::inverse);
     ClassDB::bind_method(D_METHOD("rotate", "steps", "center"),
             &hex_bind::HexMapCellId::rotate,
             DEFVAL(nullptr));
@@ -278,7 +278,7 @@ Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::subtract(
     return (inner - other->inner).to_ref();
 }
 
-Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::reverse() const {
+Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::inverse() const {
     return (-inner).to_ref();
 }
 

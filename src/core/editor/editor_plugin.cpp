@@ -633,6 +633,12 @@ void HexMapNodeEditorPlugin::_edit(Object *p_object) {
 
         delete selection_manager;
         selection_manager = nullptr;
+
+        if (bottom_panel != nullptr) {
+            remove_control_from_bottom_panel(bottom_panel);
+            memfree(bottom_panel);
+            bottom_panel = nullptr;
+        }
     }
 
     hex_map = Object::cast_to<HexMapNode>(p_object);
@@ -667,6 +673,13 @@ void HexMapNodeEditorPlugin::_edit(Object *p_object) {
     hex_map->connect("mesh_offset_changed",
             callable_mp(
                     this, &HexMapNodeEditorPlugin::on_node_hex_space_changed));
+
+    // add & show the panel
+    if (bottom_panel_scene.is_valid()) {
+        bottom_panel = (Control *)bottom_panel_scene->instantiate();
+        add_control_to_bottom_panel(bottom_panel, "HexMapInt");
+        make_bottom_panel_item_visible(bottom_panel);
+    }
 }
 
 void HexMapNodeEditorPlugin::_notification(int p_what) {
@@ -956,6 +969,13 @@ EditorPlugin::AfterGUIInput HexMapNodeEditorPlugin::handle_keypress(
     }
 
     return EditorPlugin::AFTER_GUI_INPUT_PASS;
+}
+
+void HexMapNodeEditorPlugin::set_bottom_panel_scene(Ref<PackedScene> value) {
+    ERR_FAIL_COND_MSG(hex_map != nullptr,
+            "HexMapNodeEditorPlugin: cannot change bottom panel while "
+            "editing");
+    bottom_panel_scene = value;
 }
 
 void HexMapNodeEditorPlugin::_bind_methods() {

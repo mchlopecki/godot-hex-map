@@ -43,7 +43,7 @@ public:
     operator Variant() const { return Variant(value); }
 
     /// rotate the orientation
-    /// @param steps nevative values rotate clockwise, positive rotate
+    /// @param steps negative values rotate clockwise, positive rotate
     /// counter-clockwise
     void rotate(int steps);
     void flip();

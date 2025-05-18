@@ -17,7 +17,7 @@ class HexMapSpace {
     Vector3 cell_scale = Vector3(1, 1, 1);
 
     /// global transform of the meshes
-    Transform3D transform;
+    Transform3D global_transform;
 
 public:
     /// Set the cell scaling for the hex grid.  Scale modifies the unit hex
@@ -38,7 +38,7 @@ public:
     void set_transform(Transform3D);
 
     /// Get the global transform of the `HexSpace`
-    inline Transform3D get_transform() const { return transform; }
+    inline Transform3D get_transform() const { return global_transform; }
 
     /// Get the center point for the given `cell` in local space
     inline Vector3 get_cell_center(const HexMapCellId &cell) const {
@@ -47,7 +47,7 @@ public:
 
     /// Get the center point for the given `cell` in local space
     inline Vector3 get_cell_center_global(const HexMapCellId &cell) const {
-        return transform.xform(cell.unit_center() * cell_scale);
+        return global_transform.xform(cell.unit_center() * cell_scale);
     }
 
     /// Get the `HexMapCellId` for a point in local space
@@ -57,12 +57,13 @@ public:
 
     /// Get the `HexMapCellId` for a point in global space
     inline HexMapCellId get_cell_id_global(const Vector3 &global_pos) const {
-        Vector3 local = transform.inverse().xform(global_pos);
+        Vector3 local = global_transform.inverse().xform(global_pos);
         return get_cell_id(local);
     }
 
     inline bool operator!=(const HexMapSpace &other) const {
-        return cell_scale != other.cell_scale || transform != other.transform;
+        return cell_scale != other.cell_scale ||
+                global_transform != other.global_transform;
     }
 
     /// generate a PackedVector3Array for the vertices of a hex-shaped cell

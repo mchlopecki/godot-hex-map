@@ -122,7 +122,7 @@ protected:
 public:
     void set_mesh_library(const Ref<MeshLibrary> &);
     Ref<MeshLibrary> get_mesh_library() const;
-    bool mesh_library_changed();
+    bool on_mesh_library_changed();
 
     void set_mesh_origin(MeshOrigin);
     MeshOrigin get_mesh_origin() const;

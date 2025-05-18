@@ -24,17 +24,19 @@ void HexMapAutoTiledNodeEditorPlugin::_edit(Object *p_object) {
         return;
     }
 
-    // XXX Move this loading to the constructor when gui stablizes
-    // load the bottom panel scene and add it to the editor
-    Ref<PackedScene> panel_scene = ResourceLoader::get_singleton()->load(
-            "res://addons/hexmap/gui/"
-            "auto_tiled_node_editor_bottom_panel.tscn");
-    bottom_panel = (Control *)panel_scene->instantiate();
+    bottom_panel = (Control *)bottom_panel_scene->instantiate();
     bottom_panel->set("node", auto_tiled_node);
     bottom_panel->set("editor_plugin", this);
+
     // add & show the panel
     add_control_to_bottom_panel(bottom_panel, "HexMapAutoTiled");
     make_bottom_panel_item_visible(bottom_panel);
+}
+
+HexMapAutoTiledNodeEditorPlugin::HexMapAutoTiledNodeEditorPlugin() {
+    bottom_panel_scene = ResourceLoader::get_singleton()->load(
+            "res://addons/hexmap/gui/"
+            "auto_tiled_node_editor_bottom_panel.tscn");
 }
 
 #endif // TOOLS_ENABLED

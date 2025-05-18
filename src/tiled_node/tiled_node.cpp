@@ -39,6 +39,7 @@
 #include "godot_cpp/classes/global_constants.hpp"
 #include "godot_cpp/core/class_db.hpp"
 #include "godot_cpp/core/object.hpp"
+#include "godot_cpp/variant/string.hpp"
 #include "octant.h"
 #include "profiling.h"
 #include "tiled_node.h"
@@ -280,21 +281,21 @@ void HexMapTiledNode::set_mesh_library(
         const Ref<MeshLibrary> &p_mesh_library) {
     if (!mesh_library.is_null()) {
         mesh_library->disconnect("changed",
-                callable_mp(this, &HexMapTiledNode::mesh_library_changed));
+                callable_mp(this, &HexMapTiledNode::on_mesh_library_changed));
     }
     mesh_library = p_mesh_library;
     if (!mesh_library.is_null()) {
         mesh_library->connect("changed",
-                callable_mp(this, &HexMapTiledNode::mesh_library_changed));
+                callable_mp(this, &HexMapTiledNode::on_mesh_library_changed));
     }
-    mesh_library_changed();
+    on_mesh_library_changed();
 }
 
 Ref<MeshLibrary> HexMapTiledNode::get_mesh_library() const {
     return mesh_library;
 }
 
-bool HexMapTiledNode::mesh_library_changed() {
+bool HexMapTiledNode::on_mesh_library_changed() {
     emit_signal("mesh_library_changed");
     recreate_octant_data();
     return true;
@@ -484,10 +485,6 @@ void HexMapTiledNode::_notification(int p_what) {
     static Transform3D last_transform;
 
     switch (p_what) {
-    case NOTIFICATION_POSTINITIALIZE:
-        // XXX workaround for connect during initialize
-        break;
-
     case NOTIFICATION_ENTER_WORLD:
         for (auto &pair : octants) {
             pair.value->enter_world();

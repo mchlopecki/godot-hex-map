@@ -30,7 +30,7 @@ public:
     inline Ref<MeshLibrary> get_mesh_library() const { return mesh_library; }
 
     // delete parent implementation
-    void set_cell(CellId, RID, Transform3D) = delete;
+    void set_cell(HexMapCellId, RID, Transform3D) = delete;
 
     /// Set the mesh & rotation for a given cell from a MeshLibrary.
     ///

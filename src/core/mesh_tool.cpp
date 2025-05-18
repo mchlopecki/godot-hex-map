@@ -2,7 +2,6 @@
 #include <godot_cpp/classes/standard_material3d.hpp>
 
 #include "../profiling.h"
-#include "math.h"
 #include "mesh_tool.h"
 
 void HexMapMeshTool::set_space(const HexMapSpace &value) { space = value; }
@@ -38,7 +37,7 @@ void HexMapMeshTool::build_multimeshes() {
     // iterate through the cells, save off RID & Transform pairs for multimesh
     // creation later.
     for (const auto &iter : cell_map) {
-        CellId cell_id(iter.key);
+        HexMapCellId cell_id(iter.key);
         const Cell &cell = iter.value;
 
         // skip hidden cells
@@ -56,7 +55,6 @@ void HexMapMeshTool::build_multimeshes() {
                 space.get_cell_center_global(cell_id) + mesh_origin_offset;
         mesh_transforms->push_back(
                 Transform3D(Basis(), cell_center) * cell.transform);
-        // XXX space.get_mesh_transform(cell_id) * cell.transform);
     }
 
     RenderingServer *rs = RenderingServer::get_singleton();
@@ -85,7 +83,7 @@ void HexMapMeshTool::build_multimeshes() {
     }
 }
 
-void HexMapMeshTool::set_cell(CellId cell_id,
+void HexMapMeshTool::set_cell(HexMapCellId cell_id,
         RID mesh,
         Transform3D mesh_transform) {
     ERR_FAIL_COND_MSG(
@@ -95,9 +93,9 @@ void HexMapMeshTool::set_cell(CellId cell_id,
             cell_id, Cell{ .mesh = mesh, .transform = mesh_transform });
 }
 
-void HexMapMeshTool::clear_cell(CellId key) { cell_map.erase(key); }
+void HexMapMeshTool::clear_cell(HexMapCellId key) { cell_map.erase(key); }
 
-void HexMapMeshTool::set_cell_visibility(CellId cell_id, bool visible) {
+void HexMapMeshTool::set_cell_visibility(HexMapCellId cell_id, bool visible) {
     Cell *cell = cell_map.getptr(cell_id);
     if (cell != nullptr) {
         cell->visible = visible;

@@ -24,10 +24,7 @@
 #include <godot_cpp/variant/dictionary.hpp>
 
 #include "../tiled_node.h"
-#include "core/editor/editor_cursor.h"
 #include "core/editor/editor_plugin.h"
-#include "core/editor/selection_manager.h"
-#include "editor_control.h"
 
 using namespace godot;
 
@@ -40,10 +37,10 @@ public:
     virtual void _edit(Object *p_object) override;
 
     HexMapTiledNodeEditorPlugin();
-    ~HexMapTiledNodeEditorPlugin();
+    ~HexMapTiledNodeEditorPlugin() {};
 
 protected:
-    static void _bind_methods();
+    static void _bind_methods() {};
 
 private:
     HexMapTiledNode *tiled_node = nullptr;

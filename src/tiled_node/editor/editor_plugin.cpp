@@ -1,7 +1,6 @@
 #ifdef TOOLS_ENABLED
 
 #include <cassert>
-#include <cstdint>
 #include <godot_cpp/classes/base_material3d.hpp>
 #include <godot_cpp/classes/box_mesh.hpp>
 #include <godot_cpp/classes/camera3d.hpp>
@@ -41,17 +40,19 @@
 #include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/variant/vector3i.hpp>
 
-#include "core/cell_id.h"
 #include "core/editor/editor_cursor.h"
-#include "core/editor/selection_manager.h"
-#include "editor_control.h"
 #include "editor_plugin.h"
-#include "profiling.h"
 
 using EditAxis = EditorCursor::EditAxis;
 
 bool HexMapTiledNodeEditorPlugin::_handles(Object *p_object) const {
     return p_object->is_class("HexMapTiled");
+}
+
+HexMapTiledNodeEditorPlugin::HexMapTiledNodeEditorPlugin() {
+    set_bottom_panel_scene(ResourceLoader::get_singleton()->load(
+            "res://addons/hexmap/gui/"
+            "hex_map_editor_bottom_panel.tscn"));
 }
 
 void HexMapTiledNodeEditorPlugin::update_mesh_library() {
@@ -69,12 +70,6 @@ void HexMapTiledNodeEditorPlugin::update_mesh_library() {
 }
 
 void HexMapTiledNodeEditorPlugin::_edit(Object *p_object) {
-    if (bottom_panel != nullptr) {
-        remove_control_from_bottom_panel(bottom_panel);
-        memfree(bottom_panel);
-        bottom_panel = nullptr;
-    }
-
     if (tiled_node) {
         // disconnect signals
         tiled_node->disconnect("mesh_origin_changed",
@@ -98,13 +93,8 @@ void HexMapTiledNodeEditorPlugin::_edit(Object *p_object) {
     // get the node casted as a TiledNode
     tiled_node = Object::cast_to<HexMapTiledNode>(p_object);
 
-    Ref<PackedScene> panel_scene = ResourceLoader::get_singleton()->load(
-            "res://addons/hexmap/gui/"
-            "hex_map_editor_bottom_panel.tscn");
-    bottom_panel = (Control *)panel_scene->instantiate();
+    assert(bottom_panel != nullptr);
     bottom_panel->set("editor_plugin", this);
-    add_control_to_bottom_panel(bottom_panel, "HexMap");
-    make_bottom_panel_item_visible(bottom_panel);
 
     tiled_node->connect("mesh_origin_changed",
             callable_mp(this,
@@ -121,14 +111,4 @@ void HexMapTiledNodeEditorPlugin::on_tiled_node_mesh_offset_changed() {
     editor_cursor->set_mesh_origin(tiled_node->get_mesh_origin_vec());
 }
 
-void HexMapTiledNodeEditorPlugin::_bind_methods() {}
-
-HexMapTiledNodeEditorPlugin::HexMapTiledNodeEditorPlugin() {
-    // Ref<PackedScene> panel_scene = ResourceLoader::get_singleton()->load(
-    //         "res://addons/hexmap/gui/"
-    //         "hex_map_editor_bottom_panel.tscn");
-    // bottom_panel = (Control *)panel_scene->instantiate();
-}
-
-HexMapTiledNodeEditorPlugin::~HexMapTiledNodeEditorPlugin() {}
 #endif
