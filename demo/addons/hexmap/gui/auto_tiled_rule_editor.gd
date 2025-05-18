@@ -114,7 +114,13 @@ func _ready() -> void:
     %CellTypePalette.selected.connect(_on_cell_type_palette_selected)
     %MeshPalette.selected.connect(_on_mesh_palette_selected)
 
-    _on_painter_layer_changed(2)
+    # bind all the layer buttons
+    var count := 2
+    for child in %LayerSelector.get_children():
+        child.pressed.connect(_on_layer_selector_button_pressed.bind(count))
+        count -= 1
+
+    _on_layer_selector_button_pressed(2)
     _on_cell_types_changed()
 
 func _on_cell_types_changed() -> void:
@@ -187,10 +193,7 @@ func _on_painter_cell_clicked(cell_id: HexMapCellId, button: int, drag: bool) ->
             rule.clear_cell(cell_id)
             %RulePainter3D.set_cell(cell_id, ["disabled"])
 
-func _on_layer_select(node: TextureButton, layer: int):
-    if node.button_pressed == false:
-        node.button_pressed = true
-        return
+func _on_layer_selector_button_pressed(layer: int):
     %RulePainter3D.active_layer = layer
 
 func _on_painter_layer_changed(layer: int):

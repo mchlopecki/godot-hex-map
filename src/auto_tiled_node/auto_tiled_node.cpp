@@ -832,21 +832,99 @@ Array HexMapAutoTiledNode::HexMapTileRule::get_cells() const {
 }
 
 String HexMapAutoTiledNode::HexMapTileRule::_to_string() const {
-    // XXX expand to print y=-2...2
+    // Format string for each layer & radius combination.  Each format includes
+    // the layer-specific index for each cell.
     // clang-format off
-    String fmt = "Rule {id}: tile {tile}\n"
-        "        v---^---v---^---v---^---v\n"
-        "        | {31} | {30} | {29} |\n"
-        "    v---^---v---^---v---^---v---^---v\n"
-        "    | {32} | {9} | {8} | {28} |\n"
-        "v---^---v---^---v---^---v---^---v---^---v\n"
-        "| {33} | {10} | {0} | {7} | {27} |\n"
-        "^---v---^---v---^---v---^---v---^---v---^\n"
-        "    | {34} | {5} | {6} | {26} |\n"
-        "    ^---v---^---v---^---v---^---v---^\n"
-        "        | {23} | {24} | {25} |\n"
-        "        ^---v---^---v---^---v---^\n";
+    static String layer_fmt[5][3] = {
+        // y == -2
+        {
+            // radius = 0
+            "y=-2\n"
+            "v-------v\n"
+            "| {4} |\n"
+            "^-------^\n",
+        },
+        // y == -1
+        {
+            // radius = 0
+            "y=-1\n"
+            "v-------v\n"
+            "| {2} |\n"
+            "^-------^\n",
+
+            // radius = 1
+            "y=-1\n"
+            "    v---^---v---^---v\n"
+            "    | {21} | {20} |\n"
+            "v---^---v---^---v---^---v\n"
+            "| {22} | {0} | {19} |\n"
+            "^---v---^---v---^---v---^\n"
+            "    | {17} | {18} |\n"
+            "    ^---v---^---v---^\n",
+        },
+        // y == 0
+        {
+            // radius = 0
+            "y=0\n"
+            "v-------v\n"
+            "| {0} |\n"
+            "^-------^\n",
+
+            // radius = 1
+            "y=0\n"
+            "    v---^---v---^---v\n"
+            "    | {9} | {8} |\n"
+            "v---^---v---^---v---^---v\n"
+            "| {10} | {0} | {7} |\n"
+            "^---v---^---v---^---v---^\n"
+            "    | {5} | {6} |\n"
+            "    ^---v---^---v---^\n",
+
+            // radius = 2
+            "y=0\n"
+            "        v---^---v---^---v---^---v\n"
+            "        | {31} | {30} | {29} |\n"
+            "    v---^---v---^---v---^---v---^---v\n"
+            "    | {32} | {9} | {8} | {28} |\n"
+            "v---^---v---^---v---^---v---^---v---^---v\n"
+            "| {33} | {10} | {0} | {7} | {27} |\n"
+            "^---v---^---v---^---v---^---v---^---v---^\n"
+            "    | {34} | {5} | {6} | {26} |\n"
+            "    ^---v---^---v---^---v---^---v---^\n"
+            "        | {23} | {24} | {25} |\n"
+            "        ^---v---^---v---^---v---^\n",
+        },
+        // y == 1
+        {
+            // radius = 0
+            "y=1\n"
+            "v-------v\n"
+            "| {1} |\n"
+            "^-------^\n",
+
+            // radius = 1
+            "y=1\n"
+            "    v---^---v---^---v\n"
+            "    | {15} | {14} |\n"
+            "v---^---v---^---v---^---v\n"
+            "| {16} | {1} | {13} |\n"
+            "^---v---^---v---^---v---^\n"
+            "    | {11} | {12} |\n"
+            "    ^---v---^---v---^\n",
+        },
+        // y == 2
+        {
+            // radius = 0
+            "y=2\n"
+            "v-------v\n"
+            "| {3} |\n"
+            "^-------^\n",
+        }
+    };
     // clang-format on
+
+    // radius of set cells in each layer
+    int layer_radius[5] = { -1, -1, -1, -1, -1 };
 
     Dictionary fields;
     fields["id"] = inner.id;
@@ -874,7 +952,47 @@ String HexMapAutoTiledNode::HexMapTileRule::_to_string() const {
             assert(false && "rule cell should not have INVALID_OFFSET state");
             break;
         }
+
+        if (cell.state == Rule::RULE_CELL_STATE_DISABLED) {
+            continue;
+        }
+
+        // update the radius for each layer
+        if (i == 0) {
+            layer_radius[2] = 0;
+        } else if (i == 1) {
+            layer_radius[3] = 0;
+        } else if (i == 2) {
+            layer_radius[2] = 0;
+        } else if (i == 3) {
+            layer_radius[4] = 0;
+        } else if (i == 4) {
+            layer_radius[0] = 0;
+        } else if (i < 11) {
+            layer_radius[2] = 1;
+        } else if (i < 17) {
+            layer_radius[3] = 1;
+        } else if (i < 23) {
+            layer_radius[1] = 1;
+        } else {
+            layer_radius[2] = 2;
+        }
     }
 
-    return fmt.format(fields);
+    String output = UtilityFunctions::str("HexMapTileRule: id=",
+            inner.id,
+            ", tile=",
+            inner.tile,
+            ", pattern:\n");
+    for (int layer = 4; layer >= 0; layer--) {
+        int radius = layer_radius[layer];
+
+        if (radius == -1) {
+            continue;
+        }
+
+        String format = layer_fmt[layer][radius];
+        output += format.format(fields);
+    }
+    return output;
 }
