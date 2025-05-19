@@ -42,14 +42,12 @@ void EditorCursor::set_space(HexMapSpace space) {
     transform_meshes();
 }
 
-void EditorCursor::set_mesh_library(Ref<MeshLibrary> &value) {
+void EditorCursor::set_mesh_library(Ref<MeshLibrary> value) {
     mesh_tool.set_mesh_library(value);
-    transform_meshes();
 }
 
 void EditorCursor::set_mesh_origin(Vector3 value) {
     mesh_tool.set_mesh_origin(value);
-    mesh_tool.refresh();
 }
 
 void EditorCursor::set_cells_visibility_callback(Callable value) {
@@ -170,7 +168,7 @@ Array EditorCursor::get_cells_v() const {
         Vector3i cell_id = parent_space.get_cell_id_global(center);
         out[i] = (Vector3i)cell_id;
         out[i + 1] = cell_iter->value.index;
-        out[i + 2] = cell_iter->value.orientation;
+        out[i + 2] = cell_iter->value.orientation + orientation;
         ++cell_iter;
     }
 
@@ -203,7 +201,7 @@ HexMapNode::CellInfo EditorCursor::get_origin_cell_info() const {
     }
     return HexMapNode::CellInfo{
         .value = cell->index,
-        .orientation = cell->orientation,
+        .orientation = cell->orientation + orientation,
     };
 }
 

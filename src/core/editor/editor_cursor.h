@@ -28,7 +28,7 @@ public:
     ~EditorCursor();
 
     void set_space(HexMapSpace);
-    void set_mesh_library(Ref<MeshLibrary> &);
+    void set_mesh_library(Ref<MeshLibrary>);
     void set_mesh_origin(Vector3);
 
     /// Set the callback function for `EditorCursor` to call when it needs to

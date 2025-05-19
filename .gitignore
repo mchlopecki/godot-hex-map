@@ -10,7 +10,7 @@ extension_api.json
 .scons_cache
 
 # build dlls
-demo/addons/hexmap/lib/*
+demo/addons/hex_map/lib/*
 
 # test binary
 tests/tests

@@ -297,7 +297,10 @@ Ref<MeshLibrary> HexMapTiledNode::get_mesh_library() const {
 
 bool HexMapTiledNode::on_mesh_library_changed() {
     emit_signal("mesh_library_changed");
-    recreate_octant_data();
+    for (const auto &iter : octants) {
+        iter.value->set_dirty();
+    }
+    update_dirty_octants();
     return true;
 }
 
@@ -334,7 +337,10 @@ Vector3 HexMapTiledNode::get_mesh_origin_vec() const {
 bool HexMapTiledNode::on_hex_space_changed() {
     HexMapNode::on_hex_space_changed();
     clear_baked_meshes();
-    recreate_octant_data();
+    for (const auto &iter : octants) {
+        iter.value->set_dirty();
+    }
+    update_dirty_octants();
     return true;
 }
 
@@ -465,7 +471,7 @@ void HexMapTiledNode::set_cell_visibility(const HexMapCellId &cell_id,
     Octant **octant = octants.getptr(octant_key);
     ERR_FAIL_COND_MSG(
             octant == nullptr, "no octant found for valid cell: " + cell_id);
-    (**octant).set_dirty();
+    (**octant).set_cell_visibility(cell_id, visibility);
     update_dirty_octants();
 
     // Although we aren't truely modifying the map here, covering the edge case
@@ -486,6 +492,8 @@ void HexMapTiledNode::_notification(int p_what) {
 
     switch (p_what) {
     case NOTIFICATION_ENTER_WORLD:
+        UtilityFunctions::print(
+                "tiled node entering world with ", octants.size(), " octants");
         for (auto &pair : octants) {
             pair.value->enter_world();
         }
@@ -493,6 +501,8 @@ void HexMapTiledNode::_notification(int p_what) {
         break;
 
     case NOTIFICATION_ENTER_TREE:
+        UtilityFunctions::print(
+                "tiled node enter tree with ", octants.size(), " octants");
         _update_visibility();
         break;
 

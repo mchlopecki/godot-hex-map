@@ -5,13 +5,18 @@ extends Control
 enum Tool { PAINT, ERASE, SELECT }
 enum DisplayMode { THUMBNAIL, LIST }
 
-@export var mesh_library : MeshLibrary :
-    set(value):
-        if mesh_library == value:
+@export var node: HexMapTiled :
+    set(value) :
+        if value == node:
             return
 
-        mesh_library = value
-        update_mesh_list()
+        if node != null:
+            node.mesh_library_changed.disconnect(_on_node_mesh_library_changed)
+
+        node = value
+        node.mesh_library_changed.connect(_on_node_mesh_library_changed)
+        _on_node_mesh_library_changed()
+
 @export var editor_plugin: EditorPlugin :
     set(value):
         if editor_plugin != null:
@@ -46,30 +51,15 @@ func _ready() -> void:
     %ZoomWidget.changed.connect(_on_zoom_widget_changed)
     _on_zoom_widget_changed(1.0)
 
-func set_mesh_filter(filter: String) -> void:
-    update_mesh_list()
-
-func update_mesh_list() -> void:
+func _on_node_mesh_library_changed() -> void:
     %MeshPalette.clear()
+    var mesh_library := node.mesh_library
     for id in mesh_library.get_item_list():
         %MeshPalette.add_item({
             "id": id,
             "preview": mesh_library.get_item_preview(id),
             "desc": mesh_library.get_item_name(id),
         })
-
-func set_mesh_by_index(index: int) -> void:
-
-    if index == -1:
-        mesh_id = -1
-    else:
-        mesh_id = %MeshItemList.get_item_metadata(index)
-    editor_plugin.paint_value = mesh_id
-
-func clear_selection() -> void:
-    if mesh_id != -1:
-        %MeshItemList.deselect_all()
-        set_mesh_by_index(-1)
 
 func _on_zoom_widget_changed(scale: float) -> void:
     %MeshPalette.preview_size = Vector2(64, 64) * scale

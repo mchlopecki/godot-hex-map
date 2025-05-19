@@ -71,8 +71,9 @@ void HexMapNodeEditorPlugin::commit_cell_changes(String desc) {
                 change.new_orientation;
         undo_list[base + HexMapNode::CELL_ARRAY_INDEX_VEC] =
                 (Vector3i)change.cell_id;
-        undo_list[HexMapNode::CELL_ARRAY_INDEX_VALUE] = change.orig_tile;
-        undo_list[HexMapNode::CELL_ARRAY_INDEX_ORIENTATION] =
+        undo_list[base + HexMapNode::CELL_ARRAY_INDEX_VALUE] =
+                change.orig_tile;
+        undo_list[base + HexMapNode::CELL_ARRAY_INDEX_ORIENTATION] =
                 change.orig_orientation;
     }
 
@@ -270,7 +271,7 @@ void HexMapNodeEditorPlugin::selection_move() {
     for (const HexMapCellId &cell_id : selection_manager->get_cell_ids()) {
         size_t base = index * HexMapNode::CELL_ARRAY_WIDTH;
         cells[base] = cell_id;
-        cells[HexMapNode::CELL_ARRAY_INDEX_VALUE] =
+        cells[base + HexMapNode::CELL_ARRAY_INDEX_VALUE] =
                 HexMapNode::CELL_VALUE_NONE;
         index++;
     }
@@ -300,7 +301,7 @@ void HexMapNodeEditorPlugin::selection_move_apply() {
     for (int i = 0; i < count; i++) {
         int base = i * HexMapNode::CELL_ARRAY_WIDTH;
         do_set_cells[base] = move_source_cells[i];
-        do_set_cells[HexMapNode::CELL_ARRAY_INDEX_VALUE] =
+        do_set_cells[base + HexMapNode::CELL_ARRAY_INDEX_VALUE] =
                 HexMapNode::CELL_VALUE_NONE;
     }
     // second phase is to set the destination cells
@@ -677,7 +678,7 @@ void HexMapNodeEditorPlugin::_edit(Object *p_object) {
     // add & show the panel
     if (bottom_panel_scene.is_valid()) {
         bottom_panel = (Control *)bottom_panel_scene->instantiate();
-        add_control_to_bottom_panel(bottom_panel, "HexMapInt");
+        add_control_to_bottom_panel(bottom_panel, hex_map->get_class());
         make_bottom_panel_item_visible(bottom_panel);
     }
 }

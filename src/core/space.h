@@ -50,6 +50,15 @@ public:
         return global_transform.xform(cell.unit_center() * cell_scale);
     }
 
+    /// Get the transform for a given cell
+    /// @param [offset] scaled offset from geometric center of cell
+    inline Transform3D get_cell_transform_global(const HexMapCellId &cell,
+            const Vector3 &offset = Vector3(0, 0, 0)) const {
+        Transform3D cell_transform(
+                Basis(), (cell.unit_center() + offset) * cell_scale);
+        return global_transform * cell_transform;
+    }
+
     /// Get the `HexMapCellId` for a point in local space
     inline HexMapCellId get_cell_id(const Vector3 &local_pos) const {
         return HexMapCellId::from_unit_point(local_pos / cell_scale);

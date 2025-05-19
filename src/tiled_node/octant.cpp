@@ -202,7 +202,6 @@ void HexMapOctant::update_physics_params() {
 }
 
 void HexMapOctant::update_visibility() {
-    ERR_FAIL_COND(!hex_map.is_inside_tree());
     RenderingServer *rs = RenderingServer::get_singleton();
 
     // XXX should hidden also disable the static shape?

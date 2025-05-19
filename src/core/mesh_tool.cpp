@@ -51,10 +51,10 @@ void HexMapMeshTool::build_multimeshes() {
             mesh_transforms = &iter->value;
         }
 
-        Vector3 cell_center =
-                space.get_cell_center_global(cell_id) + mesh_origin_offset;
-        mesh_transforms->push_back(
-                Transform3D(Basis(), cell_center) * cell.transform);
+        // get the transform for the mesh origin of the cell
+        Transform3D cell_origin_transform =
+                space.get_cell_transform_global(cell_id, mesh_origin_offset);
+        mesh_transforms->push_back(cell_origin_transform * cell.transform);
     }
 
     RenderingServer *rs = RenderingServer::get_singleton();

@@ -55,17 +55,12 @@ HexMapTiledNodeEditorPlugin::HexMapTiledNodeEditorPlugin() {
             "hex_map_editor_bottom_panel.tscn"));
 }
 
-void HexMapTiledNodeEditorPlugin::update_mesh_library() {
+void HexMapTiledNodeEditorPlugin::on_tiled_node_mesh_library_changed() {
     ERR_FAIL_NULL(hex_map);
 
-    mesh_library = tiled_node->get_mesh_library();
-    bottom_panel->set("mesh_library", mesh_library);
-
     if (editor_cursor) {
-        editor_cursor->clear_tiles();
-        editor_cursor->set_mesh_library(mesh_library);
-        bottom_panel->call("clear_selection");
-        bottom_panel->call("update_mesh_list");
+        editor_cursor->set_mesh_library(tiled_node->get_mesh_library());
+        rebuild_cursor();
     }
 }
 
@@ -78,7 +73,8 @@ void HexMapTiledNodeEditorPlugin::_edit(Object *p_object) {
                                 on_tiled_node_mesh_offset_changed));
         tiled_node->disconnect("mesh_library_changed",
                 callable_mp(this,
-                        &HexMapTiledNodeEditorPlugin::update_mesh_library));
+                        &HexMapTiledNodeEditorPlugin::
+                                on_tiled_node_mesh_library_changed));
         tiled_node = nullptr;
 
         // clear the mesh library
@@ -93,22 +89,31 @@ void HexMapTiledNodeEditorPlugin::_edit(Object *p_object) {
     // get the node casted as a TiledNode
     tiled_node = Object::cast_to<HexMapTiledNode>(p_object);
 
-    assert(bottom_panel != nullptr);
+    assert(bottom_panel != nullptr &&
+            "bottom_panel should be set by superclass");
     bottom_panel->set("editor_plugin", this);
+    bottom_panel->set("node", tiled_node);
 
     tiled_node->connect("mesh_origin_changed",
             callable_mp(this,
                     &HexMapTiledNodeEditorPlugin::
                             on_tiled_node_mesh_offset_changed));
     tiled_node->connect("mesh_library_changed",
-            callable_mp(
-                    this, &HexMapTiledNodeEditorPlugin::update_mesh_library));
-    update_mesh_library();
+            callable_mp(this,
+                    &HexMapTiledNodeEditorPlugin::
+                            on_tiled_node_mesh_library_changed));
+
+    // update the editor cursor for the tiled_node state
+    assert(editor_cursor != nullptr &&
+            "editor_cursor should be set by superclass");
+    editor_cursor->set_mesh_origin(tiled_node->get_mesh_origin_vec());
+    on_tiled_node_mesh_library_changed();
 }
 
 void HexMapTiledNodeEditorPlugin::on_tiled_node_mesh_offset_changed() {
     ERR_FAIL_COND_MSG(editor_cursor == nullptr, "editor_cursor not present");
     editor_cursor->set_mesh_origin(tiled_node->get_mesh_origin_vec());
+    editor_cursor->update();
 }
 
 #endif
