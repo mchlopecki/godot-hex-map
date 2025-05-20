@@ -47,6 +47,9 @@ private:
     /// set/get visibility of int node cells
     void set_cells_visible(bool value);
     bool get_cells_visible() const;
+
+    /// callback from editor_plugin to set cell visibility
+    void set_cells_visibility(const Array);
 };
 
 #endif

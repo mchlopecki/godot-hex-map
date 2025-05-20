@@ -23,6 +23,13 @@ enum Mode { Add, Update }
             await ready
         _on_mesh_library_changed()
 
+@export var mesh_origin := Vector3(0, 0, 0) :
+    set(value):
+        mesh_origin = value
+        if not is_node_ready():
+            await ready
+        _on_mesh_palette_selected(rule.tile)
+
 @export_enum("Add", "Update") var mode : String :
     set(value):
         mode = value
@@ -32,7 +39,6 @@ enum Mode { Add, Update }
         else:
             %SaveButton.text = "Save"
             pass
-            
 
 # cell radius & height used for building cell meshes in the preview.  We don't
 # need to react to changes here because the HexMapInt cell scale cannot be
@@ -155,10 +161,11 @@ func _on_cell_type_palette_selected(id: int) -> void:
 
 func _on_mesh_palette_selected(id: int) -> void:
     rule.tile = id
-    if id != -1:
+    if id != HexMapNode.CELL_VALUE_NONE:
         %RulePainter3D.tile_mesh = mesh_library.get_item_mesh(id)
-        %RulePainter3D.tile_mesh_transform = mesh_library \
-                .get_item_mesh_transform(id)
+        var mesh_transform := mesh_library.get_item_mesh_transform(id)
+        mesh_transform.origin += mesh_origin
+        %RulePainter3D.tile_mesh_transform = mesh_transform
     else:
         %RulePainter3D.tile_mesh = null
         %RulePainter3D.tile_mesh_transform = Transform3D()

@@ -7,15 +7,17 @@ extends VBoxContainer
             return
 
         if node != null:
-            node.mesh_library_changed.disconnect(_on_mesh_library_changed)
-            node.rules_changed.disconnect(_on_rules_changed)
+            node.mesh_library_changed.disconnect(_on_node_mesh_library_changed)
+            node.rules_changed.disconnect(_on_node_rules_changed)
 
         node = value
         int_node = node.get_parent()
-        node.mesh_library_changed.connect(_on_mesh_library_changed)
-        node.rules_changed.connect(_on_rules_changed)
-        _on_mesh_library_changed()
-        _on_rules_changed()
+        node.mesh_library_changed.connect(_on_node_mesh_library_changed)
+        node.mesh_origin_changed.connect(_on_node_mesh_origin_changed)
+        node.rules_changed.connect(_on_node_rules_changed)
+        _on_node_mesh_library_changed()
+        _on_node_mesh_origin_changed()
+        _on_node_rules_changed()
 
 @export var editor_plugin: EditorPlugin
 
@@ -103,11 +105,14 @@ func _on_rule_editor_cancel():
     %Directions.visible = true
     pass
 
-func _on_mesh_library_changed():
+func _on_node_mesh_library_changed():
     %RuleEditor.mesh_library = node.mesh_library
     %RulesList.mesh_library = node.mesh_library
 
-func _on_rules_changed():
+func _on_node_mesh_origin_changed():
+    %RuleEditor.mesh_origin = node.get_mesh_origin_vec()
+
+func _on_node_rules_changed():
     %RulesList.rules = node.get_rules()
     %RulesList.order = node.get_rules_order()
     var id = %RulesList.selected_id

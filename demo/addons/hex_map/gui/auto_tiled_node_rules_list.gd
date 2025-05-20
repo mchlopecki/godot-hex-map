@@ -70,6 +70,7 @@ func _redraw_rules() -> void:
         control.pressed.connect(_on_rule_selected.bind(rule))
         control.pressed_delete.connect(func(): delete_rule.emit(rule.id))
         control.enabled_toggled.connect(_on_rule_enabled_toggled.bind(rule))
+        control.tile_name = mesh_library.get_item_name(rule.tile)
 
         %Rules.add_child(control)
 

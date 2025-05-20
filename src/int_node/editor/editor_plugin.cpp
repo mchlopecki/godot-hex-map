@@ -98,6 +98,11 @@ void HexMapIntNodeEditorPlugin::_edit(Object *p_object) {
     // int node.
     int_node->add_child(tiled_node);
 
+    // override the editor cursor set visibility callback; we need to set
+    // visibility on our tiled node
+    editor_cursor->set_cells_visibility_callback(callable_mp(
+            this, &HexMapIntNodeEditorPlugin::set_cells_visibility));
+
     // set known state
     assert(bottom_panel != nullptr);
     bottom_panel->set("editor_plugin", this);
@@ -160,6 +165,12 @@ void HexMapIntNodeEditorPlugin::set_cells_visible(bool visible) {
 
 bool HexMapIntNodeEditorPlugin::get_cells_visible() const {
     return tiled_node ? tiled_node->is_visible() : false;
+}
+
+void HexMapIntNodeEditorPlugin::set_cells_visibility(const Array cells) {
+    if (tiled_node != nullptr) {
+        tiled_node->set_cells_visibility(cells);
+    }
 }
 
 #endif // TOOLS_ENABLED

@@ -158,6 +158,11 @@ HexMapTiledNode::MeshOrigin HexMapAutoTiledNode::get_mesh_origin() const {
 
 void HexMapAutoTiledNode::set_mesh_origin(HexMapTiledNode::MeshOrigin value) {
     tiled_node->set_mesh_origin(value);
+    emit_signal("mesh_origin_changed");
+}
+
+Vector3 HexMapAutoTiledNode::get_mesh_origin_vec() const {
+    return tiled_node->get_mesh_origin_vec();
 }
 
 Dictionary HexMapAutoTiledNode::get_rules() const {
@@ -405,6 +410,9 @@ void HexMapAutoTiledNode::_bind_methods() {
                          "Center,Top,Bottom"),
             "set_mesh_origin",
             "get_mesh_origin");
+    ADD_SIGNAL(MethodInfo("mesh_origin_changed"));
+    ClassDB::bind_method(D_METHOD("get_mesh_origin_vec"),
+            &HexMapAutoTiledNode::get_mesh_origin_vec);
 
     ClassDB::bind_method(
             D_METHOD("get_rules"), &HexMapAutoTiledNode::get_rules);
@@ -445,9 +453,11 @@ void HexMapAutoTiledNode::_notification(int p_what) {
                         &HexMapAutoTiledNode::on_int_node_cells_changed));
         on_int_node_hex_space_changed();
         apply_rules();
-
         break;
     case NOTIFICATION_UNPARENTED:
+        if (int_node == nullptr) {
+            break;
+        }
         int_node->disconnect("hex_space_changed",
                 callable_mp(this,
                         &HexMapAutoTiledNode::on_int_node_hex_space_changed));

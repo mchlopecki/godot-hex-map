@@ -15,6 +15,10 @@ signal enabled_toggled(value: bool)
         preview = value
         %TilePreview.texture = value
 
+@export var tile_name := "" :
+    set(value):
+        %TilePreview.tooltip_text = value
+
 @export var selected := false :
     set(value):
         selected = value

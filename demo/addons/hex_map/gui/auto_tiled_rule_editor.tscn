@@ -70,6 +70,7 @@ mouse_filter = 0
 mouse_force_pass_scroll_events = false
 stretch = true
 script = ExtResource("2_sqqto")
+active_layer = 2
 
 [node name="SubViewport" type="SubViewport" parent="Control/RulePainter3D"]
 own_world_3d = true
@@ -128,6 +129,8 @@ horizontal_scroll_mode = 0
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
+preview_size = Vector2(32, 32)
+compact_view = false
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Control"]
 layout_mode = 1
@@ -216,6 +219,8 @@ horizontal_scroll_mode = 0
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
+preview_size = Vector2(32, 32)
+compact_view = false
 
 [node name="ActiveBorder" type="PanelContainer" parent="Control"]
 unique_name_in_owner = true

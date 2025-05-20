@@ -172,8 +172,15 @@ func set_hex_space(value: HexMapSpace) -> void:
 func set_cell(cell_id: HexMapCellId, state: Array) -> void:
     var cell = cell_instances.get_or_add(cell_id.as_int(), HexCell.new())
     cell.state = state
-    cell.position = hex_space.get_cell_center(cell_id)
+
+    # grab the cell scale
     cell.scale = hex_space.get_cell_scale()
+
+    # put the cell node at the bottom of the hex-space node
+    cell.position = hex_space.get_cell_center(cell_id)
+    cell.position.y -= cell.scale.y/2
+
+    # toggle the grid if it's on the active layer
     cell.show_grid = cell_id.y == active_layer
 
     if cell.get_parent() == null:
