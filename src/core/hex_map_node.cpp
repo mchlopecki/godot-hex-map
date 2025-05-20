@@ -39,6 +39,10 @@ void HexMapNode::_bind_methods() {
             static_cast<Array (HexMapNode::*)(const Array)>(
                     &HexMapNode::get_cells));
 
+    ClassDB::bind_method(D_METHOD("has", "cell_id"),
+            static_cast<bool (HexMapNode::*)(const Ref<hex_bind::HexMapCellId>)
+                            const>(&HexMapNode::has));
+
     ClassDB::bind_method(D_METHOD("get_cell_vecs"),
             static_cast<Array (HexMapNode::*)() const>(
                     &HexMapNode::get_cell_vecs));
@@ -183,6 +187,10 @@ Dictionary HexMapNode::_get_cell(
     out["value"] = info.value;
     out["orientation"] = info.orientation;
     return out;
+}
+
+bool HexMapNode::has(const Ref<hex_bind::HexMapCellId> ref) const {
+    return has(ref->inner);
 }
 
 Array HexMapNode::get_cells(const Array cells) {

@@ -453,6 +453,10 @@ HexMapNode::CellInfo HexMapTiledNode::get_cell(
         .orientation = HexMapTileOrientation(current_cell->rot) };
 }
 
+bool HexMapTiledNode::has(HexMapCellId cell_id) const {
+    return cell_map.has(cell_id);
+}
+
 void HexMapTiledNode::set_cell_visibility(const HexMapCellId &cell_id,
         bool visibility) {
     ERR_FAIL_COND_MSG(
@@ -492,8 +496,6 @@ void HexMapTiledNode::_notification(int p_what) {
 
     switch (p_what) {
     case NOTIFICATION_ENTER_WORLD:
-        UtilityFunctions::print(
-                "tiled node entering world with ", octants.size(), " octants");
         for (auto &pair : octants) {
             pair.value->enter_world();
         }
@@ -501,8 +503,6 @@ void HexMapTiledNode::_notification(int p_what) {
         break;
 
     case NOTIFICATION_ENTER_TREE:
-        UtilityFunctions::print(
-                "tiled node enter tree with ", octants.size(), " octants");
         _update_visibility();
         break;
 

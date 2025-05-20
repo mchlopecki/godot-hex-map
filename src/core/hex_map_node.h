@@ -102,6 +102,10 @@ public:
     /// gdscript wrapper for get_cell
     Dictionary _get_cell(const Ref<hex_bind::HexMapCellId> &) const;
 
+    /// check if the cell is defined in the node
+    virtual bool has(HexMapCellId) const = 0;
+    bool has(const Ref<hex_bind::HexMapCellId>) const;
+
     /// set multiple cells
     ///
     /// `cells` is a flat Array containing three members for each cell:

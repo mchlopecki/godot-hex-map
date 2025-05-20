@@ -186,6 +186,9 @@ public:
     uint64_t as_int();
     Vector3i as_vec();
 
+    // duplication because this is a ref
+    Ref<hex_bind::HexMapCellId> duplicate() const;
+
     // maths
     Ref<hex_bind::HexMapCellId> add(Ref<hex_bind::HexMapCellId>) const;
     Ref<hex_bind::HexMapCellId> subtract(Ref<hex_bind::HexMapCellId>) const;

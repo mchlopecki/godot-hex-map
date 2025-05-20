@@ -125,6 +125,10 @@ void hex_bind::HexMapCellId::_bind_methods() {
     ClassDB::bind_method(D_METHOD("as_int"), &hex_bind::HexMapCellId::as_int);
     ClassDB::bind_method(D_METHOD("as_vec"), &hex_bind::HexMapCellId::as_vec);
 
+    // duplication
+    ClassDB::bind_method(
+            D_METHOD("duplicate"), &hex_bind::HexMapCellId::duplicate);
+
     // field accessors
     ClassDB::bind_method(D_METHOD("get_q"), &hex_bind::HexMapCellId::get_q);
     ClassDB::bind_method(
@@ -258,7 +262,7 @@ Vector3 hex_bind::HexMapCellId::unit_center() const {
 
 bool hex_bind::HexMapCellId::equals(
         const Ref<hex_bind::HexMapCellId> other) const {
-    return inner == other->inner;
+    return other.is_valid() ? inner == other->inner : false;
 }
 
 Ref<hex_bind::HexMapIter> hex_bind::HexMapCellId::get_neighbors(
@@ -289,4 +293,8 @@ Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::rotate(int steps,
     } else {
         return inner.rotate(steps).to_ref();
     }
+}
+
+Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::duplicate() const {
+    return inner.to_ref();
 }

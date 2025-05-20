@@ -171,6 +171,10 @@ HexMapNode::CellInfo HexMapIntNode::get_cell(
     return CellInfo{ .value = *current_cell };
 }
 
+bool HexMapIntNode::has(HexMapCellId cell_id) const {
+    return cell_map.has(cell_id);
+}
+
 Array HexMapIntNode::get_cell_vecs() const {
     Array out;
     for (const auto &iter : cell_map) {
