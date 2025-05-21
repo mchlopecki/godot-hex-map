@@ -52,6 +52,9 @@ void HexMapOctant::build_physics_body() {
     // the collision shapes
     PackedVector3Array debug_mesh_vertices;
 
+    // get the mesh offset from the hexmap
+    Vector3 mesh_offset = hex_map.get_mesh_origin_vec();
+
     // iterate through the cells, save off RID & Transform pairs for multimesh
     // creation later, update the physics body, and if collision debugging is
     // enabled, update that mesh.
@@ -65,8 +68,8 @@ void HexMapOctant::build_physics_body() {
         }
         RID mesh_rid = mesh->get_rid();
 
-        Transform3D cell_transform(
-                cell->get_basis(), hex_map.get_cell_center(cell_key));
+        Transform3D cell_transform(cell->get_basis(),
+                hex_map.get_cell_center(cell_key) + mesh_offset);
 
         // Update the static body for the octant if the mesh library has any
         // collision shapes for this cell type.  Note that the collision shape

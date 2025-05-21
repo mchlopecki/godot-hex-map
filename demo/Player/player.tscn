@@ -1,0 +1,28 @@
+[gd_scene load_steps=5 format=3 uid="uid://dr6vxv2avnl26"]
+
+[ext_resource type="Script" path="res://Player/player.gd" id="1_mleep"]
+[ext_resource type="Script" path="res://Player/SmoothCamera.gd" id="2_vwrpg"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_q8nkc"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_38src"]
+
+[node name="Player" type="CharacterBody3D" groups=["player"]]
+script = ExtResource("1_mleep")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("CapsuleMesh_q8nkc")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_38src")
+
+[node name="CameraPivot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 0.3, 2.08165e-12)
+
+[node name="SmoothCamera" type="Camera3D" parent="CameraPivot"]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.650649, 0)
+top_level = true
+cull_mask = 1048573
+fov = 35.0
+script = ExtResource("2_vwrpg")
