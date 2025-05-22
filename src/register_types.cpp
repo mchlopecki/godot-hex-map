@@ -9,6 +9,7 @@
 #include "core/cell_id.h"
 #include "core/hex_map_node.h"
 #include "core/iter.h"
+#include "godot_cpp/classes/navigation_server3d.hpp"
 #include "int_node/editor/editor_plugin.h"
 #include "int_node/int_node.h"
 #include "tiled_node/editor/editor_plugin.h"
@@ -42,6 +43,17 @@ void initialize_hexmap_module(ModuleInitializationLevel p_level) {
 }
 
 void uninitialize_hexmap_module(ModuleInitializationLevel p_level) {
+    if (HexMapTiledNode::navigation_source_geometry_parser != 0) {
+        NavigationServer3D *ns = NavigationServer3D::get_singleton();
+        if (ns != nullptr) {
+            static_assert(sizeof(RID) == sizeof(uint64_t) &&
+                    "RID type changed; so this work-around will have to go");
+            RID rid = RID(*(
+                    RID *)&HexMapTiledNode::navigation_source_geometry_parser);
+            ns->free_rid(rid);
+            HexMapTiledNode::navigation_source_geometry_parser = 0;
+        }
+    }
     if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
         return;
     }

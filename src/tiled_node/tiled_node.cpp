@@ -44,6 +44,8 @@
 #include "profiling.h"
 #include "tiled_node.h"
 
+uint64_t HexMapTiledNode::navigation_source_geometry_parser = 0;
+
 bool HexMapTiledNode::_set(const StringName &p_name, const Variant &p_value) {
     String name = p_name;
 
@@ -777,51 +779,6 @@ RID HexMapTiledNode::get_bake_mesh_instance(int p_idx) {
     return octants.get(key)->get_baked_mesh_instance();
 }
 
-bool HexMapTiledNode::generate_navigation_source_geometry(Ref<NavigationMesh>,
-        Ref<NavigationMeshSourceGeometryData3D> source_geometry_data,
-        Node *) const {
-    // calculate the mesh origin offset for each cell; this allows us to put
-    // the origin at the bottom or top of the cell, instead of the center.
-    Vector3 mesh_origin_offset =
-            get_mesh_origin_vec() * space.get_cell_scale();
-
-    for (const auto &it : cell_map) {
-        const Cell &cell = it.value;
-
-        if (navigation_bake_only_navmesh_tiles) {
-            // If there's a tile in the cell above this one, do not include
-            // this tile, otherwise when a navigable mesh has a
-            // non-navigable on top, the nav mesh incorrectly cuts through
-            // that upper tile.
-            if (it.key.y < SHRT_MAX && cell_map.has(it.key.get_cell_above())) {
-                continue;
-            }
-
-            // if the cell doesn't have a navmesh, skip it
-            if (!mesh_library->get_item_navigation_mesh(cell.value)
-                            .is_valid()) {
-                continue;
-            }
-        }
-
-        Ref<Mesh> mesh = mesh_library->get_item_mesh(cell.value);
-        if (!mesh.is_valid()) {
-            continue;
-        }
-
-        Transform3D cell_transform(cell.get_basis(),
-                space.get_cell_center_global(it.key) + mesh_origin_offset);
-        source_geometry_data->add_mesh(mesh,
-                cell_transform *
-                        mesh_library->get_item_mesh_transform(cell.value));
-    }
-
-    // Unused return value.  To turn this function into a Callable, the
-    // return type needs to be able to be converted into a Variant.  `void`
-    // is not a supported option.
-    return true;
-}
-
 Vector3 HexMapTiledNode::get_cell_origin(
         Ref<hex_bind::HexMapCellId> ref) const {
     Vector3 out = space.get_cell_center(ref->inner);
@@ -848,15 +805,67 @@ HexMapTiledNode::HexMapTiledNode() {
                     "debug/shapes/collision/shape_color"));
 
     // set up the source geometry parser for navmesh generation
-    NavigationServer3D *ns = NavigationServer3D::get_singleton();
-    navigation_source_geometry_parser = ns->source_geometry_parser_create();
-    ns->source_geometry_parser_set_callback(navigation_source_geometry_parser,
-            callable_mp(this,
-                    &HexMapTiledNode::generate_navigation_source_geometry));
+    if (navigation_source_geometry_parser == 0) {
+        NavigationServer3D *ns = NavigationServer3D::get_singleton();
+        RID rid = ns->source_geometry_parser_create();
+        ns->source_geometry_parser_set_callback(rid,
+                callable_mp_static(&HexMapTiledNode::
+                                generate_navigation_source_geometry));
+        navigation_source_geometry_parser = rid.get_id();
+    }
 }
 
-HexMapTiledNode::~HexMapTiledNode() {
-    clear();
-    NavigationServer3D::get_singleton()->free_rid(
-            navigation_source_geometry_parser);
+HexMapTiledNode::~HexMapTiledNode() { clear(); }
+
+bool HexMapTiledNode::generate_navigation_source_geometry(Ref<NavigationMesh>,
+        Ref<NavigationMeshSourceGeometryData3D> source_geometry_data,
+        Node *node_arg) {
+    HexMapTiledNode *node = Object::cast_to<HexMapTiledNode>(node_arg);
+    if (node == nullptr) {
+        return false;
+    }
+
+    // calculate the mesh origin offset for each cell; this allows us to put
+    // the origin at the bottom or top of the cell, instead of the center.
+    Vector3 mesh_origin_offset =
+            node->get_mesh_origin_vec() * node->space.get_cell_scale();
+
+    for (const auto &it : node->cell_map) {
+        const Cell &cell = it.value;
+
+        if (node->navigation_bake_only_navmesh_tiles) {
+            // If there's a tile in the cell above this one, do not include
+            // this tile, otherwise when a navigable mesh has a
+            // non-navigable on top, the nav mesh incorrectly cuts through
+            // that upper tile.
+            if (it.key.y < SHRT_MAX &&
+                    node->cell_map.has(it.key.get_cell_above())) {
+                continue;
+            }
+
+            // if the cell doesn't have a navmesh, skip it
+            if (!node->mesh_library->get_item_navigation_mesh(cell.value)
+                            .is_valid()) {
+                continue;
+            }
+        }
+
+        Ref<Mesh> mesh = node->mesh_library->get_item_mesh(cell.value);
+        if (!mesh.is_valid()) {
+            continue;
+        }
+
+        Transform3D cell_transform(cell.get_basis(),
+                node->space.get_cell_center_global(it.key) +
+                        mesh_origin_offset);
+        source_geometry_data->add_mesh(mesh,
+                cell_transform *
+                        node->mesh_library->get_item_mesh_transform(
+                                cell.value));
+    }
+
+    // Unused return value.  To turn this function into a Callable, the
+    // return type needs to be able to be converted into a Variant.  `void`
+    // is not a supported option.
+    return true;
 }

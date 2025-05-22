@@ -131,6 +131,9 @@ void HexMapOctant::bake_mesh() {
     // hide the mesh_manager; we want to preserve its state
     mesh_tool.set_visible(false);
 
+    // get the mesh offset from the hexmap
+    Vector3 mesh_offset = hex_map.get_mesh_origin_vec();
+
     // iterate through the cells, add cell mesh surfaces to the surface tool
     // for each material.
     for (const CellKey &cell_key : cells) {
@@ -145,7 +148,7 @@ void HexMapOctant::bake_mesh() {
 
         Transform3D transform;
         transform.basis = cell->get_basis();
-        transform.set_origin(hex_map.get_cell_center(cell_key));
+        transform.set_origin(hex_map.get_cell_center(cell_key) + mesh_offset);
         transform *= mesh_library->get_item_mesh_transform(cell->value);
 
         for (int i = 0; i < mesh->get_surface_count(); i++) {

@@ -45,6 +45,19 @@ public:
         MESH_ORIGIN_BOTTOM,
     };
 
+    /// source geometry parser for all TiledNode instances; this is the
+    /// id within the RID, or 0 when not set.
+    // We cannot declare this as `static RID` because the godot dll provides
+    // the implementation for RID, and it's not available when statics are
+    // initialized.  I don't want to make these per-instance, because that's
+    // just a waste.  I also cannot set this up during godot type registration
+    // because the NavigationServer3D is not initialized at that time.
+    //
+    // So here we just pull the RID apart, and save the id; 0 means not set.
+    //
+    // This is released in uninitialize_hexmap_module()
+    static uint64_t navigation_source_geometry_parser;
+
 private:
     /**
      * @brief A Cell is a single cell in the cube map space; it is defined by
@@ -87,8 +100,6 @@ private:
     real_t physics_body_bounce = 0.0;
 
     bool navigation_bake_only_navmesh_tiles = false;
-
-    RID navigation_source_geometry_parser;
 
     HashMap<CellKey, Cell> cell_map;
     HashMap<OctantKey, Octant *> octants;
@@ -178,9 +189,9 @@ public:
     Array get_bake_meshes();
     RID get_bake_mesh_instance(int p_idx);
 
-    bool generate_navigation_source_geometry(Ref<NavigationMesh>,
+    static bool generate_navigation_source_geometry(Ref<NavigationMesh>,
             Ref<NavigationMeshSourceGeometryData3D>,
-            Node *) const;
+            Node *);
 
     /// get the mesh origin in local coordinates for a given cell
     Vector3 get_cell_origin(const Ref<hex_bind::HexMapCellId>) const;
