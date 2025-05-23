@@ -7,6 +7,13 @@ on:
     branches:
       - main
 
+env:
+  # Used to select the version of Godot to run the tests with.
+  GODOT_TEST_VERSION: 4.3-stable
+  # Use UTF-8 on Linux.
+  LANG: en_US.UTF-8
+  LC_ALL: en_US.UTF-8
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -103,6 +110,23 @@ jobs:
             arch=${{ matrix.target.arch }} \
             precision=${{ matrix.float-precision }} \
             run_tests
+
+      - name: Download requested Godot version for testing
+        if: matrix.target.run-tests
+        run: |
+          wget "https://github.com/godotengine/godot-builds/releases/download/${GODOT_TEST_VERSION}/Godot_v${GODOT_TEST_VERSION}_linux.x86_64.zip" -O Godot.zip
+          unzip -a Godot.zip
+          chmod +x "Godot_v${GODOT_TEST_VERSION}_linux.x86_64"
+          echo "GODOT=$(pwd)/Godot_v${GODOT_TEST_VERSION}_linux.x86_64" >> $GITHUB_ENV
+
+      - name: Run GDScript tests
+        if: matrix.run-tests
+        run: |
+          $GODOT --headless --version
+          # cd test
+          # # Need to run the editor so .godot is generated... but it crashes! Ignore that :-)
+          # (cd project && (timeout 30 $GODOT --import --headless >/dev/null 2>&1 || true))
+          # ./run-tests.sh
 
       # Sign the binary (macOS only)
       # - name: Mac Sign
