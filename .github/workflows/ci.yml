@@ -112,7 +112,7 @@ jobs:
             run_tests
 
       - name: Download requested Godot version for testing
-        if: matrix.target.run-tests
+        if: matrix.target.run_tests
         run: |
           wget "https://github.com/godotengine/godot-builds/releases/download/${GODOT_TEST_VERSION}/Godot_v${GODOT_TEST_VERSION}_linux.x86_64.zip" -O Godot.zip
           unzip -a Godot.zip
@@ -120,9 +120,19 @@ jobs:
           echo "GODOT=$(pwd)/Godot_v${GODOT_TEST_VERSION}_linux.x86_64" >> $GITHUB_ENV
 
       - name: Run GDScript tests
-        if: matrix.run-tests
+        if: matrix.target.run_tests
         run: |
           $GODOT --headless --version
+
+          # link the dll over into lib so we can run the tests
+          mkdir -p demo/addons/hex_map/lib/ &&
+              ln -sv $(pwd)/bin/* demo/addons/hex_map/lib/
+          # workaround for https://github.com/bitwes/Gut/issues/589, create the
+          # .godot directory so GUT can find GutUtils
+          (cd demo && (timeout 30 $GODOT --import --headless >/dev/null 2>&1 || true))
+
+          # actually run the tests
+          $GODOT --headless -s addons/gut/gut_cmdln.gd -d --path ./demo
           # cd test
           # # Need to run the editor so .godot is generated... but it crashes! Ignore that :-)
           # (cd project && (timeout 30 $GODOT --import --headless >/dev/null 2>&1 || true))
@@ -155,12 +165,12 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: godot-cpp-template-${{ matrix.target.platform }}-${{ matrix.target.arch }}-${{ matrix.float-precision }}-${{ matrix.target-type }}
+          name: godot-hex-map-${{ matrix.target.platform }}-${{ matrix.target.arch }}-${{ matrix.float-precision }}-${{ matrix.target-type }}
           path: |
             ${{ github.workspace }}/bin/**
 
 
-  # Merges all the build artifacts together into a single godot-cpp-template artifact.
+  # Merges all the build artifacts together into a single godot-hex-map artifact.
   # If you comment out this step, all the builds will be uploaded individually.
   merge:
     name: merge build artifacts
@@ -170,6 +180,6 @@ jobs:
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v4
         with:
-          name: godot-cpp-template
-          pattern: godot-cpp-template-*
+          name: godot-hex-map
+          pattern: godot-hex-map-*
           delete-merged: true
