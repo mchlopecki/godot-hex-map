@@ -59,10 +59,10 @@ public:
         /// internal state for a cell in the rule pattern
         struct Cell {
             /// state for this cell in the pattern
-            CellState state;
+            CellState state = RULE_CELL_STATE_DISABLED;
 
             /// type for this cell
-            uint16_t type;
+            uint16_t type = 0;
 
             /// return this class as a Dictionary
             Dictionary to_dict() const;
@@ -264,7 +264,7 @@ public:
             /// value will be set to -1 when the origin cell is set in the
             /// pattern.
             int8_t radius : 4;
-        } search_pad = { 0, 0 };
+        } search_pad = { -1, -1 };
     };
 
     /// GDScript wrapper for Rule class

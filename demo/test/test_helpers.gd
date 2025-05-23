@@ -51,11 +51,25 @@ func assert_node_cell_value_eq(node, cell_id: HexMapCellId, type: int) -> void:
 
 func assert_node_cell_eq(node, cell_id: HexMapCellId, type: int, orientation = 0) -> void:
 	var found = node.get_cell(cell_id)
+	var error
 	if found.value != type:
-		fail_test(str("cell ", cell_id, " type incorrect; expected ", type,
-			", found: ", found["value"]))
+		error = str("cell ", cell_id, " type incorrect; expected ", type,
+			", found: ", found["value"])
 	elif orientation && found.orientation != orientation:
-		fail_test(str("cell ", cell_id, " orientation incorrect; expected ",
-			orientation, ", found: ", found.orientation))
+		error = str("cell ", cell_id, " orientation incorrect; expected ",
+			orientation, ", found: ", found.orientation)
 	else:
 		pass_test(str("expected cell ", cell_id, " type to equal ", [type, orientation]))
+		return
+
+	error += "\nnode.cells = [\n"
+	var cells = node.get_cells(node.get_cell_vecs())
+	var count : int = cells.size()/node.CELL_ARRAY_WIDTH
+	for i in range(count):
+		var base = i * node.CELL_ARRAY_WIDTH
+		error += "    { %s, %d, %d },\n" % [
+			HexMapCellId.from_vec(cells[base + node.CELL_ARRAY_INDEX_VEC]),
+			cells[base + node.CELL_ARRAY_INDEX_VALUE],
+			cells[base + node.CELL_ARRAY_INDEX_ORIENTATION]]
+
+	fail_test(error)

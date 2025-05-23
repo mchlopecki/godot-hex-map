@@ -743,6 +743,7 @@ func test_auto_tiled_rules(params=use_parameters(rules_params)):
             elif cell["text"] != "":
                 rule.set_cell_type(cell["cell"], int(cell["text"]))
         auto_node.add_rule(rule)
+        print(rule)
     print("expected:\n", params.expected.dedent());
 
     # make the auto_node a child of int node
