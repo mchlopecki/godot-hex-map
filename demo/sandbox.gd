@@ -1,11 +1,7 @@
 @tool
 extends Node3D
 
-@export var hex_map: HexMap
-
-# OperatorEvaluatorEqualObject::evaluate()
-#	*
-# godot::RefCounted does not pass operator= down to underlying type
+@export var hex_map: HexMapTiled
 
 var lines = [];
 
@@ -29,7 +25,6 @@ func draw_line(pos1: Vector3, pos2: Vector3) -> MeshInstance3D:
 
 
 func _ready():
-
 	# print("HexMap baked meshes ", hex_map.get_bake_meshes())
 	pass
 

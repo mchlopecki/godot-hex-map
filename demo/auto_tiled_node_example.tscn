@@ -1,0 +1,1007 @@
+[gd_scene load_steps=5 format=4 uid="uid://c17nvx3dcrl8o"]
+
+[ext_resource type="MeshLibrary" uid="uid://ygm46u2uobsa" path="res://tileset.tres" id="2_05qfa"]
+[ext_resource type="PackedScene" uid="uid://dr6vxv2avnl26" path="res://Player/player.tscn" id="2_midcw"]
+
+[sub_resource type="Environment" id="Environment_p08d2"]
+tonemap_mode = 3
+ssao_enabled = true
+
+[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_styrr"]
+
+[node name="Node3D" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_p08d2")
+camera_attributes = SubResource("CameraAttributesPractical_styrr")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866024, -0.433016, 0.250001, 0, 0.499998, 0.866026, -0.500003, 0.749999, -0.43301, 0, 66.1477, 0)
+shadow_enabled = true
+
+[node name="HexMapInt" type="HexMapInt" parent="."]
+cell_types = [{
+"color": Color(0.368006, 0.595703, 0.246658, 1),
+"name": "Land",
+"value": 1
+}, {
+"color": Color(0.944074, 0.7335, 0.420704, 1),
+"name": "Road",
+"value": 2
+}, {
+"color": Color(0.216019, 0.68892, 0.945312, 1),
+"name": "Sea",
+"value": 3
+}, {
+"color": Color(0.470953, 0.920062, 0.909536, 1),
+"name": "River",
+"value": 4
+}]
+cells = PackedByteArray("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AAD4/wAAAQAAAPf/AAABAP//9/8AAAEAAAD5/wAAAQD///r/AAABAP7/+/8AAAEA/f/8/wAAAQD8//z/AAABAPv//f8AAAEA+//8/wAAAQD9//v/AAABAP7/+v8AAAEA/f/6/wAAAQD6//3/AAABAPr//P8AAAEA+f/9/wAAAQD5//z/AAABAPj//f8AAAEA9//8/wAAAQD2//z/AAABAPb/+/8AAAEA9v/6/wAAAQD2//n/AAABAPf/+/8AAAEA+v/0/wEAAQD6//X/AQABAPv/9f8BAAEA+//0/wEAAQD6//b/AQABAPr/9/8BAAEA+//3/wEAAQD8//b/AQABAPv/+P8BAAEA/P/3/wEAAQD9//f/AQABAPv/9v8BAAEA/P/4/wEAAQD9//j/AQABAP7/9/8BAAEA///2/wEAAQAAAPb/AQABAAAA9/8BAAEAAQD2/wEAAQACAPb/AQABAP//+P8BAAEA/v/5/wEAAQD9//r/AQABAPz/+v8BAAEA+//6/wEAAQD8//n/AQABAP3/+f8BAAEA/v/4/wEAAQD///f/AQABAPz/+/8BAAEA+//7/wEAAQD6//v/AQABAPr/+v8BAAEA+f/6/wEAAQD4//v/AQABAPn/+/8BAAEA+//5/wEAAQD6//n/AQABAPj/+v8BAAEA+P/5/wEAAQD4//j/AQABAPf/+f8BAAEA+f/5/wEAAQD5//j/AQABAPr/+P8BAAEA+f/3/wEAAQD8//j/AgABAPz/+f8CAAEA/f/5/wIAAQD+//j/AgABAP7/9/8CAAEA/f/3/wIAAQD9//j/AgABAP7/+v8CAAEA/v/5/wIAAQD9//r/AgABAPz/+/8CAAEA+//7/wIAAQD6//z/AgABAPr/+/8CAAEA+v/6/wIAAQD6//n/AgABAPv/+P8CAAEA+//5/wIAAQD7//r/AgABAPz/+v8CAAEA+f/5/wIAAQD5//j/AgABAPn/9/8CAAEA+v/2/wIAAQD7//b/AgABAPv/9/8CAAEA+v/4/wIAAQD6//f/AgABAAwA8v8AAAQADQDs/wEAAQANAO3/AQABAA4A7f8BAAEADgDs/wEAAQAOAOz/AgABAAYA8/8DAAEA")
+cell_radius = 1.153
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.985, -2.26, 27.672)
+metadata/_show_cells_ = false
+metadata/_editor_state_ = {
+"__version": 1,
+"edit_axis": 0,
+"edit_axis_depth": [0, 0, 0, 0]
+}
+
+[node name="HexMapAutoTiled" type="HexMapAutoTiled" parent="HexMapInt"]
+mesh_library = ExtResource("2_05qfa")
+mesh_origin = 1
+mesh_origin = 1
+rules_order = [1, 32, 33, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 0, 14, 15, 16, 17, 18, 19, 20, 21, 22, 34, 35, 36, 37]
+rules = {
+0: {
+"cells": {
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 1
+}
+},
+"enabled": true,
+"id": 0,
+"tile": 0
+},
+1: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(-1, 0, 1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(0, 0, -1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(1, 0, -1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(1, 0, 0): {
+"state": "type",
+"type": 2
+}
+},
+"enabled": true,
+"id": 1,
+"tile": 25
+},
+2: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(-1, 0, 1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(0, 0, -1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(1, 0, -1): {
+"state": "type",
+"type": 2
+},
+Vector3i(1, 0, 0): {
+"state": "not_type",
+"type": 2
+}
+},
+"enabled": true,
+"id": 2,
+"tile": 28
+},
+3: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(-1, 0, 1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(0, 0, -1): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(1, 0, -1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(1, 0, 0): {
+"state": "not_type",
+"type": 2
+}
+},
+"enabled": true,
+"id": 3,
+"tile": 29
+},
+4: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(-1, 0, 1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(0, 0, -1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 1): {
+"state": "type",
+"type": 2
+},
+Vector3i(1, 0, -1): {
+"state": "type",
+"type": 2
+},
+Vector3i(1, 0, 0): {
+"state": "not_type",
+"type": 2
+}
+},
+"enabled": true,
+"id": 4,
+"tile": 30
+},
+5: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(-1, 0, 1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(0, 0, -1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(1, 0, -1): {
+"state": "type",
+"type": 2
+},
+Vector3i(1, 0, 0): {
+"state": "type",
+"type": 2
+}
+},
+"enabled": true,
+"id": 5,
+"tile": 31
+},
+6: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(-1, 0, 1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(0, 0, -1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 1): {
+"state": "type",
+"type": 2
+},
+Vector3i(1, 0, -1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(1, 0, 0): {
+"state": "type",
+"type": 2
+}
+},
+"enabled": true,
+"id": 6,
+"tile": 32
+},
+7: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(-1, 0, 1): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, -1): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(1, 0, -1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(1, 0, 0): {
+"state": "not_type",
+"type": 2
+}
+},
+"enabled": true,
+"id": 7,
+"tile": 33
+},
+8: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(-1, 0, 1): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, -1): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(1, 0, -1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(1, 0, 0): {
+"state": "type",
+"type": 2
+}
+},
+"enabled": true,
+"id": 8,
+"tile": 34
+},
+9: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(-1, 0, 1): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, -1): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 1): {
+"state": "type",
+"type": 2
+},
+Vector3i(1, 0, -1): {
+"state": "type",
+"type": 2
+},
+Vector3i(1, 0, 0): {
+"state": "not_type",
+"type": 2
+}
+},
+"enabled": true,
+"id": 9,
+"tile": 35
+},
+10: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(-1, 0, 1): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, -1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 1): {
+"state": "type",
+"type": 2
+},
+Vector3i(1, 0, -1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(1, 0, 0): {
+"state": "type",
+"type": 2
+}
+},
+"enabled": true,
+"id": 10,
+"tile": 36
+},
+11: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(-1, 0, 1): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, -1): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 1): {
+"state": "type",
+"type": 2
+},
+Vector3i(1, 0, -1): {
+"state": "type",
+"type": 2
+},
+Vector3i(1, 0, 0): {
+"state": "not_type",
+"type": 2
+}
+},
+"enabled": true,
+"id": 11,
+"tile": 37
+},
+12: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(-1, 0, 1): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, -1): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 1): {
+"state": "type",
+"type": 2
+},
+Vector3i(1, 0, -1): {
+"state": "type",
+"type": 2
+},
+Vector3i(1, 0, 0): {
+"state": "type",
+"type": 2
+}
+},
+"enabled": true,
+"id": 12,
+"tile": 38
+},
+13: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(-1, 0, 1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(0, 0, -1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(1, 0, -1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(1, 0, 0): {
+"state": "not_type",
+"type": 2
+}
+},
+"enabled": true,
+"id": 13,
+"tile": 39
+},
+14: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 1
+},
+Vector3i(-1, 0, 1): {
+"state": "empty",
+"type": null
+},
+Vector3i(0, 0, -1): {
+"state": "type",
+"type": 1
+},
+Vector3i(1, 0, -1): {
+"state": "type",
+"type": 1
+},
+Vector3i(1, 0, 0): {
+"state": "empty",
+"type": null
+}
+},
+"enabled": true,
+"id": 14,
+"tile": 40
+},
+15: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "empty",
+"type": null
+},
+Vector3i(0, 0, -1): {
+"state": "type",
+"type": 1
+},
+Vector3i(0, 0, 0): {
+"state": "empty",
+"type": null
+},
+Vector3i(1, 0, -1): {
+"state": "type",
+"type": 1
+},
+Vector3i(1, 0, 0): {
+"state": "empty",
+"type": null
+}
+},
+"enabled": true,
+"id": 15,
+"tile": 41
+},
+16: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "empty",
+"type": null
+},
+Vector3i(0, 0, -1): {
+"state": "type",
+"type": 1
+},
+Vector3i(0, 0, 0): {
+"state": "empty",
+"type": null
+},
+Vector3i(1, 0, -1): {
+"state": "empty",
+"type": null
+}
+},
+"enabled": true,
+"id": 16,
+"tile": 42
+},
+17: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 1
+},
+Vector3i(-1, 0, 1): {
+"state": "empty",
+"type": null
+},
+Vector3i(0, 0, -1): {
+"state": "type",
+"type": 1
+},
+Vector3i(0, 0, 0): {
+"state": "empty",
+"type": null
+},
+Vector3i(0, 0, 1): {
+"state": "empty",
+"type": null
+},
+Vector3i(1, 0, -1): {
+"state": "type",
+"type": 1
+},
+Vector3i(1, 0, 0): {
+"state": "type",
+"type": 1
+}
+},
+"enabled": true,
+"id": 17,
+"tile": 44
+},
+18: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 1
+},
+Vector3i(-1, 0, 1): {
+"state": "type",
+"type": 3
+},
+Vector3i(0, 0, -1): {
+"state": "type",
+"type": 1
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 3
+},
+Vector3i(0, 0, 1): {
+"state": "type",
+"type": 3
+},
+Vector3i(1, 0, -1): {
+"state": "type",
+"type": 1
+},
+Vector3i(1, 0, 0): {
+"state": "type",
+"type": 3
+}
+},
+"enabled": true,
+"id": 18,
+"tile": 5
+},
+19: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 3
+},
+Vector3i(-1, 0, 1): {
+"state": "type",
+"type": 3
+},
+Vector3i(0, 0, -1): {
+"state": "type",
+"type": 1
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 3
+},
+Vector3i(0, 0, 1): {
+"state": "type",
+"type": 3
+},
+Vector3i(1, 0, -1): {
+"state": "type",
+"type": 1
+},
+Vector3i(1, 0, 0): {
+"state": "type",
+"type": 3
+}
+},
+"enabled": true,
+"id": 19,
+"tile": 6
+},
+20: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 3
+},
+Vector3i(-1, 0, 1): {
+"state": "type",
+"type": 3
+},
+Vector3i(0, 0, -1): {
+"state": "type",
+"type": 1
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 3
+},
+Vector3i(0, 0, 1): {
+"state": "type",
+"type": 3
+},
+Vector3i(1, 0, -1): {
+"state": "type",
+"type": 3
+},
+Vector3i(1, 0, 0): {
+"state": "type",
+"type": 3
+}
+},
+"enabled": true,
+"id": 20,
+"tile": 7
+},
+21: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 1
+},
+Vector3i(-1, 0, 1): {
+"state": "type",
+"type": 3
+},
+Vector3i(0, 0, -1): {
+"state": "type",
+"type": 1
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 3
+},
+Vector3i(0, 0, 1): {
+"state": "type",
+"type": 3
+},
+Vector3i(1, 0, -1): {
+"state": "type",
+"type": 1
+},
+Vector3i(1, 0, 0): {
+"state": "type",
+"type": 1
+}
+},
+"enabled": true,
+"id": 21,
+"tile": 9
+},
+22: {
+"cells": {
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 3
+}
+},
+"enabled": true,
+"id": 22,
+"tile": 4
+},
+32: {
+"cells": {
+Vector3i(-2, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 4
+},
+Vector3i(-1, 0, 1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(0, 0, -1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(1, 0, -1): {
+"state": "type",
+"type": 2
+},
+Vector3i(1, 0, 0): {
+"state": "not_type",
+"type": 2
+}
+},
+"enabled": true,
+"id": 32,
+"tile": 28
+},
+33: {
+"cells": {
+Vector3i(-2, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 4
+},
+Vector3i(-1, 0, 1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(0, 0, -1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 2
+},
+Vector3i(0, 0, 1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(1, 0, -1): {
+"state": "not_type",
+"type": 2
+},
+Vector3i(1, 0, 0): {
+"state": "type",
+"type": 2
+}
+},
+"enabled": true,
+"id": 33,
+"tile": 25
+},
+34: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 4
+},
+Vector3i(-1, 0, 1): {
+"state": "not_type",
+"type": 4
+},
+Vector3i(0, 0, -1): {
+"state": "not_type",
+"type": 4
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 4
+},
+Vector3i(0, 0, 1): {
+"state": "not_type",
+"type": 4
+},
+Vector3i(1, 0, -1): {
+"state": "not_type",
+"type": 4
+},
+Vector3i(1, 0, 0): {
+"state": "type",
+"type": 4
+}
+},
+"enabled": true,
+"id": 34,
+"tile": 11
+},
+35: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 4
+},
+Vector3i(-1, 0, 1): {
+"state": "not_type",
+"type": 4
+},
+Vector3i(0, 0, -1): {
+"state": "not_type",
+"type": 4
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 4
+},
+Vector3i(0, 0, 1): {
+"state": "not_type",
+"type": 4
+},
+Vector3i(1, 0, -1): {
+"state": "type",
+"type": 4
+},
+Vector3i(1, 0, 0): {
+"state": "not_type",
+"type": 4
+}
+},
+"enabled": true,
+"id": 35,
+"tile": 12
+},
+36: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 4
+},
+Vector3i(-1, 0, 1): {
+"state": "not_type",
+"type": 4
+},
+Vector3i(0, 0, -1): {
+"state": "not_type",
+"type": 4
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 4
+},
+Vector3i(0, 0, 1): {
+"state": "type",
+"type": 4
+},
+Vector3i(1, 0, -1): {
+"state": "type",
+"type": 4
+},
+Vector3i(1, 0, 0): {
+"state": "not_type",
+"type": 4
+}
+},
+"enabled": true,
+"id": 36,
+"tile": 16
+},
+37: {
+"cells": {
+Vector3i(-1, 0, 0): {
+"state": "type",
+"type": 4
+},
+Vector3i(-1, 0, 1): {
+"state": "not_type",
+"type": 4
+},
+Vector3i(0, 0, -1): {
+"state": "not_type",
+"type": 4
+},
+Vector3i(0, 0, 0): {
+"state": "type",
+"type": 4
+},
+Vector3i(0, 0, 1): {
+"state": "not_type",
+"type": 4
+},
+Vector3i(1, 0, -1): {
+"state": "type",
+"type": 4
+},
+Vector3i(1, 0, 0): {
+"state": "type",
+"type": 4
+}
+},
+"enabled": true,
+"id": 37,
+"tile": 17
+}
+}
+
+[node name="Player" parent="." instance=ExtResource("2_midcw")]
+speed = 12.62
+jump_height = 1.2

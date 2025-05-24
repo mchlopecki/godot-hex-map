@@ -4,12 +4,13 @@ extension_api.json
 .sconsign.dblite
 *.os
 *.o
+.scons-cache
 .DS_Store
 .nobackup*
 .scons_cache
 
 # build dlls
-demo/addons/hexmap/lib/*
+demo/addons/hex_map/lib/*
 
 # test binary
 tests/tests

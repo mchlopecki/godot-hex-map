@@ -4,10 +4,16 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
-#include "hex_map/cell_id.h"
-#include "hex_map/editor/hex_map_editor_plugin.h"
-#include "hex_map/hex_map.h"
-#include "hex_map/iter.h"
+#include "auto_tiled_node/auto_tiled_node.h"
+#include "auto_tiled_node/editor/editor_plugin.h"
+#include "core/cell_id.h"
+#include "core/hex_map_node.h"
+#include "core/iter.h"
+#include "godot_cpp/classes/navigation_server3d.hpp"
+#include "int_node/editor/editor_plugin.h"
+#include "int_node/int_node.h"
+#include "tiled_node/editor/editor_plugin.h"
+#include "tiled_node/tiled_node.h"
 
 using namespace godot;
 
@@ -15,19 +21,39 @@ void initialize_hexmap_module(ModuleInitializationLevel p_level) {
     if (p_level == godot::MODULE_INITIALIZATION_LEVEL_SCENE) {
         ClassDB::register_class<hex_bind::HexMapCellId>();
         ClassDB::register_class<hex_bind::HexMapIter>();
-        ClassDB::register_class<HexMap>();
+        ClassDB::register_class<hex_bind::HexMapSpace>();
+        ClassDB::register_abstract_class<HexMapNode>();
+        ClassDB::register_class<HexMapTiledNode>();
+        ClassDB::register_class<HexMapIntNode>();
+        ClassDB::register_class<HexMapAutoTiledNode>();
+        ClassDB::register_class<HexMapAutoTiledNode::HexMapTileRule>();
     }
 
 #ifdef TOOLS_ENABLED
     if (p_level == godot::MODULE_INITIALIZATION_LEVEL_EDITOR) {
-        ClassDB::register_internal_class<EditorControl>();
-        ClassDB::register_internal_class<HexMapEditorPlugin>();
-        EditorPlugins::add_by_type<HexMapEditorPlugin>();
+        ClassDB::register_abstract_class<HexMapNodeEditorPlugin>();
+        ClassDB::register_internal_class<HexMapTiledNodeEditorPlugin>();
+        EditorPlugins::add_by_type<HexMapTiledNodeEditorPlugin>();
+        ClassDB::register_internal_class<HexMapIntNodeEditorPlugin>();
+        EditorPlugins::add_by_type<HexMapIntNodeEditorPlugin>();
+        ClassDB::register_internal_class<HexMapAutoTiledNodeEditorPlugin>();
+        EditorPlugins::add_by_type<HexMapAutoTiledNodeEditorPlugin>();
     }
 #endif
 }
 
 void uninitialize_hexmap_module(ModuleInitializationLevel p_level) {
+    if (HexMapTiledNode::navigation_source_geometry_parser != 0) {
+        NavigationServer3D *ns = NavigationServer3D::get_singleton();
+        if (ns != nullptr) {
+            static_assert(sizeof(RID) == sizeof(uint64_t) &&
+                    "RID type changed; so this work-around will have to go");
+            RID rid = RID(*(
+                    RID *)&HexMapTiledNode::navigation_source_geometry_parser);
+            ns->free_rid(rid);
+            HexMapTiledNode::navigation_source_geometry_parser = 0;
+        }
+    }
     if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
         return;
     }
