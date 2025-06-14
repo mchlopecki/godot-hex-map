@@ -59,7 +59,7 @@ func _ready() -> void:
             var above = cell
             while is_top_cell && current_search_height <= max_neighbour_search_height:
                 above = above.up()
-                is_top_cell = hex_map.get_cell(above)["value"] == HexMapNode.CELL_VALUE_NONE
+                is_top_cell = !hex_map.has(above)
                 current_search_height += 1
 
             if !is_top_cell:
