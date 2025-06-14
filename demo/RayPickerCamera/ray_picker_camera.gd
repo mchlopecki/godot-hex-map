@@ -65,12 +65,11 @@ func _ready() -> void:
             if !is_top_cell:
                 continue
 
-            var coords = hex_map.get_cell_center(cell);
+            var coords_above = hex_map.get_cell_center(cell.up());
             var clabel := Label3D.new();
             clabel.no_depth_test = true
             clabel.text = label_string.format({ "q": cell.q, "r": cell.r, "y": cell.y })
-            coords.y += 0.75
-            clabel.position = coords
+            clabel.position = coords_above
             clabel.billboard = BaseMaterial3D.BILLBOARD_ENABLED
             clabel.font_size = 48
             clabel.outline_size = 3
