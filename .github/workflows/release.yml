@@ -9,12 +9,14 @@ on:
   release:
     types: [published]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.tag || github.event.release.tag_name }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build GDExtension
     uses: ./.github/workflows/build.yml
-    with:
-      concurrency-group: ${{ inputs.tag || github.event.release.tag_name }}
 
   archive:
     needs: build
