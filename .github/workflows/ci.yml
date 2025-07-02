@@ -10,10 +10,9 @@ on:
 env:
   # Used to select the version of Godot to run the tests with.
   GODOT_TEST_VERSION: 4.3-stable
-  REF: ${{ github.head_ref || github.event.after }}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.event.after }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -42,8 +41,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ env.REF }}
       - name: Download Build Artifact
         uses: actions/download-artifact@v4
         with:
