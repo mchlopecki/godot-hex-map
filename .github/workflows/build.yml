@@ -1,4 +1,4 @@
-name: Build
+name: Build Binaries
 
 on:
   workflow_call:
@@ -8,12 +8,12 @@ on:
       float-precision:
         type: string
         default: single
-      artifact-name:
+      addon-name:
         type: string
         default: hex_map
     outputs:
       artifact-name:
-        value: ${{ inputs.artifact-name }}
+        value: ${{ inputs.addon-name }}
 
 env:
   # Use UTF-8 on Linux.
@@ -83,5 +83,5 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.artifact-name }}-${{ env.BUILD_VERSION }}_${{ hashFiles('.gitmodules') }}
-          path: ${{ github.workspace }}/demo/addons/hex_map/
+          name: ${{ inputs.addon-name }}-${{ env.BUILD_VERSION }}_${{ hashFiles('.gitmodules') }}
+          path: ${{ github.workspace }}/demo/addons/${{ inputs.addon-name }}/lib

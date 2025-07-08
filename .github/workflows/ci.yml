@@ -39,16 +39,17 @@ jobs:
     needs: build
     runs-on: ubuntu-22.04
     env:
-      BUILD_ARTIFACT_NAME: ${{ needs.build.outputs.artifact-name }}
-      BUILD_ARTIFACT_PATH: demo/addons/${{ needs.build.outputs.artifact-name }}
+      ARTIFACT_NAME: ${{ needs.build.outputs.artifact-name }}
+      ADDON_PATH: demo/addons/${{ needs.build.outputs.artifact-name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Download Build Artifact
+
+      - name: Download Binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: ${{ env.BUILD_ARTIFACT_NAME }}-*
-          path: ${{ env.BUILD_ARTIFACT_PATH }}
+          pattern: ${{ env.ARTIFACT_NAME }}-*
+          path: ${{ env.ADDON_PATH }}/lib
           merge-multiple: true
 
       - name: Download requested Godot version for testing
