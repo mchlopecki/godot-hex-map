@@ -25,7 +25,7 @@ jobs:
     env:
       RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
       ARTIFACT_NAME: ${{ needs.build.outputs.artifact-name }}
-      ADDON_PATH: addons/${{ needs.build.outputs.artifact-name }}
+      ADDON_PATH: demo/addons/${{ needs.build.outputs.artifact-name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
