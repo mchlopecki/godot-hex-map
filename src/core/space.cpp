@@ -362,6 +362,8 @@ void hex_bind::HexMapSpace::set_cell_scale(Vector3 value) {
 
 Vector3 hex_bind::HexMapSpace::get_cell_center(
         const Ref<hex_bind::HexMapCellId> &ref) const {
+    ERR_FAIL_COND_V_MSG(
+            !ref.is_valid(), Vector3(), "argument is not HexMapCellId");
     return inner.get_cell_center(ref->inner);
 }
 

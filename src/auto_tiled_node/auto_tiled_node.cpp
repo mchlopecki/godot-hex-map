@@ -230,6 +230,8 @@ unsigned HexMapAutoTiledNode::add_rule(const Rule &rule) {
 }
 
 unsigned HexMapAutoTiledNode::add_rule(const Ref<HexMapTileRule> &ref) {
+    ERR_FAIL_COND_V_MSG(
+            !ref.is_valid(), -1, "argument was not HexMapTileRule");
     return add_rule(ref->inner);
 }
 
@@ -245,6 +247,7 @@ void HexMapAutoTiledNode::update_rule(const Rule &rule) {
 }
 
 void HexMapAutoTiledNode::update_rule(const Ref<HexMapTileRule> &ref) {
+    ERR_FAIL_COND_MSG(!ref.is_valid(), "argument was not HexMapTileRule");
     return update_rule(ref->inner);
 }
 
@@ -804,22 +807,27 @@ void HexMapAutoTiledNode::HexMapTileRule::set_enabled(bool value) {
 }
 void HexMapAutoTiledNode::HexMapTileRule::clear_cell(
         const Ref<hex_bind::HexMapCellId> &ref) {
+    ERR_FAIL_COND_MSG(!ref.is_valid(), "argument was not HexMapCellId");
     inner.clear_cell(ref->inner);
 }
 void HexMapAutoTiledNode::HexMapTileRule::set_cell_type(
         const Ref<hex_bind::HexMapCellId> &ref,
         unsigned type,
         bool invert) {
+    ERR_FAIL_COND_MSG(!ref.is_valid(), "argument was not HexMapCellId");
     inner.set_cell_type(ref->inner, type, invert);
 }
 void HexMapAutoTiledNode::HexMapTileRule::set_cell_empty(
         const Ref<hex_bind::HexMapCellId> &ref,
         bool invert) {
+    ERR_FAIL_COND_MSG(!ref.is_valid(), "argument was not HexMapCellId");
     inner.set_cell_empty(ref->inner, invert);
 }
 
 Variant HexMapAutoTiledNode::HexMapTileRule::get_cell(
         const Ref<hex_bind::HexMapCellId> &ref) const {
+    ERR_FAIL_COND_V_MSG(
+            !ref.is_valid(), nullptr, "argument was not HexMapCellId");
     Dictionary out;
     auto cell = inner.get_cell(ref->inner);
     if (cell.state == Rule::RULE_CELL_INVALID_OFFSET) {

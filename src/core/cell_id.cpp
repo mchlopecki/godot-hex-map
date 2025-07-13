@@ -274,11 +274,17 @@ Ref<hex_bind::HexMapIter> hex_bind::HexMapCellId::get_neighbors(
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::add(
         Ref<hex_bind::HexMapCellId> other) const {
+    ERR_FAIL_COND_V_MSG(!other.is_valid(),
+            inner.to_ref(),
+            "argument is not a HexMapCellId");
     return (inner + other->inner).to_ref();
 }
 
 Ref<hex_bind::HexMapCellId> hex_bind::HexMapCellId::subtract(
         Ref<hex_bind::HexMapCellId> other) const {
+    ERR_FAIL_COND_V_MSG(!other.is_valid(),
+            inner.to_ref(),
+            "argument is not a HexMapCellId");
     return (inner - other->inner).to_ref();
 }
 
