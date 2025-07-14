@@ -5,12 +5,6 @@ on:
     inputs:
       ref:
         type: string
-      addon-name:
-        type: string
-        default: hex_map
-    outputs:
-      artifact-name:
-        value: ${{ inputs.addon-name }}
 
 env:
   # Use UTF-8 on Linux.
@@ -83,5 +77,19 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.addon-name }}-${{ env.BUILD_VERSION }}_${{ hashFiles('.gitmodules') }}
-          path: ${{ github.workspace }}/demo/addons/${{ inputs.addon-name }}/lib
+          name: godot-hex-map-${{ env.BUILD_VERSION }}_${{ hashFiles('.gitmodules') }}
+          path: ${{ github.workspace }}/demo/addons/hex_map/lib
+
+  # Merges all the build artifacts together into a single godot-hex-map artifact.
+  # If you comment out this step, all the builds will be uploaded individually.
+  merge:
+    name: Merge build artifacts
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: godot-hex-map
+          pattern: godot-hex-map-*
+          delete-merged: true

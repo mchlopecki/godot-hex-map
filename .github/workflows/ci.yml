@@ -39,8 +39,7 @@ jobs:
     needs: build
     runs-on: ubuntu-22.04
     env:
-      ARTIFACT_NAME: ${{ needs.build.outputs.artifact-name }}
-      ADDON_PATH: demo/addons/${{ needs.build.outputs.artifact-name }}
+      ADDON_PATH: demo/addons/hex_map
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,9 +47,8 @@ jobs:
       - name: Download Binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: ${{ env.ARTIFACT_NAME }}-*
+          name: godot-hex-map
           path: ${{ env.ADDON_PATH }}/lib
-          merge-multiple: true
 
       - name: Download requested Godot version for testing
         run: |

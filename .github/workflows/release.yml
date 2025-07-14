@@ -24,8 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
-      ARTIFACT_NAME: ${{ needs.build.outputs.artifact-name }}
-      ADDON_PATH: addons/${{ needs.build.outputs.artifact-name }}
+      ADDON_PATH: addons/hex_map
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,15 +36,14 @@ jobs:
       - name: Download Binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: ${{ env.ARTIFACT_NAME }}-*
+          name: godot-hex-map
           path: demo/${{ env.ADDON_PATH }}/lib
-          merge-multiple: true
       - id: create-archive
         name: Create Archive
         shell: sh
         working-directory: ./demo
         env:
-          ARCHIVE_NAME: ${{ env.ARTIFACT_NAME }}-${{ env.RELEASE_TAG }}.tar.gz
+          ARCHIVE_NAME: godot-hex-map-${{ env.RELEASE_TAG }}.tar.gz
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Creating $ARCHIVE_NAME from ${{ env.ADDON_PATH }}"
