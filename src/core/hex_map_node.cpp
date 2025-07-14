@@ -108,6 +108,7 @@ void HexMapNode::set_space(const HexMapSpace &value) {
 }
 
 void HexMapNode::set_space(const Ref<hex_bind::HexMapSpace> &ref) {
+    ERR_FAIL_COND_MSG(!ref.is_valid(), "argument was not HexMapSpace");
     space = ref->inner;
     on_hex_space_changed();
 }
@@ -142,6 +143,8 @@ Vector3 HexMapNode::get_cell_center(const HexMapCellId &cell_id) const {
 
 Vector3 HexMapNode::get_cell_center(
         const Ref<hex_bind::HexMapCellId> ref) const {
+    ERR_FAIL_COND_V_MSG(
+            !ref.is_valid(), Vector3(), "argument was not HexMapSpace");
     return space.get_cell_center(ref->inner);
 }
 
@@ -155,6 +158,7 @@ Ref<hex_bind::HexMapCellId> HexMapNode::_get_cell_id(Vector3 pos) const {
 void HexMapNode::set_cell(const Ref<hex_bind::HexMapCellId> ref,
         int p_item,
         int p_orientation) {
+    ERR_FAIL_COND_MSG(!ref.is_valid(), "first argument was not HexMapCellId");
     set_cell(ref->inner, p_item, p_orientation);
 
     // Emit the signal noting that the cell has changed.
@@ -182,14 +186,17 @@ void HexMapNode::set_cells(const Array cells) {
 
 Dictionary HexMapNode::_get_cell(
         const Ref<hex_bind::HexMapCellId> &ref) const {
-    auto info = get_cell(ref->inner);
     Dictionary out;
+    ERR_FAIL_COND_V_MSG(!ref.is_valid(), out, "argument was not HexMapCellId");
+    auto info = get_cell(ref->inner);
     out["value"] = info.value;
     out["orientation"] = info.orientation;
     return out;
 }
 
 bool HexMapNode::has(const Ref<hex_bind::HexMapCellId> ref) const {
+    ERR_FAIL_COND_V_MSG(
+            !ref.is_valid(), false, "argument was not HexMapCellId");
     return has(ref->inner);
 }
 

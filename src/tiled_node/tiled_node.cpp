@@ -781,6 +781,8 @@ RID HexMapTiledNode::get_bake_mesh_instance(int p_idx) {
 
 Vector3 HexMapTiledNode::get_cell_origin(
         Ref<hex_bind::HexMapCellId> ref) const {
+    ERR_FAIL_COND_V_MSG(
+            !ref.is_valid(), Vector3(), "argument is not HexMapCellId");
     Vector3 out = space.get_cell_center(ref->inner);
     out += get_mesh_origin_vec() * space.get_cell_scale();
     return out;
