@@ -43,10 +43,10 @@ jobs:
         shell: sh
         working-directory: ./demo
         env:
-          ARCHIVE_NAME: godot-hex-map-${{ env.RELEASE_TAG }}.tar.gz
+          ARCHIVE_NAME: godot-hex-map-${{ env.RELEASE_TAG }}.zip
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Creating $ARCHIVE_NAME from ${{ env.ADDON_PATH }}"
-          tar -czvf $ARCHIVE_NAME ${{ env.ADDON_PATH }}
+          zip -r $ARCHIVE_NAME ${{ env.ADDON_PATH }}
           echo "Uploading $ARCHIVE_NAME to release ${{ env.RELEASE_TAG }}"
           gh release upload ${{ env.RELEASE_TAG }} $ARCHIVE_NAME
