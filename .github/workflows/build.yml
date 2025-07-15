@@ -1,0 +1,95 @@
+name: Build Binaries
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+
+env:
+  # Use UTF-8 on Linux.
+  LANG: en_US.UTF-8
+  LC_ALL: en_US.UTF-8
+
+jobs:
+  build:
+    name: Build GDExtension
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          [
+            { platform: linux, arch: x86_64, os: ubuntu-22.04 },
+            { platform: windows, arch: x86_64, os: windows-latest },
+            { platform: windows, arch: x86_32, os: windows-latest },
+            { platform: macos, arch: universal, os: macos-latest },
+            { platform: android, arch: arm64, os: ubuntu-22.04 },
+            { platform: android, arch: arm32, os: ubuntu-22.04 },
+            { platform: android, arch: x86_64, os: ubuntu-22.04 },
+            { platform: android, arch: x86_32, os: ubuntu-22.04 },
+            { platform: ios, arch: arm64, os: macos-latest },
+            { platform: web, arch: wasm32, os: ubuntu-22.04 }
+          ]
+        target-type: [editor, template_debug, template_release]
+        # disabling double precision builds for now; doubles the CI time for
+        # unlikely case.
+        float-precision: [single] # , double]
+
+    runs-on: ${{ matrix.target.os }}
+    env:
+      BUILD_VERSION: ${{ matrix.target.platform }}_${{ matrix.target.arch }}_${{ matrix.float-precision }}_${{ matrix.target-type }}
+      SCONS_CACHE: ${{ github.workspace }}/.scons-cache/
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          submodules: true
+
+      - name: Setup godot-cpp build environment
+        uses: godotengine/godot-cpp/.github/actions/setup-godot-cpp@godot-4.4-stable
+        with:
+          platform: ${{ matrix.target.platform }}
+          em-version: 3.1.62
+
+      - name: Restore Scons cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.SCONS_CACHE }}
+          key: scons_cache-${{ env.BUILD_VERSION }}_${{ hashFiles('.gitmodules') }}
+
+      - name: Build GDExtension
+        shell: sh
+        run: |
+          scons \
+            verbose=1 \
+            target=${{ matrix.target-type }} \
+            platform=${{ matrix.target.platform }} \
+            arch=${{ matrix.target.arch }} \
+            precision=${{ matrix.float-precision }}
+
+      # Clean up compilation files
+      - name: Windows - Delete compilation files
+        if: ${{ matrix.target.platform == 'windows' }}
+        shell: pwsh
+        run: |
+          Remove-Item ${{ github.workspace }}/demo/addons/hex_map/lib/* -Include *.exp,*.lib,*.pdb -Force
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot-hex-map-${{ env.BUILD_VERSION }}_${{ hashFiles('.gitmodules') }}
+          path: ${{ github.workspace }}/demo/addons/hex_map/lib
+
+  # Merges all the build artifacts together into a single godot-hex-map artifact.
+  # If you comment out this step, all the builds will be uploaded individually.
+  merge:
+    name: Merge build artifacts
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: godot-hex-map
+          pattern: godot-hex-map-*
+          delete-merged: true
