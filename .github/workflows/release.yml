@@ -22,6 +22,8 @@ jobs:
     needs: build
     name: Create & Upload Archive
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
       ADDON_PATH: addons/hex_map
