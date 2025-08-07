@@ -37,6 +37,7 @@
 #include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/core/math.hpp>
 #include <godot_cpp/core/object.hpp>
+#include <godot_cpp/templates/local_vector.hpp>
 #include <godot_cpp/variant/callable_method_pointer.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
@@ -51,6 +52,7 @@
 #include "core/tile_orientation.h"
 #include "editor_plugin.h"
 #include "helpers.h"
+#include "core/math.h"
 #include "profiling.h"
 
 using EditAxis = EditorCursor::EditAxis;
@@ -450,25 +452,84 @@ int32_t HexMapNodeEditorPlugin::_forward_3d_gui_input(Camera3D *p_camera,
     // - commit changes on mouse up
     case INPUT_STATE_PAINTING: {
         HexMapCellId cell_id = editor_cursor->get_cell();
-        auto [tile, orientation] = hex_map->get_cell(cell_id);
+        // auto [tile, orientation] = hex_map->get_cell(cell_id);
 
         auto cell = editor_cursor->get_origin_cell_info();
         ERR_FAIL_COND_V(cell.value == HexMapNode::CELL_VALUE_NONE,
                 AFTER_GUI_INPUT_STOP);
-        if (cell.value != tile || cell.orientation != orientation) {
-            cells_changed.push_back(CellChange{
-                    .cell_id = cell_id,
-                    .orig_tile = tile,
-                    .orig_orientation = orientation,
-                    .new_tile = cell.value,
-                    .new_orientation = cell.orientation,
-            });
-            static_assert(HexMapNode::CELL_ARRAY_INDEX_VEC == 0);
-            static_assert(HexMapNode::CELL_ARRAY_INDEX_VALUE == 1);
-            static_assert(HexMapNode::CELL_ARRAY_INDEX_ORIENTATION == 2);
-            hex_map->set_cells(Array::make(
-                    (Vector3i)cell_id, cell.value, cell.orientation));
+        auto cells_to_process = LocalVector<HexMapCellId>();
+        cells_to_process.push_back(cell_id);
+        if (cells_changed.size() != 0) {
+            auto last_cell = (--cells_changed.end())->cell_id;
+            LocalVector<Point2i> cell_line;
+            Point2i start, end;
+            switch (edit_axis) {
+            case EditorCursor::EditAxis::AXIS_Y:
+                start = Vector2i(last_cell.q, last_cell.r);
+                end = Vector2i(cell_id.q, cell_id.r);
+                cell_line = bresenham_line_hex(start, end);
+                for (auto cell_it = ++cell_line.begin(); cell_it != cell_line.end(); ++cell_it) {
+                    cells_to_process.push_back(Vector3i(cell_it->x, cell_id.y, cell_it->y));
+                }    
+                break;
+            case EditorCursor::EditAxis::AXIS_Q:
+                start = Vector2i(last_cell.y, last_cell.r);
+                end = Vector2i(cell_id.y, cell_id.r);
+                cell_line = bresenham_line(start, end);
+                for (auto cell_it = ++cell_line.begin(); cell_it != cell_line.end(); ++cell_it) {
+                    cells_to_process.push_back(Vector3i(cell_id.q, cell_it->x, cell_it->y));
+                }    
+                break;
+            case EditorCursor::EditAxis::AXIS_R:
+                start = Vector2i(last_cell.q, last_cell.y);
+                end = Vector2i(cell_id.q, cell_id.y);
+                cell_line = bresenham_line(start, end);
+                for (auto cell_it = ++cell_line.begin(); cell_it != cell_line.end(); ++cell_it) {
+                    cells_to_process.push_back(Vector3i(cell_it->x, cell_it->y, cell_id.r));
+                }    
+                break;
+            case EditorCursor::EditAxis::AXIS_S:
+                start = Vector2i(last_cell.y, last_cell.r);
+                end = Vector2i(cell_id.y, cell_id.r);
+                cell_line = bresenham_line(start, end);
+                {
+                    // this might actually be -s
+                    // worth doing s = -edit_axis_depth... and again negating it in "-s-cell_it->y" to 
+                    // model the value correctly and just leave it to the compiler to optimize
+                    int32_t s = edit_axis_depth[edit_axis];
+                    for (auto cell_it = ++cell_line.begin(); cell_it != cell_line.end(); ++cell_it) {
+                        cells_to_process.push_back(Vector3i(s-cell_it->y, cell_it->x, cell_it->y));
+                    }
+                }    
+                break;
+            default:
+                break;
+            }
+            
         }
+        auto cells_array = Array::make();
+        for (auto cell_it = cells_to_process.begin(); cell_it != cells_to_process.end(); ++cell_it) {
+            HexMapCellId current_cell_id = *cell_it;
+            auto [tile, orientation] = hex_map->get_cell(current_cell_id);
+            if (cell.value != tile || cell.orientation != orientation) {
+                cells_changed.push_back(CellChange{
+                        .cell_id = current_cell_id,
+                        .orig_tile = tile,
+                        .orig_orientation = orientation,
+                        .new_tile = cell.value,
+                        .new_orientation = cell.orientation,
+                });
+                
+                cells_array.append((Vector3i)current_cell_id);
+                cells_array.append(cell.value);
+                cells_array.append(cell.orientation);
+            }
+        }
+        static_assert(HexMapNode::CELL_ARRAY_INDEX_VEC == 0);
+        static_assert(HexMapNode::CELL_ARRAY_INDEX_VALUE == 1);
+        static_assert(HexMapNode::CELL_ARRAY_INDEX_ORIENTATION == 2);
+        hex_map->set_cells(cells_array);
+
         if (mouse_left_released) {
             commit_cell_changes("HexMap: paint cells");
             input_state = INPUT_STATE_DEFAULT;
